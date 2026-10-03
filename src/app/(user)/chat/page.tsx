@@ -281,7 +281,18 @@ export default function ChatPage() {
     const rawContent = editableRef.current?.innerText ?? input
     if (!rawContent.trim() || sending || !conversationId || !profile || !character) return
 
-    const SEND_COST = 0
+    const SEND_COST = 10
+
+    // ポイントチェック（送信前）
+    const nowTs = new Date()
+    const bonusValid = (profile as any).bonus_points_expires_at
+      ? new Date((profile as any).bonus_points_expires_at) > nowTs
+      : false
+    const balance = (profile.points ?? 0) + (bonusValid ? ((profile as any).bonus_points ?? 0) : 0)
+    if (balance < SEND_COST) {
+      setPointsShortage({ current: balance, required: SEND_COST })
+      return
+    }
 
     // 初回メッセージの場合はキャラクターを登録
     const isFirstUserMessage = !messages.some(m => m.sender_role === 'user')
@@ -297,7 +308,6 @@ export default function ChatPage() {
     const content = rawContent.trim()
     setInput('')
     if (editableRef.current) editableRef.current.innerText = ''
-
 
     // ユーザーメッセージをDBに保存
     const { data: msg } = await supabase.from('messages').insert({
@@ -341,23 +351,27 @@ export default function ChatPage() {
         }),
       })
       if (res.ok) {
-        const { message: aiMsg } = await res.json()
-        if (aiMsg) addMessage(aiMsg)
+        const data = await res.json()
+        if (data.message) addMessage(data.message)
+
+        // ポイント残高を更新
+        if (data.pointsDeducted > 0) {
+          const newPts = Math.max(0, (profile.points ?? 0) - data.pointsDeducted)
+          setProfile(prev => prev ? { ...prev, points: newPts } : prev)
+          window.dispatchEvent(new CustomEvent('pointsUpdated', { detail: { points: newPts } }))
+        }
 
         // 好感度加算（fire-and-forget）
         fetch('/api/chat/add-affection', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ characterId: character.id }),
-        }).then(r => r.json()).then(data => {
-          if (data.ok) {
-            setAffection({ points: data.affection_points, level: data.affection_level, messageCount: data.message_count })
-            if (data.leveled_up) setLevelUp({ level: data.affection_level })
+        }).then(r => r.json()).then(d => {
+          if (d.ok) {
+            setAffection({ points: d.affection_points, level: d.affection_level, messageCount: d.message_count })
+            if (d.leveled_up) setLevelUp({ level: d.affection_level })
           }
         }).catch(() => {})
-      } else if (res.status === 402) {
-        const data = await res.json()
-        setPointsShortage({ current: data.current ?? 0, required: data.required ?? 10 })
       } else {
         console.error('[chat] AI返信エラー:', await res.text())
       }

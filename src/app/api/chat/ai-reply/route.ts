@@ -94,43 +94,8 @@ export async function POST(req: NextRequest) {
       const planId = sub.model as PlanId | undefined
       const overageCost = planId ? PLANS[planId].overage_points : DEFAULT_POINTS_PER_MESSAGE
       modelOverride = planId ? PLANS[planId].model : undefined
-
-      const { data: profileForPoints } = await admin
-        .from('profiles')
-        .select('points, bonus_points, bonus_points_expires_at')
-        .eq('id', user.id)
-        .single()
-      const now = new Date()
-      const bonusValid = profileForPoints?.bonus_points_expires_at
-        ? new Date(profileForPoints.bonus_points_expires_at) > now
-        : false
-      const balance =
-        (profileForPoints?.points ?? 0) + (bonusValid ? (profileForPoints?.bonus_points ?? 0) : 0)
-      if (balance < overageCost) {
-        return NextResponse.json(
-          { error: 'ポイントが不足しています', code: 'insufficient_points', current: balance, required: overageCost },
-          { status: 402 },
-        )
-      }
       pointsToDeduct = overageCost
     } else {
-      const { data: profileForPoints } = await admin
-        .from('profiles')
-        .select('points, bonus_points, bonus_points_expires_at')
-        .eq('id', user.id)
-        .single()
-      const now = new Date()
-      const bonusValid = profileForPoints?.bonus_points_expires_at
-        ? new Date(profileForPoints.bonus_points_expires_at) > now
-        : false
-      const balance =
-        (profileForPoints?.points ?? 0) + (bonusValid ? (profileForPoints?.bonus_points ?? 0) : 0)
-      if (balance < DEFAULT_POINTS_PER_MESSAGE) {
-        return NextResponse.json(
-          { error: 'ポイントが不足しています', code: 'insufficient_points', current: balance, required: DEFAULT_POINTS_PER_MESSAGE },
-          { status: 402 },
-        )
-      }
       pointsToDeduct = DEFAULT_POINTS_PER_MESSAGE
     }
   }
@@ -221,5 +186,6 @@ export async function POST(req: NextRequest) {
     freeUsed,
     freeLimit,
     wasFree: free?.ok ?? false,
+    pointsDeducted: pointsToDeduct,
   })
 }
