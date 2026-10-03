@@ -22,8 +22,16 @@ type UserDetail = {
   last_login_at: string | null
   created_at: string
   referral_source: string | null
+  referral_article: string | null
   registration_ip: string | null
   registration_ua: string | null
+  utm_source: string | null
+  utm_medium: string | null
+  utm_campaign: string | null
+  utm_content: string | null
+  utm_term: string | null
+  fbclid: string | null
+  gclid: string | null
 }
 
 type Label = {
@@ -80,7 +88,7 @@ export default function AdminUserDetailPage() {
 
   const loadAll = async () => {
     const [userRes, labelsRes, assignRes, convRes, txRes, noteRes] = await Promise.all([
-      supabase.from('profiles').select('id, user_code, email, display_name, age, gender, points, bonus_points, bonus_points_expires_at, last_login_at, created_at, referral_source, registration_ip, registration_ua').eq('id', id).single(),
+      supabase.from('profiles').select('id, user_code, email, display_name, age, gender, points, bonus_points, bonus_points_expires_at, last_login_at, created_at, referral_source, referral_article, registration_ip, registration_ua, utm_source, utm_medium, utm_campaign, utm_content, utm_term, fbclid, gclid').eq('id', id).single(),
       supabase.from('admin_labels').select('*').order('name'),
       supabase.from('user_label_assignments').select('label_id').eq('user_id', id),
       supabase.from('conversations').select('id, last_message_at, is_unread_staff, characters(name, avatar_url)').eq('user_id', id).order('last_message_at', { ascending: false }).limit(10),
@@ -224,6 +232,23 @@ export default function AdminUserDetailPage() {
           <div><span className="text-[var(--color-text-muted)] text-xs">登録日</span><p>{new Date(user.created_at).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo' })}</p></div>
           <div><span className="text-[var(--color-text-muted)] text-xs">最終ログイン</span><p>{user.last_login_at ? formatDistanceToNow(new Date(user.last_login_at), { addSuffix: true, locale: ja }) : '—'}</p></div>
           <div className="col-span-2"><span className="text-[var(--color-text-muted)] text-xs">流入元</span><p>{user.referral_source ?? '—'}</p></div>
+          {user.referral_article && (
+            <div className="col-span-2"><span className="text-[var(--color-text-muted)] text-xs">記事</span><p className="text-xs">{user.referral_article}</p></div>
+          )}
+          {(user.utm_source || user.utm_medium || user.utm_campaign || user.utm_content || user.utm_term || user.fbclid || user.gclid) && (
+            <div className="col-span-2 space-y-1">
+              <span className="text-[var(--color-text-muted)] text-xs font-medium block">UTM / 広告</span>
+              <div className="flex flex-wrap gap-2">
+                {user.utm_source   && <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'var(--color-bg-secondary)' }}>source: {user.utm_source}</span>}
+                {user.utm_medium   && <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'var(--color-bg-secondary)' }}>medium: {user.utm_medium}</span>}
+                {user.utm_campaign && <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'var(--color-bg-secondary)' }}>campaign: {user.utm_campaign}</span>}
+                {user.utm_content  && <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'var(--color-bg-secondary)' }}>content: {user.utm_content}</span>}
+                {user.utm_term     && <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'var(--color-bg-secondary)' }}>term: {user.utm_term}</span>}
+                {user.fbclid       && <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'var(--color-bg-secondary)' }}>fbclid: {user.fbclid.slice(0, 16)}…</span>}
+                {user.gclid        && <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'var(--color-bg-secondary)' }}>gclid: {user.gclid.slice(0, 16)}…</span>}
+              </div>
+            </div>
+          )}
           <div className="col-span-2"><span className="text-[var(--color-text-muted)] text-xs">登録IP</span><p className="font-mono text-xs">{user.registration_ip ?? '—'}</p></div>
           <div className="col-span-2"><span className="text-[var(--color-text-muted)] text-xs">登録UA</span><p className="text-xs break-all text-[var(--color-text-muted)]">{user.registration_ua ?? '—'}</p></div>
         </div>

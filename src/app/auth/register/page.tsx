@@ -23,6 +23,24 @@ export default function RegisterPage() {
     const refBy = params.get('ref_by')
     if (refBy) sessionStorage.setItem('referral_by_code', refBy)
     trackRegisterPageView({ ref: ref ?? undefined })
+
+    // UTMパラメータをURL→localStorageの順で読み sessionStorage にも保存
+    let storedUtm: Record<string, string> = {}
+    try { storedUtm = JSON.parse(localStorage.getItem('utm_attr') ?? '{}') } catch { /* noop */ }
+    const utmSource   = params.get('utm_source')   ?? storedUtm.utm_source
+    const utmMedium   = params.get('utm_medium')   ?? storedUtm.utm_medium
+    const utmCampaign = params.get('utm_campaign') ?? storedUtm.utm_campaign
+    const utmContent  = params.get('utm_content')  ?? storedUtm.utm_content
+    const utmTerm     = params.get('utm_term')     ?? storedUtm.utm_term
+    const fbclid      = params.get('fbclid')       ?? storedUtm.fbclid
+    if (utmSource)   sessionStorage.setItem('utm_source',   utmSource)
+    if (utmMedium)   sessionStorage.setItem('utm_medium',   utmMedium)
+    if (utmCampaign) sessionStorage.setItem('utm_campaign', utmCampaign)
+    if (utmContent)  sessionStorage.setItem('utm_content',  utmContent)
+    if (utmTerm)     sessionStorage.setItem('utm_term',     utmTerm)
+    if (fbclid)      sessionStorage.setItem('fbclid',       fbclid)
+    const gclid = params.get('gclid')
+    if (gclid) sessionStorage.setItem('gclid', gclid)
   }, [])
 
   const handleGoogle = async () => {
@@ -55,11 +73,21 @@ export default function RegisterPage() {
       // チェック失敗時はそのまま続行
     }
 
+    // user_metadata に UTM を入れておく（メール確認を別ブラウザで開いた場合のフォールバック）
+    const utmMeta: Record<string, string> = {}
+    ;['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'fbclid', 'gclid'].forEach(k => {
+      const v = sessionStorage.getItem(k)
+      if (v) utmMeta[k] = v
+    })
+    const refSource = sessionStorage.getItem('referral_source')
+    if (refSource) utmMeta['referral_source'] = refSource
+
     const supabase = createClient()
     const { error } = await supabase.auth.signUp({
       email, password,
       options: {
         emailRedirectTo: `${location.origin}/auth/callback`,
+        data: Object.keys(utmMeta).length > 0 ? utmMeta : undefined,
       },
     })
 

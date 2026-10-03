@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Loader2, ChevronLeft } from 'lucide-react'
 import { trackSignUp, trackOnboardingStart } from '@/lib/gtag'
+import { getStoredUtm, getStoredGclid } from '@/components/UtmCapture'
 
 const GENDER_OPTIONS = [
   { value: 'male', label: '男性' },
@@ -57,13 +58,33 @@ export default function OnboardingPage() {
   const complete = async () => {
     if (!selectedCharId) return
     setSaving(true)
-    const referralSource = sessionStorage.getItem('referral_source') ?? undefined
+
+    // セッションストレージ → localStorage → user_metadata の優先順で UTM を読む
+    const { data: { user: authUser } } = await supabase.auth.getUser()
+    const meta = (authUser?.user_metadata ?? {}) as Record<string, string | undefined>
+    const urlP = new URLSearchParams(window.location.search)
+    const utmData = getStoredUtm()
+
+    const referralSource = urlP.get('referral_source') ?? sessionStorage.getItem('referral_source') ?? meta.referral_source ?? undefined
     const referralArticle = sessionStorage.getItem('referral_article') ?? undefined
-    const referralByCode = sessionStorage.getItem('referral_by_code') ?? undefined
+    const referralByCode  = sessionStorage.getItem('referral_by_code') ?? undefined
+
+    const utmSource   = urlP.get('utm_source')   ?? utmData?.utm_source   ?? sessionStorage.getItem('utm_source')   ?? meta.utm_source   ?? undefined
+    const utmMedium   = urlP.get('utm_medium')   ?? utmData?.utm_medium   ?? sessionStorage.getItem('utm_medium')   ?? meta.utm_medium   ?? undefined
+    const utmCampaign = urlP.get('utm_campaign') ?? utmData?.utm_campaign ?? sessionStorage.getItem('utm_campaign') ?? meta.utm_campaign ?? undefined
+    const utmContent  = urlP.get('utm_content')  ?? utmData?.utm_content  ?? sessionStorage.getItem('utm_content')  ?? meta.utm_content  ?? undefined
+    const utmTerm     = urlP.get('utm_term')     ?? utmData?.utm_term     ?? sessionStorage.getItem('utm_term')     ?? meta.utm_term     ?? undefined
+    const fbclid      = urlP.get('fbclid')       ?? utmData?.fbclid       ?? sessionStorage.getItem('fbclid')       ?? meta.fbclid       ?? undefined
+    const gclid       = urlP.get('gclid')        ?? getStoredGclid() ?? sessionStorage.getItem('gclid') ?? undefined
+
     const res = await fetch('/api/onboarding/complete', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, age, gender, partnerCharacterId: selectedCharId, referralSource, referralArticle, referralByCode }),
+      body: JSON.stringify({
+        name, age, gender, partnerCharacterId: selectedCharId,
+        referralSource, referralArticle, referralByCode,
+        utmSource, utmMedium, utmCampaign, utmContent, utmTerm, fbclid, gclid,
+      }),
     })
     setSaving(false)
     if (!res.ok) {
@@ -71,10 +92,11 @@ export default function OnboardingPage() {
       alert('保存に失敗しました: ' + (data.error ?? ''))
       return
     }
-    trackSignUp({ referral_source: referralSource })
-    sessionStorage.removeItem('referral_source')
-    sessionStorage.removeItem('referral_article')
-    sessionStorage.removeItem('referral_by_code')
+    trackSignUp({ referral_source: referralSource ?? utmSource })
+    // sessionStorage をクリア
+    ;['referral_source', 'referral_article', 'referral_by_code',
+      'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'fbclid', 'gclid',
+    ].forEach(k => sessionStorage.removeItem(k))
     window.location.href = `/chat?character=${selectedCharId}`
   }
 

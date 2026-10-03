@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
   const user = await getAuthUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { name, age, gender, partnerCharacterId, referralSource, referralArticle, referralByCode } = await req.json()
+  const { name, age, gender, partnerCharacterId, referralSource, referralArticle, referralByCode, utmSource, utmMedium, utmCampaign, utmContent, utmTerm, fbclid, gclid } = await req.json()
   if (!name?.trim() || !age || !gender)
     return NextResponse.json({ error: 'name, age, gender are required' }, { status: 400 })
   if (parseInt(age) < 18)
@@ -99,6 +99,13 @@ export async function POST(req: NextRequest) {
         ...(partnerCharacterId ? { partner_character_id: partnerCharacterId } : {}),
         ...(referralSource ? { referral_source: referralSource } : {}),
         ...(referralArticle ? { referral_article: referralArticle } : {}),
+        ...(utmSource   ? { utm_source:   utmSource }   : {}),
+        ...(utmMedium   ? { utm_medium:   utmMedium }   : {}),
+        ...(utmCampaign ? { utm_campaign: utmCampaign } : {}),
+        ...(utmContent  ? { utm_content:  utmContent }  : {}),
+        ...(utmTerm     ? { utm_term:     utmTerm }     : {}),
+        ...(fbclid      ? { fbclid:       fbclid }      : {}),
+        ...(gclid       ? { gclid:        gclid }       : {}),
       })
       if (insertError) return NextResponse.json({ error: insertError.message }, { status: 500 })
     } else {
@@ -113,6 +120,13 @@ export async function POST(req: NextRequest) {
         ...(partnerCharacterId ? { partner_character_id: partnerCharacterId } : {}),
         ...(referralSource ? { referral_source: referralSource } : {}),
         ...(referralArticle ? { referral_article: referralArticle } : {}),
+        ...(utmSource   ? { utm_source:   utmSource }   : {}),
+        ...(utmMedium   ? { utm_medium:   utmMedium }   : {}),
+        ...(utmCampaign ? { utm_campaign: utmCampaign } : {}),
+        ...(utmContent  ? { utm_content:  utmContent }  : {}),
+        ...(utmTerm     ? { utm_term:     utmTerm }     : {}),
+        ...(fbclid      ? { fbclid:       fbclid }      : {}),
+        ...(gclid       ? { gclid:        gclid }       : {}),
       }).eq('id', user.id)
       if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 })
     }
