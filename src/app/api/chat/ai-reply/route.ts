@@ -4,7 +4,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { generateReply, extractMemoryUpdate, type LLMMessage } from '@/lib/llm-service'
-import { sendNotificationEmail } from '@/lib/send-notification-email'
 import { PLANS, type PlanId } from '@/lib/plans'
 
 const DEFAULT_POINTS_PER_MESSAGE = 10
@@ -241,21 +240,6 @@ export async function POST(req: NextRequest) {
       })
       .catch(() => {})
   }
-
-  // メール通知
-  Promise.all([admin.auth.admin.getUserById(user.id)])
-    .then(([{ data: authData }]) => {
-      const email = authData?.user?.email
-      if (email) {
-        sendNotificationEmail({
-          toEmail: email,
-          characterName: character.name,
-          messageContent: replyText,
-          conversationId,
-        })
-      }
-    })
-    .catch(() => {})
 
   return NextResponse.json({
     message: newMsg,

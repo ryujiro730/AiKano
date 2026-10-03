@@ -37,8 +37,26 @@ export default function RegisterPage() {
     e.preventDefault()
     setLoading(true)
     setError('')
+
+    // メールアドレスの重複チェック
+    try {
+      const checkRes = await fetch('/api/auth/check-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+      const checkData = await checkRes.json()
+      if (checkData.exists) {
+        setError('このメールアドレスはすでに登録されています')
+        setLoading(false)
+        return
+      }
+    } catch {
+      // チェック失敗時はそのまま続行
+    }
+
     const supabase = createClient()
-    const { data, error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email, password,
       options: {
         emailRedirectTo: `${location.origin}/auth/callback`,
