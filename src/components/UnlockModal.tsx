@@ -76,8 +76,8 @@ export function UnlockModal({ characterId, characterName, onClose, onSuccess }: 
 
         {/* 説明 */}
         <div style={{
-          background: 'linear-gradient(135deg, rgba(233,76,139,0.08), rgba(233,76,139,0.04))',
-          border: '1px solid rgba(233,76,139,0.2)',
+          background: 'var(--color-primary-soft)',
+          border: '1px solid var(--color-primary-border)',
           borderRadius: 16, padding: '14px 16px', marginBottom: 20,
         }}>
           <p style={{ fontSize: 14, fontWeight: 700, marginBottom: 6, color: 'var(--color-primary)' }}>
@@ -122,12 +122,12 @@ export function UnlockModal({ characterId, characterName, onClose, onSuccess }: 
           disabled={submitting || !postUrl.trim()}
           style={{
             width: '100%', padding: '14px', borderRadius: 18,
-            background: 'linear-gradient(135deg, #E94C8B, #c73578)',
+            background: 'var(--color-primary)',
             color: '#fff', fontWeight: 700, fontSize: 15, border: 'none',
             cursor: submitting || !postUrl.trim() ? 'not-allowed' : 'pointer',
             opacity: submitting || !postUrl.trim() ? 0.6 : 1,
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            boxShadow: '0 4px 16px rgba(233,76,139,0.35)',
+            boxShadow: 'none',
           }}
         >
           <Send size={16} />

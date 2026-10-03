@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Loader2, Crown, CheckCircle2, Settings, Gift, Copy, Check, CreditCard, Store, Building2, RefreshCw } from 'lucide-react'
+import { Loader2, Crown, Settings, Gift, Copy, Check, CreditCard, Store, Building2, RefreshCw } from 'lucide-react'
 import { CardBrands, FamilyMartBadge, LawsonBadge, MinistopBadge, SeicomartBadge, PayPayBadge } from '@/components/icons/payment-brands'
 import { PLANS } from '@/lib/plans'
 import type { Profile } from '@/types'
@@ -137,7 +137,7 @@ export default function PaymentPage() {
                 width: `${usagePct}%`,
                 background: isOverLimit
                   ? 'linear-gradient(to right, #f87171, #ef4444)'
-                  : 'linear-gradient(to right, var(--color-primary), #c73578)',
+                  : 'var(--color-primary)',
               }} />
             </div>
             {isOverLimit && (
@@ -171,25 +171,23 @@ export default function PaymentPage() {
             {/* プランヘッダー */}
             <div className="p-5 pb-4">
               {plan.id === 'premium' && (
-                <p className="text-[11px] font-bold mb-1.5" style={{ color: 'var(--color-primary)' }}>★ おすすめ</p>
+                <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-md mb-2" style={{ background: 'var(--color-primary)', color: '#fff', letterSpacing: '0.04em' }}>おすすめ</span>
               )}
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="font-bold text-base">{plan.name}</p>
-                  <div className="flex items-baseline gap-1 mt-0.5">
-                    <span className="text-2xl font-bold">¥{plan.price_yen.toLocaleString()}</span>
-                    <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>/月</span>
-                  </div>
-                </div>
-                <ul className="space-y-1 text-right">
-                  {plan.features.map((f: string) => (
-                    <li key={f} className="flex items-center gap-1.5 text-xs justify-end" style={{ color: 'var(--color-text-muted)' }}>
-                      <CheckCircle2 size={11} style={{ color: 'var(--color-primary)', flexShrink: 0 }} />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
+              <div className="flex items-baseline justify-between gap-3">
+                <p className="font-bold text-base">{plan.name}</p>
+                <p className="flex items-baseline gap-1">
+                  <span className="text-2xl font-bold tabular-nums">¥{plan.price_yen.toLocaleString()}</span>
+                  <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>/月</span>
+                </p>
               </div>
+              <ul className="space-y-1.5 mt-3">
+                {plan.features.map((f: string) => (
+                  <li key={f} className="flex items-center gap-2 text-[13px]" style={{ color: 'var(--color-text)' }}>
+                    <Check size={14} strokeWidth={2.5} style={{ color: 'var(--color-primary)', flexShrink: 0 }} />
+                    {f}
+                  </li>
+                ))}
+              </ul>
             </div>
 
             {/* 支払い方法 */}
@@ -319,13 +317,13 @@ export default function PaymentPage() {
           setTimeout(() => setCopied(false), 2000)
         }
         return (
-          <div className="card p-5" style={{ border: '1px solid var(--color-border-warm)', background: 'linear-gradient(135deg, rgba(249,168,184,0.08), rgba(232,121,160,0.05))' }}>
+          <div className="card p-5" style={{ border: '1px solid var(--color-border)', background: 'var(--color-surface)' }}>
             <div className="flex items-center gap-2 mb-2">
               <Gift size={16} style={{ color: 'var(--color-primary)' }} />
               <p className="font-bold text-sm">友達紹介プログラム</p>
             </div>
             <p className="text-xs mb-3 leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
-              紹介URLから友達が登録すると、<span className="font-semibold" style={{ color: 'var(--color-primary)' }}>あなたも友達も1,000ポイント</span>もらえます！
+              紹介URLから友達が登録すると、<span className="font-semibold" style={{ color: 'var(--color-primary)' }}>あなたも友達も100ポイント</span>もらえます！
             </p>
             <div className="flex gap-2">
               <div className="flex-1 px-3 py-2 rounded-xl text-xs font-mono truncate"

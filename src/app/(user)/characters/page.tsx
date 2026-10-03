@@ -27,7 +27,7 @@ export default async function CharactersPage() {
       ? admin.from('character_unlocks').select('character_id').eq('user_id', userId)
       : Promise.resolve({ data: [] }),
     userId
-      ? admin.rpc('get_unread_char_ids', { p_user_id: userId })
+      ? admin.rpc('get_conversation_unread', { p_user_id: userId })
       : Promise.resolve({ data: [] }),
     userId
       ? admin.from('profiles').select('partner_character_id').eq('id', userId).single()
@@ -61,10 +61,10 @@ export default async function CharactersPage() {
         ? visibleChars.find(c => c.id === convDataArr.find((cv: any) => visibleChars.some(ch => ch.id === cv.character_id))?.character_id) ?? null
         : null)
 
-  // 未読: RPC が返す UUID[] からそのまま構築（直列2クエリ不要）
+  // 未読: メッセージ一覧・フッターと同じ DB 関数（キャラごとの未読件数）
   const unreadByChar: Record<string, number> = {}
-  for (const charId of ((unreadData as any)?.data ?? []) as string[]) {
-    unreadByChar[charId] = 1
+  for (const row of ((unreadData as any)?.data ?? []) as { character_id: string; unread: number }[]) {
+    unreadByChar[row.character_id] = row.unread
   }
 
   return (

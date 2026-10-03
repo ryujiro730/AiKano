@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { ChevronLeft, Send, Headphones } from 'lucide-react'
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
+import { notifyBadgesChanged } from '@/lib/badge-events'
 
 type ChatMessage = {
   id: string
@@ -25,7 +26,11 @@ export default function SupportPage() {
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  useEffect(() => { loadHistory() }, [])
+  useEffect(() => {
+    loadHistory()
+    // 開いた時点でスタッフ返信を既読にしてフッターのバッジを更新
+    fetch('/api/support/mark-read', { method: 'POST' }).then(notifyBadgesChanged).catch(() => {})
+  }, [])
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])

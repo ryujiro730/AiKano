@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { BottomNav } from './BottomNav'
 import { useCampaign } from './CampaignProvider'
+import { usePathname } from 'next/navigation'
+import { BADGES_CHANGED_EVENT } from '@/lib/badge-events'
 
 export function BottomNavLive({
   userId,
@@ -15,6 +17,7 @@ export function BottomNavLive({
 }) {
   const [counts, setCounts] = useState({ unread: initialUnread, support: initialSupport })
   const { campaign: rawCampaign } = useCampaign()
+  const pathname = usePathname()
   const [dismissedId, setDismissedId] = useState<string | null>(null)
 
   const activeCampaign = rawCampaign && rawCampaign.id !== dismissedId
@@ -37,12 +40,19 @@ export function BottomNavLive({
       if (document.visibilityState === 'visible') refresh()
     }
     document.addEventListener('visibilitychange', onVisibility)
+    window.addEventListener(BADGES_CHANGED_EVENT, refresh)
 
     return () => {
       clearInterval(interval)
       document.removeEventListener('visibilitychange', onVisibility)
+      window.removeEventListener(BADGES_CHANGED_EVENT, refresh)
     }
   }, [userId, refresh])
+
+  // 画面遷移のたびに最新化（チャットから戻ったとき等）
+  useEffect(() => {
+    if (userId) refresh()
+  }, [pathname, userId, refresh])
 
   const handleDismiss = useCallback(() => {
     if (rawCampaign) setDismissedId(rawCampaign.id)

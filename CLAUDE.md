@@ -104,6 +104,17 @@ Supabase RPC → 集計・計算・複雑なフィルタ（SQL/PostgreSQL）
 
 ---
 
+## 未読数・バッジ
+
+- 未読数の定義は DB 関数 `get_conversation_unread` / `get_badge_counts`（063）に一本化。メッセージ一覧・フッター・ホームが同じ条件（直近15日・ブロック除外）を使う
+- チャット画面ではキャラ発言を受信した時点で既読化し、`notifyBadgesChanged()`（`lib/badge-events.ts`）でフッターを即更新
+- サポート返信の既読は `profiles.support_last_read_at`（サポート画面を開くと更新）
+
+## ユーザー画面デザイン
+
+- 色・角丸は `globals.css` の `.user-layout` トークンで管理（インク×ローズ1色、`--radius-card: 12px`）。色の直書き・絵文字アイコンは使わない
+- 好感度レベルのアイコンは `components/AffectionIcon.tsx`（lucide）
+
 ## Next.js キャッシュの注意点
 
 - 管理画面ナビ（`AdminNav`）の `<Link>` は `prefetch={false}` 済み。データが古くなる問題を防ぐため
@@ -243,7 +254,7 @@ src/
     UtmCapture.tsx          # UTMパラメータ捕捉
     PointsShortageDialog.tsx # ポイント不足ダイアログ
 .github/workflows/deploy.yml  # デプロイ＆cron設定
-supabase/migrations/          # マイグレーション（062まで適用済み）
+supabase/migrations/          # マイグレーション（063まで適用済み）
 ```
 
 ---

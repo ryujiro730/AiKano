@@ -3,7 +3,7 @@ import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { unstable_cache } from 'next/cache'
 import Link from 'next/link'
 import { INTERNAL_EMAILS } from '@/lib/internal-accounts'
-import { RefreshOnMount } from './RefreshOnMount'
+import { RefreshOnMount } from '@/components/RefreshOnMount'
 
 function adminDb() {
   return createAdminClient(

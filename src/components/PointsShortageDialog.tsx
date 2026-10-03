@@ -62,6 +62,9 @@ export function PointsShortageDialog({ currentPoints, requiredPoints, onClose }:
     }
   }
 
+  const covering = TOKEN_PACKAGES.filter(p => p.tokens >= shortage)
+  const featuredId = (covering.find(p => p.is_popular) ?? covering[0])?.id
+
   // 不足分をカバーできる最小パックを先頭に
   const sorted = [...TOKEN_PACKAGES].sort((a, b) => {
     const aCover = a.tokens >= shortage
@@ -78,13 +81,13 @@ export function PointsShortageDialog({ currentPoints, requiredPoints, onClose }:
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
     >
       <div
-        className="w-full max-w-lg rounded-t-3xl pb-safe"
+        className="w-full max-w-lg rounded-t-2xl pb-safe"
         style={{ background: 'var(--color-surface)', maxHeight: '85vh', overflowY: 'auto' }}
       >
         {/* ヘッダー */}
         <div className="flex items-center justify-between px-5 pt-5 pb-3">
           <div>
-            <p className="font-bold text-base">ポイントが足りません</p>
+            <p className="font-bold text-base">続けて話すにはポイントが必要です</p>
             <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
               残高 <strong>{currentPoints.toLocaleString()}pt</strong>
               　 必要 <strong style={{ color: 'var(--color-primary)' }}>{requiredPoints}pt</strong>
@@ -102,7 +105,7 @@ export function PointsShortageDialog({ currentPoints, requiredPoints, onClose }:
         <div className="px-4 pt-3 pb-6 flex flex-col gap-2.5">
           {campaignBonusRate > 1.0 && (
             <div className="rounded-xl px-4 py-2.5 flex items-center gap-2 mb-1"
-              style={{ background: 'linear-gradient(135deg, rgba(232,67,127,0.12), rgba(249,168,212,0.15))', border: '1px solid rgba(232,67,127,0.3)' }}>
+              style={{ background: 'var(--color-primary-soft)', border: '1px solid var(--color-primary-border)' }}>
               <Sparkles size={14} style={{ color: 'var(--color-primary)', flexShrink: 0 }} />
               <p className="text-xs font-bold" style={{ color: 'var(--color-primary)' }}>
                 キャンペーン中！ポイント ×{campaignBonusRate}倍
@@ -111,6 +114,8 @@ export function PointsShortageDialog({ currentPoints, requiredPoints, onClose }:
           )}
           {sorted.map((pkg) => {
             const covers = pkg.tokens >= shortage
+            // 不足分をカバーできるパックのうち「人気」を1つだけ強調（なければ最小のカバーパック）
+            const highlight = pkg.id === featuredId
             const campaignPoints = getCampaignPoints(pkg)
             const bonusPct = pkg.bonus_points > 0
               ? Math.round(pkg.bonus_points / (pkg.tokens - pkg.bonus_points) * 100)
@@ -120,10 +125,11 @@ export function PointsShortageDialog({ currentPoints, requiredPoints, onClose }:
                 key={pkg.id}
                 onClick={() => handlePurchase(pkg)}
                 disabled={!!purchasing}
-                className="w-full flex items-center justify-between px-4 py-3 rounded-2xl transition-all disabled:opacity-60"
+                className="w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all disabled:opacity-60"
                 style={{
-                  background: covers ? 'linear-gradient(135deg, rgba(232,121,160,0.12), rgba(196,80,128,0.06))' : 'var(--color-surface-2)',
-                  border: covers ? '1.5px solid var(--color-primary)' : '1px solid var(--color-border)',
+                  background: highlight ? 'var(--color-primary-soft)' : 'var(--color-surface)',
+                  border: highlight ? '1.5px solid var(--color-primary)' : '1px solid var(--color-border)',
+                  opacity: covers ? 1 : 0.6,
                 }}
               >
                 <div className="text-left">
@@ -142,15 +148,15 @@ export function PointsShortageDialog({ currentPoints, requiredPoints, onClose }:
                         <span className="font-bold text-sm">{pkg.tokens.toLocaleString()}pt</span>
                         {pkg.bonus_points > 0 && (
                           <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5"
-                            style={{ background: 'rgba(232,121,160,0.15)', color: 'var(--color-primary)' }}>
+                            style={{ background: 'var(--color-primary-soft)', color: 'var(--color-primary)' }}>
                             <Sparkles size={9} />+{bonusPct}%
                           </span>
                         )}
                       </>
                     )}
-                    {covers && pkg.is_popular && (
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                        style={{ background: 'var(--color-primary)', color: '#fff' }}>人気</span>
+                    {highlight && (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md"
+                        style={{ background: 'var(--color-primary)', color: '#fff' }}>{pkg.is_popular ? '人気' : 'おすすめ'}</span>
                     )}
                   </div>
                   {!campaignPoints && pkg.bonus_points > 0 && (

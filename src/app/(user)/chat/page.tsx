@@ -15,6 +15,8 @@ import { compressImage, isHeic, heicToBlob } from '@/lib/compress-image'
 import { PointsShortageDialog } from '@/components/PointsShortageDialog'
 import { LevelUpToast } from '@/components/LevelUpToast'
 import { AffectionMeter } from '@/components/AffectionMeter'
+import { AffectionIcon } from '@/components/AffectionIcon'
+import { notifyBadgesChanged } from '@/lib/badge-events'
 
 const MAX_CACHED_MSGS = 60
 const CHAT_ENABLED = process.env.NEXT_PUBLIC_CHAT_ENABLED !== 'false'
@@ -72,7 +74,23 @@ export default function ChatPage() {
   const initializedRef = useRef(false)
   const supabase = supabaseRef.current
 
+  // 画面に表示中のキャラ発言を既読にする（連続受信はまとめて1回）
+  const markReadTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const markRead = useCallback(() => {
+    if (markReadTimerRef.current) clearTimeout(markReadTimerRef.current)
+    markReadTimerRef.current = setTimeout(() => {
+      const cid = convIdRef.current
+      if (!cid || document.visibilityState !== 'visible') return
+      fetch('/api/chat/mark-read', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversationId: cid }),
+      }).then(notifyBadgesChanged).catch(() => {})
+    }, 300)
+  }, [])
+
   const addMessage = useCallback((msg: Message) => {
+    if (msg.sender_role === 'character' && !msg.is_read) markRead()
     setMessages(prev => {
       if (prev.find(m => m.id === msg.id)) return prev
       const next = [...prev, msg]
@@ -82,7 +100,17 @@ export default function ChatPage() {
       }
       return next
     })
-  }, [])
+  }, [markRead])
+
+  // 別タブ・バックグラウンドから戻ったときに既読化
+  useEffect(() => {
+    const onVisible = () => { if (document.visibilityState === 'visible') markRead() }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible)
+      if (markReadTimerRef.current) clearTimeout(markReadTimerRef.current)
+    }
+  }, [markRead])
 
   useEffect(() => {
     if (initializedRef.current) return
@@ -124,14 +152,7 @@ export default function ChatPage() {
     channel.on('broadcast', { event: 'new_message' }, ({ payload }) => {
       const msg = payload.message as Message
       addMessage(msg)
-      if (msg.sender_role === 'character') {
-        setIsTyping(false)
-        fetch('/api/chat/mark-read', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ conversationId: convIdRef.current }),
-        }).catch(() => {})
-      }
+      if (msg.sender_role === 'character') setIsTyping(false)
     })
 
     channel.on('broadcast', { event: 'typing' }, ({ payload }) => {
@@ -267,15 +288,8 @@ export default function ChatPage() {
       }).catch(() => {})
     }
 
-    // mark as read → refresh で会話一覧のバッジも即更新
-    const cid = convIdRef.current
-    if (cid) {
-      fetch('/api/chat/mark-read', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ conversationId: cid }),
-      }).then(() => router.refresh()).catch(() => {})
-    }
+    // 開いた時点で既読化
+    markRead()
   }
 
   const sendMessage = async () => {
@@ -512,23 +526,19 @@ export default function ChatPage() {
     <div className="fixed flex flex-col" style={{ top: '52px', left: 0, right: 0, bottom: 0 }}>
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3 flex-shrink-0"
-        style={{ background: 'rgba(255, 245, 248, 0.92)', backdropFilter: 'blur(12px)', borderBottom: '1px solid var(--color-border)' }}>
+        style={{ background: 'rgba(255, 255, 255, 0.94)', backdropFilter: 'saturate(180%) blur(16px)', borderBottom: '1px solid var(--color-border)' }}>
         <Link href="/characters" className="p-1 -ml-1 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors">
           <ChevronLeft size={22} />
         </Link>
         <Link href={`/characters/${character.id}`}>
-          <div className="relative w-9 h-9 rounded-full overflow-hidden border border-[var(--color-border-warm)] flex-shrink-0">
+          <div className="relative w-9 h-9 rounded-full overflow-hidden flex-shrink-0">
             <Image src={character.avatar_url} alt={character.name} fill className="object-cover" sizes="36px" />
           </div>
         </Link>
         <div className="flex-1">
           <Link href={`/characters/${character.id}`}>
-            <p className="text-sm font-medium leading-tight hover:opacity-80 transition-opacity">{character.name}</p>
+            <p className="text-[15px] font-semibold leading-tight hover:opacity-80 transition-opacity">{character.name}</p>
           </Link>
-          <div className="flex items-center gap-1.5 mt-0.5">
-            <span className="online-dot" style={{ width: '6px', height: '6px' }} />
-            <p className="text-[var(--color-text-muted)] text-xs">オンライン</p>
-          </div>
           {subInfo && subInfo.limit > 0 && (
             <div style={{ fontSize: 10, color: 'var(--color-text-muted)', marginTop: 1 }}>
               {subInfo.used}/{subInfo.limit}通
@@ -554,31 +564,25 @@ export default function ChatPage() {
         const progress = getAffectionProgress(affection.points)
         const nextLv = AFFECTION_LEVELS.find(l => l.level === lvData.level + 1)
         return (
-          <div className="flex items-center gap-2.5 px-4 py-2 flex-shrink-0"
+          <div className="px-4 py-2 flex-shrink-0"
             style={{ background: 'var(--color-surface)', borderBottom: '1px solid var(--color-border)' }}>
-            <div className="relative w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border-2"
-              style={{ borderColor: lvData.color }}>
-              <Image src={character.avatar_url} alt={character.name} fill className="object-cover" sizes="32px" />
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: 'var(--color-text)' }}>
+                <AffectionIcon level={lvData.level} size={13} style={{ color: lvData.color }} />
+                {lvData.title}
+                <span className="font-normal tabular-nums" style={{ color: 'var(--color-text-muted)' }}>Lv.{lvData.level}</span>
+              </span>
+              <span className="text-[11px] tabular-nums" style={{ color: 'var(--color-text-muted)' }}>
+                {nextLv ? `次の「${nextLv.title}」まで ${(nextLv.threshold - affection.points).toLocaleString()}pt` : `${affection.points.toLocaleString()}pt`}
+              </span>
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-semibold" style={{ color: lvData.color }}>
-                  {lvData.emoji} {lvData.title}
-                </span>
-                <span className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
-                  {affection.points.toLocaleString()}pt
-                </span>
-              </div>
-              <div style={{ height: 4, borderRadius: 99, overflow: 'hidden', background: 'var(--color-surface-2)' }}>
-                <div style={{
-                  height: '100%', borderRadius: 99,
-                  width: `${progress}%`,
-                  background: nextLv
-                    ? `linear-gradient(90deg, ${lvData.color}, ${nextLv.color})`
-                    : lvData.color,
-                  transition: 'width 0.8s ease',
-                }} />
-              </div>
+            <div style={{ height: 3, borderRadius: 2, overflow: 'hidden', background: 'var(--color-surface-2)' }}>
+              <div style={{
+                height: '100%', borderRadius: 2,
+                width: `${progress}%`,
+                background: lvData.color,
+                transition: 'width 0.8s ease',
+              }} />
             </div>
           </div>
         )
@@ -616,7 +620,7 @@ export default function ChatPage() {
 
       {/* Input */}
       <div className="flex-shrink-0 px-4 py-3"
-        style={{ borderTop: '1px solid var(--color-border)', background: 'rgba(255, 245, 248, 0.97)' }}>
+        style={{ borderTop: '1px solid var(--color-border)', background: 'var(--color-surface)', paddingBottom: 'calc(12px + env(safe-area-inset-bottom))' }}>
         {CHAT_ENABLED ? (
           <div className="flex flex-col gap-2">
             <div className="flex gap-2 items-end">
@@ -629,6 +633,7 @@ export default function ChatPage() {
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendPendingOrText() } }}
                   data-placeholder={pendingMedia ? '（メディアを送信します）' : 'メッセージを送る…'}
                   className="input-warm px-4 py-2.5 outline-none"
+                  role="textbox"
                   style={{
                     minHeight: '42px', maxHeight: '120px', overflowY: 'auto',
                     lineHeight: '1.5', fontSize: '16px',
@@ -637,7 +642,7 @@ export default function ChatPage() {
                   }}
                 />
                 {input.length > 200 && (
-                  <p className="text-right text-[11px] mt-0.5 mr-1" style={{ color: input.length >= 300 ? '#e8438f' : 'var(--color-text-muted)' }}>
+                  <p className="text-right text-[11px] mt-0.5 mr-1" style={{ color: input.length >= 300 ? 'var(--color-primary)' : 'var(--color-text-muted)' }}>
                     {input.length}/300
                   </p>
                 )}
@@ -646,17 +651,18 @@ export default function ChatPage() {
                 type="button"
                 onClick={sendPendingOrText}
                 disabled={(!input.trim() && !pendingMedia) || input.length > 300 || sending}
-                className="btn-primary p-2.5 flex-shrink-0 disabled:opacity-40"
-                style={{ borderRadius: '10px' }}
+                className="btn-primary flex-shrink-0 flex items-center justify-center disabled:opacity-40"
+                style={{ width: 44, height: 44 }}
+                aria-label="送信"
               >
                 <Send size={17} />
               </button>
             </div>
           </div>
         ) : (
-          <div className="rounded-2xl px-4 py-3 text-center"
-            style={{ background: 'linear-gradient(135deg, rgba(249,168,184,0.15), rgba(232,121,160,0.08))', border: '1px solid var(--color-border-warm)' }}>
-            <p className="text-sm font-bold mb-0.5">🎀 アイカノでチャットを楽しもう</p>
+          <div className="rounded-xl px-4 py-3 text-center"
+            style={{ background: 'var(--color-primary-soft)', border: '1px solid var(--color-primary-border)' }}>
+            <p className="text-sm font-bold mb-0.5">アイカノでチャットを楽しもう</p>
             <p className="text-xs text-[var(--color-text-muted)]">新規登録で3,000円分のポイントをプレゼント中。登録は無料・30秒で完了！</p>
           </div>
         )}

@@ -43,7 +43,7 @@ export default function FeedbackPage() {
       <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center"
         style={{ background: 'var(--color-bg)' }}>
         <div className="animate-fade-in">
-          <CheckCircle size={64} className="mx-auto mb-6" style={{ color: '#e8438f' }} />
+          <CheckCircle size={64} className="mx-auto mb-6" style={{ color: 'var(--color-primary)' }} />
           <h1 className="text-2xl font-black mb-3" style={{ color: 'var(--color-text)' }}>
             ありがとうございます！
           </h1>
@@ -65,7 +65,7 @@ export default function FeedbackPage() {
     <div className="min-h-screen pb-24" style={{ background: 'var(--color-bg)' }}>
       {/* ヘッダー */}
       <div className="sticky top-0 z-10 px-4 flex items-center gap-3"
-        style={{ background: 'rgba(255,245,248,0.92)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(232,67,143,0.12)', height: '56px' }}>
+        style={{ background: 'rgba(255,255,255,0.94)', backdropFilter: 'saturate(180%) blur(16px)', borderBottom: '1px solid var(--color-border)', height: '56px' }}>
         <button onClick={() => router.back()} className="p-1.5 -ml-1.5 rounded-lg"
           style={{ color: 'var(--color-text-muted)' }}>
           <ChevronLeft size={22} />
@@ -76,7 +76,7 @@ export default function FeedbackPage() {
       <div className="max-w-lg mx-auto px-4 pt-6">
         {/* プレリリースバナー */}
         <div className="rounded-2xl overflow-hidden mb-8"
-          style={{ background: 'linear-gradient(135deg, #e8438f 0%, #a060e0 100%)' }}>
+          style={{ background: 'var(--color-primary)' }}>
           <div className="px-5 py-6">
             <div className="inline-block mb-3 px-3 py-1 rounded-full text-xs font-bold"
               style={{ background: 'rgba(255,255,255,0.2)', color: 'white' }}>
@@ -97,7 +97,7 @@ export default function FeedbackPage() {
           {/* カテゴリ選択 */}
           <div>
             <p className="text-sm font-bold mb-3" style={{ color: 'var(--color-text)' }}>
-              カテゴリを選んでください <span style={{ color: '#e8438f' }}>*</span>
+              カテゴリを選んでください <span style={{ color: 'var(--color-primary)' }}>*</span>
             </p>
             <div className="space-y-2">
               {CATEGORIES.map(cat => (
@@ -108,10 +108,10 @@ export default function FeedbackPage() {
                   className="w-full flex items-start gap-3 px-4 py-3 rounded-xl text-left transition-all"
                   style={{
                     background: category === cat.id
-                      ? 'linear-gradient(135deg, rgba(232,67,143,0.1), rgba(160,96,224,0.1))'
+                      ? 'var(--color-primary-soft)'
                       : 'var(--color-surface)',
                     border: category === cat.id
-                      ? '1.5px solid rgba(232,67,143,0.5)'
+                      ? '1px solid var(--color-primary)'
                       : '1.5px solid var(--color-border)',
                   }}
                 >
@@ -159,7 +159,7 @@ export default function FeedbackPage() {
           {/* 内容 */}
           <div>
             <p className="text-sm font-bold mb-2" style={{ color: 'var(--color-text)' }}>
-              詳しく教えてください <span style={{ color: '#e8438f' }}>*</span>
+              詳しく教えてください <span style={{ color: 'var(--color-primary)' }}>*</span>
             </p>
             <textarea
               value={content}

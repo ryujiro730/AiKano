@@ -12,6 +12,8 @@ import { ActionLogger } from '@/components/ActionLogger'
 import { SortToggleButton } from './SortToggleButton'
 import { CampaignBannerImage } from '@/components/CampaignBannerImage'
 import { INTERNAL_EMAILS } from '@/lib/internal-accounts'
+import { RefreshOnMount } from '@/components/RefreshOnMount'
+import { UserPlus } from 'lucide-react'
 
 // ブロック中のキャラIDを30秒キャッシュ（unstable_cacheはSetを保持できないので配列で返す）
 const getCachedBlockedIds = unstable_cache(
@@ -54,99 +56,72 @@ async function ConversationList({ userId, sort }: { userId: string; sort: 'asc' 
     )
   }
 
-  const { data: lastMessages } = await admin.from('messages')
-    .select('conversation_id, content, sender_role, created_at, is_read, metadata')
-    .in('conversation_id', convIds)
-    .order('created_at', { ascending: false })
-    .limit(Math.max(convIds.length * 30, 100))
+  // 未読数はフッターのバッジと同じ DB 関数で算出
+  const [{ data: lastMessages }, { data: unreadRows }] = await Promise.all([
+    admin.from('messages')
+      .select('conversation_id, content, sender_role, created_at, metadata')
+      .in('conversation_id', convIds)
+      .eq('is_deleted', false)
+      .order('created_at', { ascending: false })
+      .limit(Math.max(convIds.length * 30, 100)),
+    admin.rpc('get_conversation_unread', { p_user_id: userId }),
+  ])
 
   const lastMsgMap = new Map<string, { content: string; sender_role: string; metadata: any }>()
-  const unreadMap = new Map<string, number>()
   ;(lastMessages ?? []).forEach((msg: any) => {
     if (!lastMsgMap.has(msg.conversation_id)) {
       lastMsgMap.set(msg.conversation_id, { content: msg.content, sender_role: msg.sender_role, metadata: msg.metadata })
     }
-    if (msg.sender_role === 'character' && !msg.is_read) {
-      unreadMap.set(msg.conversation_id, (unreadMap.get(msg.conversation_id) ?? 0) + 1)
-    }
   })
+  const unreadMap = new Map<string, number>(
+    ((unreadRows ?? []) as { conversation_id: string; unread: number }[]).map(r => [r.conversation_id, r.unread]),
+  )
 
   return (
-    <div className="space-y-2">
-      {convs.map((conv: any) => {
+    <div className="overflow-hidden" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-card)' }}>
+      {convs.map((conv: any, i: number) => {
         const lastMsg = lastMsgMap.get(conv.id)
         const unread = unreadMap.get(conv.id) ?? 0
+        const preview = lastMsg?.content?.trim()
+          ? lastMsg.content
+          : lastMsg?.metadata?.video_url
+            ? '動画が送信されました'
+            : lastMsg?.metadata?.image_url
+              ? '画像が送信されました'
+              : ''
 
         return (
           <Link
             key={conv.id}
             href={`/chat?character=${conv.characters?.id}`}
-            className="block"
+            className="flex items-center gap-3 px-4 py-3.5 transition-colors active:bg-[var(--color-surface-2)]"
+            style={i > 0 ? { borderTop: '1px solid var(--color-border)' } : undefined}
           >
-            <div
-              className="flex items-center gap-3 p-4 rounded-2xl transition-all duration-200"
-              style={unread > 0 ? {
-                background: 'linear-gradient(135deg, rgba(253,236,246,0.9) 0%, rgba(253,246,249,0.8) 100%)',
-                border: '1.5px solid rgba(233,76,139,0.35)',
-                boxShadow: '0 4px 20px rgba(232,67,143,0.1)',
-              } : {
-                background: 'var(--color-surface)',
-                border: '1px solid var(--color-border)',
-              }}
-            >
-              <div className="relative flex-shrink-0">
-                <div
-                  className="rounded-full overflow-hidden"
-                  style={{
-                    width: '60px', height: '60px',
-                    border: unread > 0 ? '2px solid var(--color-primary)' : '1.5px solid var(--color-border-warm)',
-                    boxShadow: unread > 0 ? '0 0 16px var(--color-primary-glow)' : 'none',
-                  }}
-                >
-                  <AvatarImage src={conv.characters?.avatar_url} alt={conv.characters?.name ?? ''} iconSize={28} />
-                </div>
+            <div className="rounded-full overflow-hidden flex-shrink-0" style={{ width: 52, height: 52 }}>
+              <AvatarImage src={conv.characters?.avatar_url} alt={conv.characters?.name ?? ''} iconSize={24} />
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <div className="flex items-baseline justify-between gap-2 mb-1">
+                <span className={`text-[15px] truncate ${unread > 0 ? 'font-bold' : 'font-semibold'}`}>{conv.characters?.name}</span>
+                <span className="text-[11px] flex-shrink-0"
+                  style={{ color: unread > 0 ? 'var(--color-primary)' : 'var(--color-text-muted)', fontWeight: unread > 0 ? 600 : 400 }}>
+                  {formatDistanceToNow(new Date(conv.last_message_at), { addSuffix: true, locale: ja })}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <p className="flex-1 text-[13px] truncate"
+                  style={{ color: unread > 0 ? 'var(--color-text)' : 'var(--color-text-muted)', fontWeight: unread > 0 ? 500 : 400 }}>
+                  {lastMsg && lastMsg.sender_role !== 'character' ? 'あなた: ' : ''}{preview}
+                </p>
                 {unread > 0 && (
                   <span
-                    className="absolute -top-1 -right-1 min-w-[20px] h-5 rounded-full flex items-center justify-center text-[11px] text-white font-bold px-1"
-                    style={{ background: 'var(--color-primary)', boxShadow: '0 1px 6px rgba(232,121,160,0.5)' }}
+                    className="flex-shrink-0 min-w-[20px] h-5 rounded-[6px] flex items-center justify-center text-[11px] text-white font-bold px-1.5 tabular-nums"
+                    style={{ background: 'var(--color-primary)' }}
                   >
                     {unread > 99 ? '99+' : unread}
                   </span>
                 )}
-              </div>
-
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between mb-0.5">
-                  <span className="text-sm font-semibold">{conv.characters?.name}</span>
-                  <span className="text-[11px] flex-shrink-0 ml-2"
-                    style={{ color: unread > 0 ? 'var(--color-primary)' : 'var(--color-text-muted)' }}>
-                    {formatDistanceToNow(new Date(conv.last_message_at), { addSuffix: true, locale: ja })}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  {unread > 0 && (
-                    <span
-                      className="flex-shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                      style={{ background: 'var(--color-primary)', color: '#fff' }}
-                    >
-                      新着
-                    </span>
-                  )}
-                  {lastMsg && (
-                    <p className="text-xs truncate"
-                      style={{ color: unread > 0 ? 'var(--color-text)' : 'var(--color-text-muted)', fontWeight: unread > 0 ? 500 : 400 }}>
-                      {lastMsg.sender_role === 'character' ? '' : 'あなた: '}
-                      {lastMsg.content?.trim()
-                        ? lastMsg.content
-                        : lastMsg.metadata?.video_url
-                          ? '動画が送信されました'
-                          : lastMsg.metadata?.image_url
-                            ? '画像が送信されました'
-                            : ''}
-                    </p>
-                  )}
-                </div>
               </div>
             </div>
           </Link>
@@ -160,7 +135,7 @@ function ConversationListSkeleton() {
   return (
     <div className="space-y-2">
       {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="flex items-center gap-3 p-4 rounded-2xl" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
+        <div key={i} className="flex items-center gap-3 p-4 rounded-xl" style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
           <div className="skeleton rounded-full flex-shrink-0" style={{ width: 52, height: 52 }} />
           <div className="flex-1 space-y-2">
             <div className="skeleton rounded" style={{ height: 14, width: '55%' }} />
@@ -183,11 +158,13 @@ export default async function ConversationsPage({ searchParams }: { searchParams
   return (
     <div>
       <div className="flex items-center justify-between mb-6 pt-2">
-        <h1 className="text-xl font-bold">メッセージ</h1>
+        <h1 className="text-[22px] font-bold">メッセージ</h1>
         <div className="flex items-center gap-3">
           <SortToggleButton currentSort={sort} />
-          <Link href="/characters" style={{ color: 'var(--color-primary)', fontSize: 20, lineHeight: 1 }} aria-label="新しく話す">
-            ♡
+          <Link href="/characters" className="flex items-center justify-center w-9 h-9 rounded-[10px]"
+            style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', color: 'var(--color-text)' }}
+            aria-label="新しく話す">
+            <UserPlus size={17} strokeWidth={2} />
           </Link>
         </div>
       </div>
@@ -200,6 +177,8 @@ export default async function ConversationsPage({ searchParams }: { searchParams
         <ConversationList userId={user.id} sort={sort} />
       </Suspense>
       <ActionLogger actionType="conversations_view" />
+      {/* ルーターキャッシュで既読前の未読数が残らないよう毎回最新化 */}
+      <RefreshOnMount />
     </div>
   )
 }

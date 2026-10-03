@@ -1,6 +1,8 @@
 'use client'
 
 import { getAffectionLevel, getAffectionProgress, AFFECTION_LEVELS } from '@/lib/affection'
+import { AffectionIcon } from './AffectionIcon'
+import { MessageCircle } from 'lucide-react'
 
 export function AffectionMeter({
   points = 0,
@@ -18,10 +20,10 @@ export function AffectionMeter({
   if (compact) {
     return (
       <span
-        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold"
-        style={{ background: `${current.color}22`, color: current.color, border: `1px solid ${current.color}44` }}
+        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold"
+        style={{ background: `${current.color}1a`, color: current.color }}
       >
-        {current.emoji} {current.title}
+        <AffectionIcon level={current.level} size={11} /> {current.title}
       </span>
     )
   }
@@ -31,14 +33,16 @@ export function AffectionMeter({
       {/* レベルバッジ + タイトル */}
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <span style={{ fontSize: 22 }}>{current.emoji}</span>
+          <span className="flex items-center justify-center w-9 h-9 rounded-[10px]" style={{ background: `${current.color}1a`, color: current.color }}>
+            <AffectionIcon level={current.level} size={18} />
+          </span>
           <div>
             <p style={{ fontSize: 14, fontWeight: 700 }}>{current.title}</p>
             <p style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>Lv.{current.level}</p>
           </div>
         </div>
         <div className="text-right">
-          <p style={{ fontSize: 18, fontWeight: 800, color: current.color }}>{points.toLocaleString()}</p>
+          <p className="tabular-nums" style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text)' }}>{points.toLocaleString()}</p>
           <p style={{ fontSize: 10, color: 'var(--color-text-muted)' }}>好感度pt</p>
         </div>
       </div>
@@ -48,15 +52,15 @@ export function AffectionMeter({
         <div className="mb-1.5">
           <div
             style={{
-              height: 6, borderRadius: 99, overflow: 'hidden',
+              height: 4, borderRadius: 2, overflow: 'hidden',
               background: 'var(--color-surface-2)',
             }}
           >
             <div
               style={{
-                height: '100%', borderRadius: 99,
+                height: '100%', borderRadius: 2,
                 width: `${progress}%`,
-                background: `linear-gradient(90deg, ${current.color}, ${nextLevel.color})`,
+                background: current.color,
                 transition: 'width 0.8s ease',
               }}
             />
@@ -64,7 +68,7 @@ export function AffectionMeter({
           <div className="flex justify-between mt-1">
             <p style={{ fontSize: 10, color: 'var(--color-text-muted)' }}>{progress}%</p>
             <p style={{ fontSize: 10, color: 'var(--color-text-muted)' }}>
-              次: {nextLevel.emoji} {nextLevel.title}（{nextLevel.threshold.toLocaleString()}pt~）
+              次: {nextLevel.title}（{nextLevel.threshold.toLocaleString()}pt〜）
             </p>
           </div>
         </div>
@@ -72,8 +76,8 @@ export function AffectionMeter({
 
       {/* メッセージ数 */}
       {messageCount > 0 && (
-        <p style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 4 }}>
-          💬 {messageCount.toLocaleString()}通のメッセージ
+        <p className="flex items-center gap-1" style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 4 }}>
+          <MessageCircle size={12} /> {messageCount.toLocaleString()}通のメッセージ
         </p>
       )}
     </div>

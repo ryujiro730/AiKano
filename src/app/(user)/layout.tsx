@@ -30,7 +30,7 @@ export default async function UserLayout({ children }: { children: React.ReactNo
   const [{ data: profile }] = await Promise.all([
     admin
       .from('profiles')
-      .select('display_name, age, points, bonus_points, bonus_points_expires_at, role')
+      .select('display_name, age, points, bonus_points, bonus_points_expires_at, role, subscription_status, subscription_plan')
       .eq('id', userId)
       .single(),
     admin
@@ -49,8 +49,8 @@ export default async function UserLayout({ children }: { children: React.ReactNo
     <div className="min-h-screen user-layout" style={{ background: 'var(--color-bg)' }}>
       <header className="fixed top-0 w-full z-50 glass">
         <div className="max-w-2xl mx-auto px-4 flex items-center justify-between" style={{ height: '52px' }}>
-          <Link href="/characters" className="text-sm font-semibold tracking-wide" style={{ color: 'var(--color-text-warm)' }}>
-            AiKano
+          <Link href="/characters" className="text-[15px] font-bold" style={{ color: 'var(--color-text)', letterSpacing: '0.02em' }}>
+            Ai<span style={{ color: 'var(--color-primary)' }}>Kano</span>
           </Link>
           <div className="flex items-center gap-3">
             {['admin', 'owner'].includes(profile?.role ?? '') && (
@@ -60,10 +60,12 @@ export default async function UserLayout({ children }: { children: React.ReactNo
             )}
             {((profile as any)?.subscription_status === 'active' || (profile as any)?.subscription_status === 'trialing') && (profile as any)?.subscription_plan && (
               <span className={`sub-badge ${(profile as any).subscription_plan === 'premium' ? 'sub-badge-premium' : 'sub-badge-standard'}`}>
-                ✦ {(profile as any).subscription_plan === 'premium' ? 'プレミアム' : 'スタンダード'}
+                {(profile as any).subscription_plan === 'premium' ? 'PREMIUM' : 'STANDARD'}
               </span>
             )}
-            <PointsDisplay initialPoints={(profile?.points ?? 0) + (profile?.bonus_points ?? 0)} />
+            <PointsDisplay initialPoints={(profile?.points ?? 0) + (
+              profile?.bonus_points_expires_at && new Date(profile.bonus_points_expires_at) > new Date() ? (profile?.bonus_points ?? 0) : 0
+            )} />
           </div>
         </div>
       </header>

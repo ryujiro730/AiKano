@@ -14,10 +14,10 @@ export function SortToggleButton({ currentSort }: { currentSort: 'asc' | 'desc' 
   return (
     <button
       onClick={toggle}
-      className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg transition-colors"
+      className="flex items-center gap-1.5 text-xs font-medium px-3 h-9 rounded-[10px] transition-colors"
       style={{
-        background: 'var(--color-surface-2)',
-        color: 'var(--color-text-muted)',
+        background: 'var(--color-surface)',
+        color: 'var(--color-text)',
         border: '1px solid var(--color-border)',
       }}
     >

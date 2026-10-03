@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Heart, MessageCircle, Crown, Settings, X } from 'lucide-react'
+import { Heart, MessageCircle, Crown, Settings, X, Sparkles } from 'lucide-react'
 
 const tabs = [
   { href: '/characters',    icon: Heart,          label: 'ホーム' },
@@ -30,10 +30,10 @@ export function BottomNav({
     <nav
       className="fixed bottom-0 left-0 right-0 z-50"
       style={{
-        background: 'rgba(255, 255, 255, 0.97)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        borderTop: '1px solid rgba(0,0,0,0.08)',
+        background: 'rgba(255, 255, 255, 0.94)',
+        backdropFilter: 'saturate(180%) blur(16px)',
+        WebkitBackdropFilter: 'saturate(180%) blur(16px)',
+        borderTop: '1px solid rgba(23,19,26,0.08)',
         paddingBottom: 'env(safe-area-inset-bottom)',
       }}
     >
@@ -49,24 +49,25 @@ export function BottomNav({
           const content = (
             <>
               <span className="relative">
-                <Icon size={22} strokeWidth={isActive ? 2.5 : 1.6} />
+                <Icon size={22} strokeWidth={isActive ? 2.2 : 1.7} fill={isActive && href === '/characters' ? 'currentColor' : 'none'} />
                 {badge > 0 && (
                   <span
-                    className="absolute -top-1 -right-1.5 min-w-[15px] h-[15px] rounded-full flex items-center justify-center"
+                    className="absolute -top-1.5 -right-2.5 min-w-[17px] h-[17px] rounded-[6px] flex items-center justify-center tabular-nums"
                     style={{
                       background: 'var(--color-primary)',
                       color: 'white',
-                      fontSize: '9px',
+                      fontSize: '10px',
                       fontWeight: 700,
-                      padding: '0 3px',
+                      padding: '0 4px',
                       lineHeight: 1,
+                      border: '1.5px solid #fff',
                     }}
                   >
-                    {badge > 9 ? '9+' : badge}
+                    {badge > 99 ? '99+' : badge}
                   </span>
                 )}
               </span>
-              <span style={{ fontSize: '10px', fontWeight: isActive ? 700 : 400, letterSpacing: '0.02em' }}>
+              <span style={{ fontSize: '10px', fontWeight: isActive ? 700 : 500 }}>
                 {label}
               </span>
             </>
@@ -81,7 +82,7 @@ export function BottomNav({
                     style={{ bottom: 'calc(100% + 6px)', left: '50%', transform: 'translateX(-50%)', zIndex: 60 }}
                   >
                     <div
-                      className="relative flex items-center gap-1.5 rounded-full px-3 py-1.5 shadow-lg"
+                      className="relative flex items-center gap-1.5 rounded-lg px-3 py-1.5 shadow-lg"
                       style={{
                         background: 'var(--color-primary)',
                         color: '#fff',
@@ -92,7 +93,7 @@ export function BottomNav({
                         animation: 'campaign-text-bounce 2s ease-in-out infinite',
                       }}
                     >
-                      <span>🎉</span>
+                      <Sparkles size={12} strokeWidth={2.4} />
                       <span className="truncate">{activeCampaign.catchphrase || 'キャンペーン開催中！'}</span>
                       <button
                         onClick={e => { e.preventDefault(); e.stopPropagation(); onDismissCampaign?.() }}
@@ -121,7 +122,7 @@ export function BottomNav({
                   href={href}
                   prefetch={true}
                   className="flex flex-col items-center justify-center gap-0.5 w-full h-full transition-opacity active:opacity-60"
-                  style={{ color: isActive ? 'var(--color-primary)' : 'var(--color-text-muted)' }}
+                  style={{ color: isActive ? 'var(--color-text)' : 'rgba(23,19,26,0.42)' }}
                 >
                   {content}
                 </Link>
@@ -135,7 +136,7 @@ export function BottomNav({
               href={href}
               prefetch={true}
               className="flex-1 flex flex-col items-center justify-center gap-0.5 transition-opacity active:opacity-60"
-              style={{ color: isActive ? 'var(--color-primary)' : 'var(--color-text-muted)' }}
+              style={{ color: isActive ? 'var(--color-text)' : 'rgba(23,19,26,0.42)' }}
             >
               {content}
             </Link>

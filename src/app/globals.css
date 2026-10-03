@@ -29,37 +29,68 @@
   --color-online: #5ab34d;
 }
 
-/* ユーザー画面：爽やかブルーテーマ */
+/* ユーザー画面：インク×ローズ（中立色ベース＋アクセント1色） */
 .user-layout {
-  --color-bg: #f0f5ff;
+  --color-bg: #f6f5f3;
   --color-surface: #ffffff;
-  --color-surface-2: #e8f0fe;
-  --color-surface-3: #d1e4fd;
-  --color-border: rgba(59, 130, 246, 0.14);
-  --color-border-warm: rgba(59, 130, 246, 0.28);
-  --color-text: #0f1629;
-  --color-text-muted: rgba(15, 22, 41, 0.48);
-  --color-text-warm: #1d4ed8;
-  --color-primary: #2563eb;
-  --color-primary-hover: #1d4ed8;
-  --color-primary-light: #3b82f6;
-  --color-primary-glow: rgba(37, 99, 235, 0.18);
-  --color-primary-border: rgba(37, 99, 235, 0.3);
+  --color-surface-2: #f1efec;
+  --color-surface-3: #e8e5e1;
+  --color-border: rgba(23, 19, 26, 0.08);
+  --color-border-warm: rgba(23, 19, 26, 0.14);
+  --color-text: #17131a;
+  --color-text-muted: rgba(23, 19, 26, 0.55);
+  --color-text-warm: #17131a;
+  --color-primary: #d4386f;
+  --color-primary-hover: #bd2c60;
+  --color-primary-light: #e0608c;
+  --color-primary-soft: #fbeef2;
+  --color-primary-glow: rgba(212, 56, 111, 0.14);
+  --color-primary-border: rgba(212, 56, 111, 0.3);
+  --radius-card: 12px;
+  --radius-control: 10px;
+  --shadow-card: 0 1px 2px rgba(23, 19, 26, 0.04);
+  letter-spacing: 0;
 }
 
 .user-layout .glass {
-  background: rgba(240, 245, 255, 0.95);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(59, 130, 246, 0.1);
-  box-shadow: 0 1px 0 rgba(59, 130, 246, 0.06);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: saturate(180%) blur(16px);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: none;
 }
 
 .user-layout .card,
 .user-layout .card-warm {
-  border-color: rgba(59, 130, 246, 0.1);
-  box-shadow: 0 2px 10px rgba(59, 130, 246, 0.06);
+  border-color: var(--color-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
 }
+
+.user-layout .btn-primary,
+.user-layout .btn-ghost,
+.user-layout .input-warm {
+  border-radius: var(--radius-control);
+}
+.user-layout .btn-primary { font-weight: 600; }
+.user-layout .btn-ghost { color: var(--color-text); border-width: 1px; }
+.user-layout .input-warm { border-width: 1px; }
+.user-layout .input-warm:focus { box-shadow: 0 0 0 3px var(--color-primary-glow); }
+
+.user-layout .bubble-user {
+  background: var(--color-primary);
+  border-radius: 18px 18px 6px 18px;
+  box-shadow: none;
+}
+.user-layout .bubble-operator {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 18px 18px 18px 6px;
+  box-shadow: none;
+}
+
+.user-layout ::-webkit-scrollbar-thumb { background: rgba(23, 19, 26, 0.18); }
 
 .user-layout .warm-bg,
 .user-layout.warm-bg {
@@ -131,15 +162,15 @@
   align-items: center;
   gap: 3px;
   padding: 2px 8px;
-  border-radius: 99px;
+  border-radius: 6px;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.03em;
 }
 .sub-badge-standard {
-  background: rgba(37, 99, 235, 0.12);
-  color: #1d4ed8;
-  border: 1px solid rgba(37, 99, 235, 0.25);
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  border: 1px solid var(--color-border-warm);
 }
 .sub-badge-premium {
   background: linear-gradient(135deg, rgba(180,134,14,0.15), rgba(212,162,55,0.1));
@@ -266,11 +297,6 @@ body {
   background: linear-gradient(135deg, #2563eb, #1d4ed8);
   border-radius: 16px 16px 4px 16px;
   color: #ffffff;
-  box-shadow: 0 3px 12px rgba(37, 99, 235, 0.35);
-}
-
-.user-layout .bubble-user {
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
   box-shadow: 0 3px 12px rgba(37, 99, 235, 0.35);
 }
 

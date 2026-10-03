@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { getAffectionLevel } from '@/lib/affection'
+import { AffectionIcon } from './AffectionIcon'
 
 interface Props {
   level: number
@@ -25,23 +26,25 @@ export function LevelUpToast({ level, characterName, onClose }: Props) {
       style={{
         position: 'fixed', top: 80, left: '50%', transform: 'translateX(-50%)',
         zIndex: 9999,
-        background: 'linear-gradient(135deg, rgba(253,246,249,0.98), rgba(255,255,255,0.98))',
-        border: `1.5px solid ${levelData.color}`,
-        borderRadius: 16,
-        padding: '14px 20px',
-        boxShadow: `0 8px 32px ${levelData.color}44`,
+        background: '#fff',
+        border: '1px solid rgba(23,19,26,0.08)',
+        borderRadius: 14,
+        padding: '16px 22px',
+        boxShadow: '0 12px 32px rgba(23,19,26,0.14)',
         textAlign: 'center',
         minWidth: 240,
         animation: 'levelUpIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both',
         cursor: 'pointer',
       }}
     >
-      <p style={{ fontSize: 28, marginBottom: 4 }}>{levelData.emoji}</p>
+      <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, borderRadius: 12, marginBottom: 6, background: `${levelData.color}1a`, color: levelData.color }}>
+        <AffectionIcon level={levelData.level} size={20} />
+      </span>
       <p style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 2 }}>好感度アップ！</p>
-      <p style={{ fontSize: 15, fontWeight: 800, color: levelData.color }}>
+      <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text, #17131a)' }}>
         {characterName} との関係が
       </p>
-      <p style={{ fontSize: 17, fontWeight: 900, color: levelData.color }}>
+      <p style={{ fontSize: 17, fontWeight: 800, color: levelData.color }}>
         「{levelData.title}」になった！
       </p>
       <style>{`

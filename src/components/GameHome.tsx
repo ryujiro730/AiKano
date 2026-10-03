@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { getAffectionLevel, getAffectionProgress } from '@/lib/affection'
 import { UnlockModal } from './UnlockModal'
+import { AffectionIcon } from './AffectionIcon'
+import { Lock, MessageCircle, ChevronRight } from 'lucide-react'
 
 type CharData = {
   id: string
@@ -48,6 +50,7 @@ export function GameHome({
   const affProgress = aff ? getAffectionProgress(aff.points) : 0
   const unread = unreadByChar[activeChar.id] ?? 0
   const isLocked = isCharLocked(activeChar)
+  const otherChars = allChars.filter(c => c.id !== activeChar.id)
 
   const handlePickerSelect = (char: CharData) => {
     if (isCharLocked(char)) {
@@ -67,7 +70,7 @@ export function GameHome({
           left: '50%', transform: 'translateX(-50%)',
           width: '100%', maxWidth: '480px',
           zIndex: 5, overflow: 'hidden',
-          background: '#0a0005',
+          background: '#0d0a0e',
         }}
       >
         {/* キャラ全画面写真 */}
@@ -98,32 +101,25 @@ export function GameHome({
         {/* 下部グラデーション */}
         <div style={{
           position: 'absolute', bottom: 0, left: 0, right: 0, height: '65%',
-          background: 'linear-gradient(to top, rgba(8,0,4,1) 0%, rgba(8,0,4,0.85) 22%, rgba(8,0,4,0.5) 45%, transparent 70%)',
+          background: 'linear-gradient(to top, rgba(13,10,14,0.96) 0%, rgba(13,10,14,0.8) 24%, rgba(13,10,14,0.35) 48%, transparent 68%)',
           pointerEvents: 'none',
         }} />
 
-        {/* オンラインバッジ */}
-        {!isLocked && (
-          <div style={{
-            position: 'absolute', top: 14, left: 14,
-            background: 'rgba(82,163,68,0.92)', borderRadius: 99,
-            padding: '5px 12px', fontSize: 11, fontWeight: 600, color: '#fff',
-            display: 'flex', alignItems: 'center', gap: 5,
-          }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#fff', flexShrink: 0 }} />
-            オンライン
-          </div>
-        )}
-
         {/* 未読バッジ */}
         {unread > 0 && (
-          <div style={{
-            position: 'absolute', top: 14, right: 14,
-            background: 'var(--color-primary)', color: '#fff',
-            borderRadius: 99, padding: '5px 13px', fontSize: 11, fontWeight: 700,
-          }}>
-            ♡ {unread > 99 ? '99+' : unread}
-          </div>
+          <a
+            href={`/chat?character=${activeChar.id}`}
+            style={{
+              position: 'absolute', top: 14, right: 14,
+              display: 'flex', alignItems: 'center', gap: 5,
+              background: 'var(--color-primary)', color: '#fff',
+              borderRadius: 8, padding: '5px 10px', fontSize: 12, fontWeight: 700,
+              textDecoration: 'none',
+            }}
+          >
+            <MessageCircle size={13} strokeWidth={2.5} />
+            {unread > 99 ? '99+' : unread}
+          </a>
         )}
 
         {/* ボトムパネル */}
@@ -131,105 +127,113 @@ export function GameHome({
 
           {/* 好感度 */}
           {affLevel && !isLocked && (
-            <>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
-                <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.68)' }}>
-                  {affLevel.emoji} {affLevel.title}
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 7 }}>
+                <AffectionIcon level={affLevel.level} size={13} style={{ color: affLevel.color }} />
+                <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.85)' }}>
+                  {affLevel.title}
                 </span>
-                <span style={{
-                  fontSize: 10, color: 'rgba(255,255,255,0.45)',
-                  background: 'rgba(255,255,255,0.1)', borderRadius: 99, padding: '2px 8px',
-                }}>
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', fontVariantNumeric: 'tabular-nums' }}>
                   Lv.{aff!.level}
                 </span>
               </div>
-              <div style={{ marginBottom: 11, height: 2.5, background: 'rgba(255,255,255,0.12)', borderRadius: 99, overflow: 'hidden' }}>
-                <div style={{
-                  height: '100%', width: `${affProgress}%`,
-                  background: `linear-gradient(to right, ${affLevel.color}99, ${affLevel.color})`,
-                  borderRadius: 99,
-                }} />
+              <div style={{ height: 2, background: 'rgba(255,255,255,0.14)', borderRadius: 2, overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${affProgress}%`, background: affLevel.color, borderRadius: 2 }} />
               </div>
-            </>
+            </div>
           )}
 
           {/* 名前 */}
           <p style={{
-            color: '#fff', fontSize: 28, fontWeight: 800,
-            letterSpacing: '-0.02em', lineHeight: 1.1, marginBottom: 16,
+            color: '#fff', fontSize: 30, fontWeight: 700,
+            letterSpacing: '-0.01em', lineHeight: 1.1, marginBottom: 16,
           }}>
             {isLocked ? '???' : activeChar.name}
-            {!isLocked && activeChar.age && (
-              <span style={{ fontSize: 14, fontWeight: 400, opacity: 0.55, marginLeft: 10 }}>
+            {!isLocked && activeChar.age > 0 && (
+              <span style={{ fontSize: 15, fontWeight: 400, opacity: 0.6, marginLeft: 10 }}>
                 {activeChar.age}歳
               </span>
             )}
           </p>
 
           {/* アクションボタン */}
-          <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
             {isLocked ? (
               <button
                 onClick={() => setUnlockTarget(activeChar)}
                 style={{
-                  flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  padding: '14px', borderRadius: 18, fontWeight: 700, fontSize: 15,
-                  background: 'rgba(255,255,255,0.18)', color: '#fff',
-                  border: '1px solid rgba(255,255,255,0.28)', cursor: 'pointer',
-                  backdropFilter: 'blur(8px)',
+                  flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  height: 50, borderRadius: 12, fontWeight: 700, fontSize: 15,
+                  background: 'rgba(255,255,255,0.16)', color: '#fff',
+                  border: '1px solid rgba(255,255,255,0.22)', cursor: 'pointer',
+                  backdropFilter: 'blur(12px)',
                 }}
               >
-                🔓 SNSで宣伝して解放
+                <Lock size={16} strokeWidth={2.2} />
+                SNSで宣伝して解放
               </button>
             ) : (
               <>
                 <a
                   href={`/chat?character=${activeChar.id}`}
                   style={{
-                    flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    padding: '14px', borderRadius: 18, fontWeight: 700, fontSize: 15,
-                    background: 'linear-gradient(135deg, #E94C8B, #c73578)',
-                    color: '#fff', textDecoration: 'none',
-                    boxShadow: '0 4px 24px rgba(233,76,139,0.45)',
+                    flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                    height: 50, borderRadius: 12, fontWeight: 700, fontSize: 15,
+                    background: 'var(--color-primary)', color: '#fff', textDecoration: 'none',
                   }}
                 >
-                  話しかける ♡
+                  <MessageCircle size={17} strokeWidth={2.2} />
+                  話しかける
                 </a>
                 <a
                   href={`/characters/${activeChar.id}`}
                   style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    padding: '14px 18px', borderRadius: 18, fontSize: 13, fontWeight: 600,
-                    background: 'rgba(255,255,255,0.12)', color: '#fff',
-                    border: '1px solid rgba(255,255,255,0.18)', textDecoration: 'none',
-                    backdropFilter: 'blur(8px)',
+                    height: 50, padding: '0 18px', borderRadius: 12, fontSize: 14, fontWeight: 600,
+                    background: 'rgba(255,255,255,0.14)', color: '#fff',
+                    border: '1px solid rgba(255,255,255,0.2)', textDecoration: 'none',
+                    backdropFilter: 'blur(12px)',
                   }}
                 >
-                  詳細 →
+                  プロフィール
                 </a>
               </>
             )}
           </div>
 
-          {/* 他のキャラを見るボタン */}
-          {allChars.length > 1 && (
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
-              <button
-                onClick={() => setShowPicker(true)}
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                  padding: '7px 16px', borderRadius: 99,
-                  background: 'rgba(255,255,255,0.1)',
-                  border: '1px solid rgba(255,255,255,0.18)',
-                  color: 'rgba(255,255,255,0.65)', fontSize: 12, fontWeight: 600,
-                  cursor: 'pointer',
-                  backdropFilter: 'blur(8px)',
-                }}
-              >
-                <span style={{ fontSize: 13 }}>👥</span>
-                他のキャラクターを見る ({allChars.length})
-              </button>
-            </div>
+          {/* 他のキャラクター（顔写真を重ねて表示） */}
+          {otherChars.length > 0 && (
+            <button
+              onClick={() => setShowPicker(true)}
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center', gap: 12,
+                height: 50, padding: '0 12px 0 10px', borderRadius: 12,
+                background: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                color: '#fff', cursor: 'pointer', backdropFilter: 'blur(12px)',
+              }}
+            >
+              <span style={{ display: 'flex' }}>
+                {otherChars.slice(0, 4).map((c, i) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    key={c.id}
+                    src={c.avatar_url}
+                    alt=""
+                    style={{
+                      width: 30, height: 30, borderRadius: '50%', objectFit: 'cover', objectPosition: 'top center',
+                      border: '2px solid #1a1218', marginLeft: i === 0 ? 0 : -9,
+                      filter: isCharLocked(c) ? 'blur(2px) brightness(0.6)' : 'none',
+                    }}
+                  />
+                ))}
+              </span>
+              <span style={{ flex: 1, textAlign: 'left', fontSize: 13, fontWeight: 600 }}>
+                他のキャラクター
+                <span style={{ fontWeight: 400, opacity: 0.55, marginLeft: 6 }}>{otherChars.length}人</span>
+              </span>
+              <ChevronRight size={18} style={{ opacity: 0.6 }} />
+            </button>
           )}
         </div>
       </div>
@@ -252,8 +256,8 @@ export function GameHome({
             transform: 'translateX(-50%)',
             width: '100%', maxWidth: '480px',
             zIndex: 21,
-            background: '#160010',
-            borderRadius: '20px 20px 0 0',
+            background: '#141015',
+            borderRadius: '16px 16px 0 0',
             padding: '0 0 20px',
             maxHeight: '70vh',
             overflow: 'hidden',
@@ -282,14 +286,14 @@ export function GameHome({
                       onClick={() => handlePickerSelect(char)}
                       style={{
                         position: 'relative',
-                        borderRadius: 14,
+                        borderRadius: 10,
                         overflow: 'hidden',
                         aspectRatio: '3/4',
                         border: 'none', padding: 0,
-                        outline: isActive ? '2.5px solid #E94C8B' : '1.5px solid rgba(255,255,255,0.1)',
+                        outline: isActive ? '2px solid var(--color-primary)' : '1px solid rgba(255,255,255,0.1)',
                         outlineOffset: isActive ? '2px' : '0',
                         cursor: 'pointer',
-                        background: '#0a0005',
+                        background: '#0d0a0e',
                       }}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -310,21 +314,21 @@ export function GameHome({
                       {charLocked && (
                         <div style={{
                           position: 'absolute', inset: 0,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff',
                         }}>
-                          🔒
+                          <Lock size={18} strokeWidth={2.2} />
                         </div>
                       )}
 
                       {charUnread > 0 && !charLocked && (
                         <div style={{
                           position: 'absolute', top: 6, right: 6,
-                          background: '#E94C8B', color: '#fff', borderRadius: '50%',
-                          width: 16, height: 16, fontSize: 9,
+                          background: 'var(--color-primary)', color: '#fff', borderRadius: 6,
+                          minWidth: 18, height: 18, padding: '0 5px', fontSize: 10,
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           fontWeight: 700,
                         }}>
-                          ♡
+                          {charUnread > 99 ? '99+' : charUnread}
                         </div>
                       )}
 

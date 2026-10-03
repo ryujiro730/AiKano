@@ -105,7 +105,7 @@ export function LoginBonusDialog() {
 
         <div
           style={{
-            background: 'rgba(232,67,143,0.06)',
+            background: 'var(--color-primary-soft)',
             borderRadius: '12px',
             padding: '10px 14px',
             marginBottom: '20px',
