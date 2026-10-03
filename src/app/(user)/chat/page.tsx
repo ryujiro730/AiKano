@@ -13,6 +13,7 @@ import { CharacterActionMenu } from '@/components/CharacterActionMenu'
 import { compressImage, isHeic, heicToBlob } from '@/lib/compress-image'
 import { PointsShortageDialog } from '@/components/PointsShortageDialog'
 import { LevelUpToast } from '@/components/LevelUpToast'
+import { AffectionMeter } from '@/components/AffectionMeter'
 
 const MAX_CACHED_MSGS = 60
 const CHAT_ENABLED = process.env.NEXT_PUBLIC_CHAT_ENABLED !== 'false'
@@ -50,6 +51,7 @@ export default function ChatPage() {
   const [unlockedVideos, setUnlockedVideos] = useState<Set<string>>(new Set())
   const [subInfo, setSubInfo] = useState<{ plan: string | null; used: number; limit: number } | null>(null)
   const [levelUp, setLevelUp] = useState<{ level: number } | null>(null)
+  const [affection, setAffection] = useState<{ points: number; level: number; messageCount: number } | null>(null)
 
   const bottomRef = useRef<HTMLDivElement>(null)
   const editableRef = useRef<HTMLDivElement>(null)
@@ -171,11 +173,12 @@ export default function ChatPage() {
       setLoading(false)
 
       // Background refresh
-      const [profRes, charRes, photosRes, msgsRes] = await Promise.all([
+      const [profRes, charRes, photosRes, msgsRes, ucRes] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', userId).single(),
         supabase.from('characters').select('*').eq('id', characterId).single(),
         supabase.from('character_photos').select('*').eq('character_id', characterId).order('order_index'),
         supabase.from('messages').select('*').eq('conversation_id', cachedConvId).eq('is_deleted', false).order('created_at', { ascending: true }),
+        supabase.from('user_characters').select('affection_points,affection_level,message_count').eq('user_id', userId).eq('character_id', characterId!).maybeSingle(),
       ])
       if (profRes.data) {
         setProfile(profRes.data)
@@ -193,10 +196,14 @@ export default function ChatPage() {
         setMessages(msgsRes.data)
         writeCache(`msgs:${cachedConvId}`, msgsRes.data.slice(-MAX_CACHED_MSGS))
       }
+      if (ucRes.data) {
+        const uc = ucRes.data as any
+        setAffection({ points: uc.affection_points, level: uc.affection_level, messageCount: uc.message_count })
+      }
       setupRealtimeAndPolling(cachedConvId, userId)
     } else {
       // 初回：start-conversationで会話を作成＆ウェルカムメッセージ
-      const [profRes, charRes, photosRes, startRes] = await Promise.all([
+      const [profRes, charRes, photosRes, startRes, ucRes] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', userId).single(),
         supabase.from('characters').select('*').eq('id', characterId).single(),
         supabase.from('character_photos').select('*').eq('character_id', characterId).order('order_index'),
@@ -205,6 +212,7 @@ export default function ChatPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ characterId }),
         }),
+        supabase.from('user_characters').select('affection_points,affection_level,message_count').eq('user_id', userId).eq('character_id', characterId!).maybeSingle(),
       ])
       if (profRes.data) {
         setProfile(profRes.data)
@@ -218,6 +226,10 @@ export default function ChatPage() {
         writeCache(`charData:${characterId}`, charRes.data)
       }
       setPhotos(photosRes.data || [])
+      if ((ucRes as any).data) {
+        const uc = (ucRes as any).data
+        setAffection({ points: uc.affection_points, level: uc.affection_level, messageCount: uc.message_count })
+      }
 
       if (!startRes.ok) { setLoading(false); return }
       const { conversationId: newConvId, welcomeMessage } = await startRes.json()
@@ -338,8 +350,9 @@ export default function ChatPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ characterId: character.id }),
         }).then(r => r.json()).then(data => {
-          if (data.ok && data.leveled_up) {
-            setLevelUp({ level: data.affection_level })
+          if (data.ok) {
+            setAffection({ points: data.affection_points, level: data.affection_level, messageCount: data.message_count })
+            if (data.leveled_up) setLevelUp({ level: data.affection_level })
           }
         }).catch(() => {})
       } else {
@@ -523,6 +536,15 @@ export default function ChatPage() {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        {/* 好感度カード */}
+        {affection && (
+          <div className="rounded-2xl p-4 flex-shrink-0"
+            style={{ border: '1px solid var(--color-border-warm)', background: 'var(--color-surface)' }}>
+            <p className="text-xs font-semibold text-[var(--color-text-muted)] mb-3">好感度</p>
+            <AffectionMeter points={affection.points} messageCount={affection.messageCount} />
+          </div>
+        )}
+
         {messages.length === 0 && (
           <div className="flex-1 flex flex-col items-center justify-center py-12 animate-fade-in text-center">
             <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-[var(--color-border-warm)] mb-4">
