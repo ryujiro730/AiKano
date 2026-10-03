@@ -18,23 +18,18 @@ export async function POST(req: NextRequest) {
   const user = await getAuthUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  let body: { conversationId: string; characterId: string; userMessage: string }
+  let body: { conversationId: string; characterId: string }
   try {
     body = await req.json()
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  const { conversationId, characterId, userMessage } = body
-  if (!conversationId || !characterId || !userMessage?.trim()) {
+  // 返信対象のユーザーメッセージはクライアント申告ではなく DB の最新メッセージを使う
+  const { conversationId, characterId } = body
+  if (!conversationId || !characterId) {
     return NextResponse.json(
-      { error: 'conversationId, characterId, userMessage are required' },
-      { status: 400 },
-    )
-  }
-  if (userMessage.trim().length > 300) {
-    return NextResponse.json(
-      { error: 'メッセージは300文字以内にしてください' },
+      { error: 'conversationId, characterId are required' },
       { status: 400 },
     )
   }
@@ -49,13 +44,14 @@ export async function POST(req: NextRequest) {
     .eq('id', characterId)
     .single()
 
-  // 最新30件を降順取得後、昇順に並べ直してLLMに渡す
+  // 最新31件（返信対象のユーザーメッセージ＋履歴30件）を降順取得
   const msgsPromise = admin
     .from('messages')
     .select('sender_role, content')
     .eq('conversation_id', conversationId)
+    .eq('is_deleted', false)
     .order('created_at', { ascending: false })
-    .limit(30)
+    .limit(31)
 
   // OpenAI: メモリを取得（キャラ設定注入に使う）
   const memoryPromise = isOpenAI
@@ -71,7 +67,7 @@ export async function POST(req: NextRequest) {
   // ここではサブスクユーザーのモデル切り替えのみ（カウントは増やさない）。
   const profilePromise = admin
     .from('profiles')
-    .select('subscription_plan, subscription_status')
+    .select('subscription_plan, subscription_status, display_name, age')
     .eq('id', user.id)
     .single()
 
@@ -94,7 +90,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
   // 返信待ちのユーザーメッセージがない場合は生成しない（送信なしでの無料返信を防止）
-  if ((msgs as any[] | null)?.[0]?.sender_role !== 'user') {
+  const [latest, ...older] = (msgs as { sender_role: string; content: string }[] | null) ?? []
+  if (latest?.sender_role !== 'user') {
     return NextResponse.json({ error: 'No pending user message' }, { status: 409 })
   }
 
@@ -110,7 +107,9 @@ export async function POST(req: NextRequest) {
 
   const currentMemory: string = (memData as any)?.data?.memory_text ?? ''
 
-  const history: LLMMessage[] = ((msgs as any[]) ?? []).reverse().map((m: any) => ({
+  const userMessage = latest.content.trim()
+  // 返信対象メッセージは generateReply の userMessage として渡すので履歴からは除く（二重送信防止）
+  const history: LLMMessage[] = older.reverse().map((m) => ({
     role: m.sender_role === 'user' ? 'user' : 'assistant',
     content: m.content,
   }))
@@ -118,9 +117,10 @@ export async function POST(req: NextRequest) {
   // ── LLM 生成 ──────────────────────────────────────────────────────────
   let replyText: string
   try {
-    const result = await generateReply(character, history, userMessage.trim(), {
+    const result = await generateReply(character, history, userMessage, {
       modelOverride,
       memoryText: isOpenAI ? currentMemory : undefined,
+      user: { name: prof?.display_name, age: prof?.age },
     })
     replyText = result.text
   } catch (err) {
@@ -152,10 +152,11 @@ export async function POST(req: NextRequest) {
   // ── 非同期後処理（fire-and-forget）─────────────────────────────────────
 
   admin.from('conversations').update({ last_message_at: now, is_unread_staff: false }).eq('id', conversationId)
+    .then(({ error }) => { if (error) console.error('[ai-reply] conversation update error:', error.message) })
 
   // メモリ更新（OpenAIプロバイダーのみ）
   if (isOpenAI) {
-    extractMemoryUpdate(currentMemory, userMessage.trim(), replyText, character.name)
+    extractMemoryUpdate(currentMemory, userMessage, replyText, character.name)
       .then(async (updatedMemory) => {
         if (!updatedMemory) return
         await admin

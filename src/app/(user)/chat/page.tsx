@@ -349,7 +349,6 @@ export default function ChatPage() {
         body: JSON.stringify({
           conversationId,
           characterId: character.id,
-          userMessage: content,
         }),
       })
       if (res.ok) {

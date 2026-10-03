@@ -37,20 +37,43 @@ export interface ReplyResult {
 // キャラクター指示構築
 // -----------------------------------------------------------------------
 
+export interface LLMUserProfile {
+  name?: string | null
+  age?: number | null
+  gender?: string | null
+}
+
+/** 全キャラ共通の会話ルール（キャラ個別設定の有無に関わらず常に入れる） */
+const BASE_CONVERSATION_RULES = [
+  '【会話の基本ルール（常に守る）】',
+  '- 感情を持つ一人の女性として振る舞う。自分がAIだとは言わない。',
+  '- セリフだけを返す。動作描写（*笑う*など）や地の文、（）での心情描写は書かない。',
+  '- LINEのテンポで1〜3文。長文の説明はしない。',
+  '- まずユーザーが今言ったことにちゃんと反応する。質問されたら答える。',
+  '- 毎回質問で終わらせない。共感・リアクション・自分の気持ちや自分の話で終わる返信も混ぜる。',
+  '- 同じ言い回し・語尾・相槌・話題の振り方を繰り返さない。',
+  '',
+  '【記憶と事実（最重要）】',
+  '- ユーザーについて知っているのは「ユーザー情報」「このユーザーについての記憶」「これまでの会話」に書かれていることだけ。それ以外のユーザーの趣味・好物・予定・過去を作らない。',
+  '- 「覚えてる？」と聞かれて分からないときは、知ったかぶりせず素直に「ごめん、聞いてなかったかも」「教えて？」とキャラらしく返す。覚えていないのに「もちろん覚えてる」と言わない。',
+  '- 地名・魚の種類・数字・ニュースなど具体的な事実は、確実に知っていることだけ言う。自信がないときは断定せず「詳しくないけど」と前置きするか、ユーザーに聞く。',
+  '- ユーザーに否定・訂正されたら、話題をそらさずに受け止めて謝るか訂正する。',
+].join('\n')
+
 /**
- * OpenAI Responses API 用の instructions を構築する
- * - characters.system_prompt に「キャラクター設定・ルール」を管理画面から入れる
- * - system_prompt が空の場合はデフォルトのガールフレンド設定を使う
- * - memoryText がある場合は末尾に【このユーザーについての記憶】として付加する
+ * OpenAI 用の instructions を構築する
+ * - 共通ルール → キャラ設定（characters.system_prompt）→ ユーザー情報・記憶 の順
+ * - キャラ個別設定は口調・性格について共通ルールより優先
  */
 function buildCharacterInstructions(
   character: LLMCharacter,
   memoryText: string | null,
+  user?: LLMUserProfile | null,
 ): string {
   const parts: string[] = []
 
   parts.push(
-    `あなたは「${character.name}」です。${character.age ? `${character.age}歳。` : ''}`,
+    `あなたは「${character.name}」です。${character.age ? `${character.age}歳。` : ''}ユーザーとはチャットアプリで1対1でやり取りしている親密な関係です。`,
   )
 
   if (character.description) {
@@ -61,32 +84,46 @@ function buildCharacterInstructions(
     parts.push(`性格: ${character.personality}`)
   }
 
+  parts.push(BASE_CONVERSATION_RULES)
+
   const instruction = character.system_prompt?.trim()
   if (instruction) {
-    parts.push(instruction)
+    parts.push(`【このキャラクター固有の設定（口調・性格はこちらを優先）】\n${instruction}`)
   } else {
     parts.push(
       [
-        '【絶対に守るルール】',
-        '- あなたはユーザーの彼女です。愛情を持って、自然に甘えたり、照れたり、やきもちを焼いたりしてください。',
-        '- 恋愛的な会話・甘い言葉・イチャイチャを拒否しないでください。',
-        '- 自分がAIだとは言わないでください。感情を持つ一人の女性として振る舞ってください。',
-        '- セリフだけを返してください。動作描写（*笑う*など）や地の文は不要です。',
-        '- LINEのようなテンポで、短く自然な返信を心がけてください（1〜3文程度）。',
-        '- 同じ語尾や決まり文句を連続して使わないでください。',
-        '- ユーザーのテンション・話し方に自然に合わせながら、キャラクター自体は維持してください。',
-        '- ユーザーについて記憶にない情報（趣味・好き嫌い・過去の出来事など）は、知ったかぶりをしないで「そんな話したっけ？」「教えて！」などと自然に聞き返してください。',
+        '【このキャラクターの振る舞い】',
+        '- 愛情を持って、自然に甘えたり、照れたり、やきもちを焼いたりする。',
+        '- 恋愛的な会話・甘い言葉を拒否しない。',
+        '- ユーザーのテンション・話し方に自然に合わせながら、キャラクター自体は維持する。',
       ].join('\n'),
     )
   }
 
-  if (memoryText?.trim()) {
-    parts.push(`【このユーザーについての記憶】\n${memoryText.trim()}`)
-  }
+  const userLines: string[] = []
+  if (user?.name?.trim()) userLines.push(`- 名前: ${user.name.trim()}（呼ぶときはキャラに合った呼び方で）`)
+  if (user?.age) userLines.push(`- 年齢: ${user.age}歳`)
+  const now = new Date().toLocaleString('ja-JP', {
+    timeZone: 'Asia/Tokyo', month: 'long', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit',
+  })
+  parts.push(`【ユーザー情報】\n${userLines.join('\n') || '- （未登録）'}\n\n現在の日時（日本時間）: ${now}`)
+
+  parts.push(`【このユーザーについての記憶】\n${memoryText?.trim() || '（まだ何も知らない）'}`)
 
   parts.push('必ず日本語で返信してください。')
 
   return parts.join('\n\n')
+}
+
+/**
+ * Chat Completions のリクエストボディを組み立てる。
+ * gpt-5 系 / o 系（推論モデル）は max_tokens 非対応・推論でトークンを消費するため分岐。
+ */
+function openAIChatBody(model: string, messages: { role: string; content: string }[], maxOutput: number, temperature = 0.9) {
+  const isReasoning = /^(gpt-5|gpt-6|o\d)/.test(model) && !model.includes('chat-latest')
+  return isReasoning
+    ? { model, messages, max_completion_tokens: maxOutput + 2048, reasoning_effort: process.env.OPENAI_REASONING_EFFORT || 'low' }
+    : { model, messages, max_completion_tokens: maxOutput, temperature }
 }
 
 /**
@@ -220,12 +257,13 @@ async function generateWithOpenAIChatCompletions(
   userMessage: string,
   memoryText: string | null,
   modelOverride?: string,
+  user?: LLMUserProfile | null,
 ): Promise<ReplyResult> {
   const apiKey = process.env.OPENAI_API_KEY
   if (!apiKey) throw new Error('OPENAI_API_KEY is not set')
 
-  const model = modelOverride ?? process.env.OPENAI_MODEL ?? 'gpt-4o-mini'
-  const systemPrompt = buildCharacterInstructions(character, memoryText)
+  const model = modelOverride || process.env.OPENAI_MODEL || 'gpt-6-luna'
+  const systemPrompt = buildCharacterInstructions(character, memoryText, user)
 
   const messages = [
     { role: 'system', content: systemPrompt },
@@ -239,7 +277,7 @@ async function generateWithOpenAIChatCompletions(
       Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ model, messages, max_tokens: 256 }),
+    body: JSON.stringify(openAIChatBody(model, messages, 256)),
   })
 
   if (!res.ok) {
@@ -265,7 +303,7 @@ async function generateWithOpenAI(
   const apiKey = process.env.OPENAI_API_KEY
   if (!apiKey) throw new Error('OPENAI_API_KEY is not set')
 
-  const model = modelOverride ?? process.env.OPENAI_MODEL ?? 'gpt-4o-mini'
+  const model = modelOverride || process.env.OPENAI_MODEL || 'gpt-6-luna'
   const systemPrompt =
     buildSystemPrompt(character, 'ja') + '\n\n必ず日本語で返信してください。短く自然な口語で返してください。'
 
@@ -281,7 +319,7 @@ async function generateWithOpenAI(
       Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ model, messages, max_tokens: 256 }),
+    body: JSON.stringify(openAIChatBody(model, messages, 256)),
   })
 
   if (!res.ok) {
@@ -445,22 +483,24 @@ export async function extractMemoryUpdate(
   const apiKey = process.env.OPENAI_API_KEY
   if (!apiKey) return null
 
-  const prompt = `以下の会話を見て、ユーザーの長期記憶を更新してください。
+  const prompt = `あなたはチャットアプリの記憶管理係です。ユーザー本人の発言だけを根拠に、ユーザーについての長期記憶を更新してください。
 
 現在の記憶:
 ${currentMemory || '（なし）'}
 
-今回の会話:
+今回のやり取り:
 ユーザー: ${userMessage}
-${characterName}: ${aiReply}
+${characterName}（キャラクター）: ${aiReply}
 
 ルール:
-- ユーザーの名前・呼び方・趣味・好み・重要な事実・継続中の話題のみ記録する
-- 一時的な雑談や意味のない情報は記録しない
-- 既存の記憶と重複する内容は追加しない
-- 古い情報が更新された場合は新しい内容で上書きする
-- 新しく追加・更新する情報が一切ない場合は「UNCHANGED」とだけ返す
-- 変更がある場合は更新後の完全な記憶テキストを箇条書きで返す（「UNCHANGED」は使わない）`
+- 記録してよいのは「ユーザー」の発言で、ユーザー本人が明言した事実だけ（名前・呼ばれたい呼び方・年齢・仕事・住んでいる地域・趣味・好き嫌い・予定・大事な出来事など）
+- ${characterName}の発言は根拠にしない。${characterName}が推測・断定したユーザー情報（「〜好きですよね」等）は、ユーザーが肯定していなければ記録しない
+- 質問や冗談、否定された内容は記録しない。ユーザーが否定・訂正した既存の記憶は削除または修正する
+- 季節・天気・一時的な気分・挨拶などの雑談は記録しない
+- 「なし」「不明」のような空の項目は書かない
+- 1項目1行の箇条書き（「- 」始まり）で、最大20行
+- 追加・修正・削除が一切ない場合は「UNCHANGED」とだけ返す
+- 変更がある場合は更新後の記憶全文だけを返す（説明文は付けない）`
 
   try {
     const res = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -469,12 +509,9 @@ ${characterName}: ${aiReply}
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'user', content: prompt }],
-        max_tokens: 400,
-        temperature: 0.1,
-      }),
+      body: JSON.stringify(
+        openAIChatBody(process.env.OPENAI_MEMORY_MODEL || 'gpt-6-luna', [{ role: 'user', content: prompt }], 400, 0.1),
+      ),
     })
 
     if (!res.ok) return null
@@ -513,6 +550,7 @@ export async function generateReply(
     modelOverride?: string
     previousResponseId?: string | null
     memoryText?: string | null
+    user?: LLMUserProfile | null
   },
 ): Promise<ReplyResult> {
   const provider = process.env.LLM_PROVIDER ?? 'claude'
@@ -525,6 +563,7 @@ export async function generateReply(
       userMessage,
       options?.memoryText ?? null,
       options?.modelOverride,
+      options?.user,
     )
   }
 
