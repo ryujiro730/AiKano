@@ -71,12 +71,6 @@ export default async function UserLayout({ children }: { children: React.ReactNo
       <CampaignBanner />
 
       <main className="max-w-2xl mx-auto px-4" style={{ paddingTop: 'var(--main-pt, 72px)', paddingBottom: '88px' }}>
-        {/* ポイント説明バナー */}
-        <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium mb-4"
-          style={{ background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.14)', color: '#1d4ed8' }}>
-          <span style={{ fontSize: 14 }}>💬</span>
-          <span>毎日<strong>2通</strong>のメッセージが無料 · ログインすると追加<strong>2通</strong>サービス</span>
-        </div>
         {children}
       </main>
 

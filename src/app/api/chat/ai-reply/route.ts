@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
         (profileForPoints?.points ?? 0) + (bonusValid ? (profileForPoints?.bonus_points ?? 0) : 0)
       if (balance < overageCost) {
         return NextResponse.json(
-          { error: 'ポイントが不足しています', code: 'insufficient_points' },
+          { error: 'ポイントが不足しています', code: 'insufficient_points', current: balance, required: overageCost },
           { status: 402 },
         )
       }
@@ -127,7 +127,7 @@ export async function POST(req: NextRequest) {
         (profileForPoints?.points ?? 0) + (bonusValid ? (profileForPoints?.bonus_points ?? 0) : 0)
       if (balance < DEFAULT_POINTS_PER_MESSAGE) {
         return NextResponse.json(
-          { error: 'ポイントが不足しています', code: 'insufficient_points' },
+          { error: 'ポイントが不足しています', code: 'insufficient_points', current: balance, required: DEFAULT_POINTS_PER_MESSAGE },
           { status: 402 },
         )
       }

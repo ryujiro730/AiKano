@@ -355,6 +355,9 @@ export default function ChatPage() {
             if (data.leveled_up) setLevelUp({ level: data.affection_level })
           }
         }).catch(() => {})
+      } else if (res.status === 402) {
+        const data = await res.json()
+        setPointsShortage({ current: data.current ?? 0, required: data.required ?? 10 })
       } else {
         console.error('[chat] AI返信エラー:', await res.text())
       }

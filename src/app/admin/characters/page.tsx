@@ -471,6 +471,7 @@ export default function AdminCharactersPage() {
       avatar_url: char.avatar_url,
       is_active: char.is_active,
     })
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const startNew = () => {
