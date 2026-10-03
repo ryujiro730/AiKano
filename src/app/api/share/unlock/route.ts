@@ -41,18 +41,36 @@ export async function GET() {
   return NextResponse.json({ activatedCount: activated, limit, shareCount: shareCount ?? 0, nextAvailable, canShareNow })
 }
 
+const PLATFORM_PATTERNS: { platform: string; regex: RegExp; label: string }[] = [
+  { platform: 'x',        regex: /^https?:\/\/(twitter\.com|x\.com)\/\w+\/status\/\d+/,              label: 'X(Twitter)' },
+  { platform: 'threads',  regex: /^https?:\/\/(www\.)?threads\.net\/@[\w.]+\/post\/[A-Za-z0-9_-]+/, label: 'Threads' },
+  { platform: 'facebook', regex: /^https?:\/\/(www\.)?(facebook\.com|fb\.com|fb\.watch)\//,          label: 'Facebook' },
+  { platform: 'instagram',regex: /^https?:\/\/(www\.)?instagram\.com\/(p|reel|tv)\/[A-Za-z0-9_-]+/, label: 'Instagram' },
+]
+
+function detectPlatform(url: string): { platform: string; label: string } | null {
+  for (const p of PLATFORM_PATTERNS) {
+    if (p.regex.test(url)) return { platform: p.platform, label: p.label }
+  }
+  return null
+}
+
 export async function POST(req: NextRequest) {
   const authClient = createServerClient()
   const user = await getAuthUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { tweetUrl } = await req.json()
-  if (!tweetUrl) return NextResponse.json({ error: 'tweetUrl required' }, { status: 400 })
+  const body = await req.json()
+  const shareUrl = (body.shareUrl ?? body.tweetUrl ?? '').trim()
+  if (!shareUrl) return NextResponse.json({ error: 'shareUrl required' }, { status: 400 })
 
-  // Validate tweet URL format
-  const isValidTweetUrl = /^https?:\/\/(twitter\.com|x\.com)\/\w+\/status\/\d+/.test(tweetUrl.trim())
-  if (!isValidTweetUrl) {
-    return NextResponse.json({ ok: false, error: 'invalid_url', message: '有効なX(Twitter)の投稿URLを入力してください（例: https://x.com/yourname/status/123456）' }, { status: 400 })
+  const detected = detectPlatform(shareUrl)
+  if (!detected) {
+    return NextResponse.json({
+      ok: false,
+      error: 'invalid_url',
+      message: '対応していないURLです。X・Threads・Facebook・Instagramの投稿URLを貼り付けてください',
+    }, { status: 400 })
   }
 
   const adminClient = createClient(
@@ -60,7 +78,7 @@ export async function POST(req: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  // Check weekly cooldown
+  // クールダウンチェック
   const since = new Date(Date.now() - SHARE_COOLDOWN_DAYS * 24 * 60 * 60 * 1000).toISOString()
   const { data: recentShares } = await adminClient
     .from('share_logs')
@@ -76,20 +94,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'weekly_limit_reached', nextAvailable })
   }
 
-  // Check for duplicate tweet URL
+  // URL重複チェック
   const { count: dupCount } = await adminClient
     .from('share_logs')
     .select('id', { count: 'exact', head: true })
-    .eq('tweet_url', tweetUrl.trim())
+    .eq('tweet_url', shareUrl)
 
   if ((dupCount ?? 0) > 0) {
-    return NextResponse.json({ ok: false, error: 'duplicate_tweet', message: 'このURLはすでに使用されています' }, { status: 400 })
+    return NextResponse.json({ ok: false, error: 'duplicate_url', message: 'このURLはすでに使用されています' }, { status: 400 })
   }
 
-  // Insert share log
   const { error } = await adminClient.from('share_logs').insert({
     user_id: user.id,
-    tweet_url: tweetUrl.trim(),
+    tweet_url: shareUrl,
+    platform: detected.platform,
   })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
