@@ -16,6 +16,8 @@ type UserDetail = {
   age: number | null
   gender: string | null
   points: number
+  bonus_points: number | null
+  bonus_points_expires_at: string | null
   admin_note: string | null
   last_login_at: string | null
   created_at: string
@@ -78,7 +80,7 @@ export default function AdminUserDetailPage() {
 
   const loadAll = async () => {
     const [userRes, labelsRes, assignRes, convRes, txRes, noteRes] = await Promise.all([
-      supabase.from('profiles').select('id, user_code, email, display_name, age, gender, points, last_login_at, created_at, referral_source, registration_ip, registration_ua').eq('id', id).single(),
+      supabase.from('profiles').select('id, user_code, email, display_name, age, gender, points, bonus_points, bonus_points_expires_at, last_login_at, created_at, referral_source, registration_ip, registration_ua').eq('id', id).single(),
       supabase.from('admin_labels').select('*').order('name'),
       supabase.from('user_label_assignments').select('label_id').eq('user_id', id),
       supabase.from('conversations').select('id, last_message_at, is_unread_staff, characters(name, avatar_url)').eq('user_id', id).order('last_message_at', { ascending: false }).limit(10),
@@ -198,8 +200,27 @@ export default function AdminUserDetailPage() {
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div><span className="text-[var(--color-text-muted)] text-xs">年齢</span><p>{user.age != null ? `${user.age}歳` : '—'}</p></div>
           <div><span className="text-[var(--color-text-muted)] text-xs">性別</span><p>{{ male: '男性', female: '女性', other: 'その他' }[user.gender ?? ''] ?? '—'}</p></div>
-          <div><span className="text-[var(--color-text-muted)] text-xs">残高</span><p className="font-semibold">{user.points}T</p></div>
-          <div><span className="text-[var(--color-text-muted)] text-xs">累計課金</span><p className="font-semibold">{totalCharged > 0 ? `¥${totalCharged.toLocaleString()}` : '—'}</p></div>
+          <div>
+            <span className="text-[var(--color-text-muted)] text-xs">残高</span>
+            <p className="font-semibold">{user.points}T</p>
+          </div>
+          <div>
+            <span className="text-[var(--color-text-muted)] text-xs">累計課金</span>
+            <p className="font-semibold">{totalCharged > 0 ? `¥${totalCharged.toLocaleString()}` : '—'}</p>
+          </div>
+          {(user.bonus_points ?? 0) > 0 && (
+            <div className="col-span-2">
+              <span className="text-[var(--color-text-muted)] text-xs">ボーナスPT</span>
+              <p className="font-semibold text-amber-500">
+                {user.bonus_points}T
+                {user.bonus_points_expires_at && (
+                  <span className="text-xs font-normal text-[var(--color-text-muted)] ml-1">
+                    （期限: {new Date(user.bonus_points_expires_at).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo' })}）
+                  </span>
+                )}
+              </p>
+            </div>
+          )}
           <div><span className="text-[var(--color-text-muted)] text-xs">登録日</span><p>{new Date(user.created_at).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo' })}</p></div>
           <div><span className="text-[var(--color-text-muted)] text-xs">最終ログイン</span><p>{user.last_login_at ? formatDistanceToNow(new Date(user.last_login_at), { addSuffix: true, locale: ja }) : '—'}</p></div>
           <div className="col-span-2"><span className="text-[var(--color-text-muted)] text-xs">流入元</span><p>{user.referral_source ?? '—'}</p></div>
