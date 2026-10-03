@@ -6,6 +6,7 @@ import { ShoppingBag, Loader2, Gift, Check } from 'lucide-react'
 import type { Item, ItemCategory, UserItem } from '@/types'
 import Link from 'next/link'
 import Image from 'next/image'
+import { logAction } from '@/lib/action-log'
 
 export default function ShopPage() {
   const [items, setItems] = useState<Item[]>([])
@@ -18,7 +19,7 @@ export default function ShopPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const supabase = createClient()
 
-  useEffect(() => { loadData() }, [])
+  useEffect(() => { logAction('shop_open'); loadData() }, [])
 
   const loadData = async () => {
     const res = await fetch('/api/items')

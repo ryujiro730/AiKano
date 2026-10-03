@@ -1,11 +1,11 @@
+export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createAdminClient } from '@/lib/supabase/server'
+import { PLANS, type PlanId } from '@/lib/plans'
 
 export async function POST(request: Request) {
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2026-02-25.clover',
-  })
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2026-09-30.endive' as any })
 
   const body = await request.text()
   const sig = request.headers.get('stripe-signature')!
@@ -18,45 +18,131 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
   }
 
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object as Stripe.Checkout.Session
-    const { userId, tokens } = session.metadata ?? {}
+  const admin = createAdminClient()
 
-    if (!userId || !tokens) {
-      console.error('Missing metadata in session:', session.id)
-      return NextResponse.json({ error: 'Missing metadata' }, { status: 400 })
+  // ── 一回払い決済（ポイント購入）────────────────────────────────
+  if (
+    event.type === 'checkout.session.completed' ||
+    event.type === 'checkout.session.async_payment_succeeded'
+  ) {
+    const session = event.data.object as Stripe.Checkout.Session
+    if (session.mode !== 'payment') {
+      return NextResponse.json({ received: true })
     }
+    if (session.payment_status === 'unpaid') return NextResponse.json({ received: true })
+
+    const { userId, tokens, priceYen } = session.metadata ?? {}
+    if (!userId || !tokens) return NextResponse.json({ received: true })
+
+    // 冪等チェック
+    const { data: existing } = await admin
+      .from('point_transactions')
+      .select('id')
+      .eq('stripe_session_id', session.id)
+      .single()
+    if (existing) return NextResponse.json({ received: true })
 
     const tokenCount = parseInt(tokens)
-    const supabase = createAdminClient()
+    await admin.rpc('add_points', { p_user_id: userId, p_amount: tokenCount })
+    await admin.from('point_transactions').insert({
+      user_id: userId,
+      amount: tokenCount,
+      type: 'purchase',
+      description: `${tokenCount}ポイント購入`,
+      price_yen: priceYen ? parseInt(priceYen) : (session.amount_total ?? null),
+      stripe_session_id: session.id,
+    })
+  }
 
-    // トークンを追加
-    const { data: profile } = await supabase
+  // ── サブスク開始（checkout完了）────────────────────────────────
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object as Stripe.Checkout.Session
+    if (session.mode !== 'subscription') return NextResponse.json({ received: true })
+
+    const { userId, planId } = session.metadata ?? {}
+    if (!userId || !planId) return NextResponse.json({ received: true })
+
+    const plan = PLANS[planId as PlanId]
+    if (!plan) return NextResponse.json({ received: true })
+
+    // subscription_id から period_end を取得
+    const subscriptionId = session.subscription as string
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId) as any
+    const periodEnd = new Date(subscription.current_period_end * 1000).toISOString()
+
+    await admin.from('profiles').update({
+      subscription_plan: planId,
+      subscription_status: 'active',
+      subscription_period_end: periodEnd,
+      monthly_messages_used: 0,
+      monthly_messages_limit: plan.monthly_messages,
+      monthly_reset_at: periodEnd,
+    }).eq('id', userId)
+  }
+
+  // ── サブスク更新（プラン変更・更新）────────────────────────────
+  if (event.type === 'customer.subscription.updated') {
+    const subscription = event.data.object as any
+    const customerId = subscription.customer as string
+
+    const { data: profile } = await admin
       .from('profiles')
-      .select('points')
-      .eq('id', userId)
+      .select('id, subscription_plan')
+      .eq('stripe_customer_id', customerId)
       .single()
+    if (!profile) return NextResponse.json({ received: true })
 
-    if (profile) {
-      await supabase
-        .from('profiles')
-        .update({ points: profile.points + tokenCount })
-        .eq('id', userId)
+    // Price IDからプランを特定
+    const priceId = subscription.items.data[0]?.price?.id
+    const newPlanId = (Object.entries(PLANS).find(([, p]) => p.stripe_price_id === priceId)?.[0] ?? profile.subscription_plan) as PlanId | null
+    const plan = newPlanId ? PLANS[newPlanId] : null
+    const periodEnd = new Date(subscription.current_period_end * 1000).toISOString()
 
-      const priceYen = session.amount_total ?? null
+    await admin.from('profiles').update({
+      subscription_plan: newPlanId,
+      subscription_status: subscription.status as any,
+      subscription_period_end: periodEnd,
+      monthly_messages_limit: plan?.monthly_messages ?? 0,
+      monthly_reset_at: periodEnd,
+    }).eq('id', profile.id)
+  }
 
-      await supabase.from('point_transactions').insert({
-        user_id: userId,
-        amount: tokenCount,
-        type: 'purchase',
-        description: `${tokenCount}トークン購入`,
-        price_yen: priceYen,
-      })
-    }
+  // ── サブスクキャンセル ──────────────────────────────────────────
+  if (event.type === 'customer.subscription.deleted') {
+    const subscription = event.data.object as any
+    const customerId = subscription.customer as string
+
+    await admin.from('profiles').update({
+      subscription_status: 'canceled',
+      subscription_plan: null,
+      monthly_messages_limit: 0,
+    }).eq('stripe_customer_id', customerId)
+  }
+
+  // ── 請求成功（毎月の自動更新）──────────────────────────────────
+  if (event.type === 'invoice.payment_succeeded') {
+    const invoice = event.data.object as Stripe.Invoice
+    if ((invoice as any).billing_reason !== 'subscription_cycle') return NextResponse.json({ received: true })
+
+    const customerId = invoice.customer as string
+    const subscriptionId = (invoice as any).subscription as string
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId) as any
+    const periodEnd = new Date(subscription.current_period_end * 1000).toISOString()
+
+    await admin.from('profiles').update({
+      subscription_status: 'active',
+      subscription_period_end: periodEnd,
+      monthly_messages_used: 0,
+      monthly_reset_at: periodEnd,
+    }).eq('stripe_customer_id', customerId)
+  }
+
+  // ── 支払い失敗 ─────────────────────────────────────────────────
+  if (event.type === 'invoice.payment_failed') {
+    const invoice = event.data.object as Stripe.Invoice
+    const customerId = invoice.customer as string
+    await admin.from('profiles').update({ subscription_status: 'past_due' }).eq('stripe_customer_id', customerId)
   }
 
   return NextResponse.json({ received: true })
 }
-
-// Stripeのwebhookはraw bodyが必要なのでbodyParserを無効化
-export const dynamic = 'force-dynamic'

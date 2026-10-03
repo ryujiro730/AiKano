@@ -10,7 +10,7 @@ function admin() {
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const authClient = createServerClient()
-  const user = await getAuthUser(authClient)
+  const user = await getAuthUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { data: profile } = await admin()

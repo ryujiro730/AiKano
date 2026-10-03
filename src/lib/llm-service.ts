@@ -275,6 +275,48 @@ function cleanJaRpOutput(text: string): string {
 }
 
 // -----------------------------------------------------------------------
+// OpenAI API
+// -----------------------------------------------------------------------
+
+async function generateWithOpenAI(
+  character: LLMCharacter,
+  history: LLMMessage[],
+  userMessage: string,
+  modelOverride?: string,
+): Promise<string> {
+  const apiKey = process.env.OPENAI_API_KEY
+  if (!apiKey) throw new Error('OPENAI_API_KEY is not set')
+
+  const model = modelOverride ?? process.env.OPENAI_MODEL ?? 'gpt-4o-mini'
+  const systemPrompt = buildSystemPrompt(character, 'ja') +
+    '\n\n必ず日本語で返信してください。短く自然な口語で返してください。'
+
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    ...history.map(m => ({ role: m.role, content: m.content })),
+    { role: 'user', content: userMessage },
+  ]
+
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ model, messages, max_tokens: 256 }),
+  })
+
+  if (!res.ok) {
+    const err = await res.text()
+    throw new Error(`OpenAI API error ${res.status}: ${err}`)
+  }
+
+  const data = await res.json()
+  const raw: string = data.choices?.[0]?.message?.content ?? ''
+  return cleanJaRpOutput(raw)
+}
+
+// -----------------------------------------------------------------------
 // Ollama API（英語モデル + DeepL翻訳）
 // -----------------------------------------------------------------------
 
@@ -352,11 +394,16 @@ export async function generateReply(
   character: LLMCharacter,
   history: LLMMessage[],
   userMessage: string,
+  modelOverride?: string,
 ): Promise<string> {
   const provider = process.env.LLM_PROVIDER ?? 'claude'
 
   // 履歴は直近30件に絞る（コンテキスト長管理）
   const recentHistory = history.slice(-30)
+
+  if (provider === 'openai') {
+    return generateWithOpenAI(character, recentHistory, userMessage, modelOverride)
+  }
 
   if (provider === 'openrouter') {
     return generateWithOpenRouter(character, recentHistory, userMessage)

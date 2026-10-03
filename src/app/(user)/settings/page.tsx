@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { Loader2, Check, LogOut, KeyRound, Trash2, MessageSquare, Twitter } from 'lucide-react'
+import { Loader2, Check, LogOut, KeyRound, Trash2, MessageSquare, Twitter, Ban } from 'lucide-react'
 import type { Profile } from '@/types'
 import Link from 'next/link'
 
@@ -14,6 +14,8 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+
+  const [supportUnread, setSupportUnread] = useState(0)
 
   // シェアで枠解放
   const [shareInfo, setShareInfo] = useState<{ activatedCount: number; limit: number; shareCount: number; nextAvailable: string | null; canShareNow: boolean } | null>(null)
@@ -50,7 +52,14 @@ export default function SettingsPage() {
       }
       setLoading(false)
     }
+    const fetchSupportUnread = () => {
+      fetch('/api/support/unread-count').then(r => r.json()).then(d => setSupportUnread(d.count ?? 0)).catch(() => {})
+    }
     load()
+    fetchSupportUnread()
+    const onVisible = () => { if (document.visibilityState === 'visible') fetchSupportUnread() }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
   }, [])
 
   useEffect(() => {
@@ -311,12 +320,26 @@ export default function SettingsPage() {
         </div>
       </div>
 
+      {/* お断りリスト */}
+      <div className="card p-5 mb-4">
+        <p className="text-xs text-[var(--color-text-muted)] font-medium uppercase tracking-wider mb-4">キャラクター</p>
+        <Link href="/settings/blocks" className="flex items-center gap-2 text-sm text-[var(--color-text)] hover:text-[var(--color-primary)] transition-colors">
+          <Ban size={15} />
+          お断りリスト
+        </Link>
+      </div>
+
       {/* お問い合わせ */}
       <div className="card p-5 mb-4">
         <p className="text-xs text-[var(--color-text-muted)] font-medium uppercase tracking-wider mb-4">サポート</p>
         <Link href="/support" className="flex items-center gap-2 text-sm text-[var(--color-text)] hover:text-[var(--color-primary)] transition-colors">
           <MessageSquare size={15} />
           お問い合わせ・サポート
+          {supportUnread > 0 && (
+            <span className="ml-auto inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[11px] font-bold text-white" style={{ background: 'var(--color-primary)' }}>
+              {supportUnread}
+            </span>
+          )}
         </Link>
       </div>
 

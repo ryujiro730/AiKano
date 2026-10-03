@@ -29,6 +29,131 @@
   --color-online: #5ab34d;
 }
 
+/* ユーザー画面：乙女ゲームウォームテーマ */
+.user-layout {
+  --color-bg: #fdf6f9;
+  --color-surface: #ffffff;
+  --color-surface-2: #fef0f6;
+  --color-surface-3: #fce4ef;
+  --color-border: rgba(232, 67, 143, 0.12);
+  --color-border-warm: rgba(232, 67, 143, 0.28);
+  --color-text: #2d1420;
+  --color-text-muted: rgba(45, 20, 32, 0.45);
+  --color-text-warm: #c0306e;
+  --color-primary: #E94C8B;
+  --color-primary-hover: #d43b7a;
+  --color-primary-light: #f06aaa;
+  --color-primary-glow: rgba(233, 76, 139, 0.18);
+  --color-primary-border: rgba(233, 76, 139, 0.3);
+}
+
+.user-layout .glass {
+  background: rgba(253, 246, 249, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(232, 67, 143, 0.1);
+  box-shadow: 0 1px 0 rgba(232, 67, 143, 0.06);
+}
+
+.user-layout .card,
+.user-layout .card-warm {
+  border-color: rgba(232, 67, 143, 0.1);
+  box-shadow: 0 2px 10px rgba(232, 67, 143, 0.06);
+}
+
+.user-layout .warm-bg,
+.user-layout.warm-bg {
+  background: var(--color-bg);
+}
+
+/* Otome card — portrait ratio character card */
+.char-portrait-card {
+  position: relative;
+  border-radius: 18px;
+  overflow: hidden;
+  cursor: pointer;
+  aspect-ratio: 3 / 4;
+  box-shadow: 0 4px 20px rgba(232, 67, 143, 0.12);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.char-portrait-card:active {
+  transform: scale(0.97);
+}
+.char-portrait-card .overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(30,8,18,0.82) 0%, rgba(30,8,18,0.2) 45%, transparent 70%);
+}
+.char-portrait-card .card-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 14px 12px 12px;
+  color: #fff;
+}
+.char-portrait-card .online-pill {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(90,179,77,0.9);
+  border-radius: 99px;
+  padding: 3px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.char-portrait-card .unread-heart {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  min-width: 26px;
+  height: 26px;
+  border-radius: 99px;
+  background: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(232,67,143,0.5);
+  animation: pulse-border 1.8s ease-in-out infinite;
+  padding: 0 5px;
+}
+
+/* Subscription badge in header */
+.sub-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+.sub-badge-standard {
+  background: rgba(233, 76, 139, 0.12);
+  color: #c0306e;
+  border: 1px solid rgba(233, 76, 139, 0.25);
+}
+.sub-badge-premium {
+  background: linear-gradient(135deg, rgba(180,134,14,0.15), rgba(212,162,55,0.1));
+  color: #b5860e;
+  border: 1px solid rgba(180,134,14,0.3);
+}
+
+/* contenteditable プレースホルダー */
+[contenteditable][data-placeholder]:empty::before {
+  content: attr(data-placeholder);
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
 /* 管理画面：クリーン白テーマ（ピンクなし） */
 .admin-layout {
   --color-bg: #f4f5f7;
@@ -441,4 +566,23 @@ body {
     radial-gradient(ellipse 55% 45% at 10% 70%, rgba(232, 67, 143, 0.08) 0%, transparent 65%),
     radial-gradient(ellipse 50% 40% at 90% 20%, rgba(240, 106, 170, 0.06) 0%, transparent 65%),
     var(--color-bg);
+}
+
+@keyframes campaign-text-bounce {
+  0%, 100% { transform: translateY(0); }
+  35%       { transform: translateY(-8px); }
+  65%       { transform: translateY(-2px); }
+}
+@keyframes campaign-banner-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+@keyframes campaign-banner-bg {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes campaign-banner-glow {
+  0%, 100% { box-shadow: 0 2px 16px rgba(232,67,143,0.55); }
+  50%       { box-shadow: 0 2px 32px rgba(232,67,143,0.85), 0 0 48px rgba(255,107,53,0.4); }
 }

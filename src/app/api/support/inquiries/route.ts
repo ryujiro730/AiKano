@@ -10,7 +10,7 @@ function admin() {
 
 export async function GET() {
   const authClient = createServerClient()
-  const user = await getAuthUser(authClient)
+  const user = await getAuthUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { data } = await admin()
@@ -24,7 +24,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const authClient = createServerClient()
-  const user = await getAuthUser(authClient)
+  const user = await getAuthUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { subject, message } = await req.json()

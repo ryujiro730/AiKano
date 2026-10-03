@@ -1,4 +1,6 @@
 export type UserRole = 'user' | 'staff' | 'admin'
+export type SubscriptionPlan = 'standard' | 'premium'
+export type SubscriptionStatus = 'active' | 'canceled' | 'past_due' | 'trialing' | 'incomplete'
 
 export interface Profile {
   id: string
@@ -7,8 +9,8 @@ export interface Profile {
   display_name: string | null
   avatar_url: string | null
   role: UserRole
-  points: number // token count
-  free_messages_used: number // 0-5 (free quota)
+  points: number
+  free_messages_used: number
   age: number | null
   gender: 'male' | 'female' | 'other' | null
   last_login_at: string | null
@@ -16,6 +18,14 @@ export interface Profile {
   bonus_points_expires_at: string | null
   last_login_bonus_at: string | null
   created_at: string
+  // サブスクリプション
+  stripe_customer_id: string | null
+  subscription_plan: SubscriptionPlan | null
+  subscription_status: SubscriptionStatus | null
+  subscription_period_end: string | null
+  monthly_messages_used: number
+  monthly_messages_limit: number
+  monthly_reset_at: string | null
 }
 
 export interface AdminUserView extends Profile {

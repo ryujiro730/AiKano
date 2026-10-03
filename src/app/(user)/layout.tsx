@@ -4,67 +4,83 @@ import Link from 'next/link'
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
-import { createClient, createAdminClient } from '@/lib/supabase/server'
+
+import { createAdminClient } from '@/lib/supabase/server'
+import { INTERNAL_EMAILS } from '@/lib/internal-accounts'
+import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { redirect } from 'next/navigation'
 import { unstable_noStore as noStore } from 'next/cache'
 import { Suspense } from 'react'
 import { PointsDisplay } from '@/components/PointsDisplay'
-import { BottomNav } from '@/components/BottomNav'
+import { BottomNavLive } from '@/components/BottomNavLive'
 import { BottomNavServer } from '@/components/BottomNavServer'
 import { LoginBonusDialog } from '@/components/LoginBonusDialog'
-
+import { CampaignBanner } from '@/components/CampaignBanner'
+import { CampaignProvider } from '@/components/CampaignProvider'
+import { LoginPing } from '@/components/LoginPing'
 
 export default async function UserLayout({ children }: { children: React.ReactNode }) {
   noStore()
-  const supabase = createClient()
-
-  // getSession() reads from cookie — no network call
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) redirect('/auth/login')
-  const userId = session.user.id
+  const user = await getAuthUser()
+  if (!user) redirect('/auth/login')
+  const userId = user.id
 
   const admin = createAdminClient()
 
-  // Only 1 DB query blocks the critical path
-  const { data: profile } = await admin
-    .from('profiles')
-    .select('display_name, age, points, bonus_points, bonus_points_expires_at, role')
-    .eq('id', userId)
-    .single()
+  const [{ data: profile }] = await Promise.all([
+    admin
+      .from('profiles')
+      .select('display_name, age, points, bonus_points, bonus_points_expires_at, role')
+      .eq('id', userId)
+      .single(),
+    admin
+      .from('profiles')
+      .update({ last_login_at: new Date().toISOString() } as any)
+      .eq('id', userId),
+  ])
 
-  if (!profile || profile.age === null) {
+  const isInternalAccount = INTERNAL_EMAILS.includes((user.email ?? '') as typeof INTERNAL_EMAILS[number])
+  if (!isInternalAccount && (!profile || profile.age === null)) {
     redirect('/onboarding')
   }
 
-
   return (
-    <div className="min-h-screen warm-bg">
+    <CampaignProvider>
+    <div className="min-h-screen user-layout" style={{ background: 'var(--color-bg)' }}>
       <header className="fixed top-0 w-full z-50 glass">
         <div className="max-w-2xl mx-auto px-4 flex items-center justify-between" style={{ height: '52px' }}>
           <Link href="/characters" className="text-sm font-semibold tracking-wide" style={{ color: 'var(--color-text-warm)' }}>
             AiKano
           </Link>
           <div className="flex items-center gap-3">
-            {profile?.role === 'admin' && (
+            {['admin', 'owner'].includes(profile?.role ?? '') && (
               <a href="/admin" className="text-xs text-[var(--color-text-muted)] hover:opacity-70 transition-opacity">
                 管理画面 →
               </a>
+            )}
+            {((profile as any)?.subscription_status === 'active' || (profile as any)?.subscription_status === 'trialing') && (profile as any)?.subscription_plan && (
+              <span className={`sub-badge ${(profile as any).subscription_plan === 'premium' ? 'sub-badge-premium' : 'sub-badge-standard'}`}>
+                ✦ {(profile as any).subscription_plan === 'premium' ? 'プレミアム' : 'スタンダード'}
+              </span>
             )}
             <PointsDisplay initialPoints={(profile?.points ?? 0) + (profile?.bonus_points ?? 0)} />
           </div>
         </div>
       </header>
 
-      <main className="pt-[52px] pb-[72px] max-w-2xl mx-auto px-4 py-5">
+      <CampaignBanner />
+
+      <main className="max-w-2xl mx-auto px-4" style={{ paddingTop: 'var(--main-pt, 72px)', paddingBottom: '88px' }}>
         {children}
       </main>
 
+      <LoginPing />
       <LoginBonusDialog />
-
-      {/* ボトムナビ: unreadCountをSuspenseで非ブロッキングにストリーム */}
-      <Suspense fallback={<BottomNav unreadCount={0} />}>
+      {/* ボトムナビ: サーバーで初期値を取得し、クライアントで定期ポーリング更新 */}
+      <Suspense fallback={<BottomNavLive />}>
         <BottomNavServer userId={userId} />
       </Suspense>
     </div>
+    </CampaignProvider>
   )
 }

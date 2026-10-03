@@ -6,7 +6,7 @@ import { getAuthUser } from '@/lib/supabase/get-auth-user'
 
 export async function DELETE() {
   const authClient = createServerClient()
-  const user = await getAuthUser(authClient)
+  const user = await getAuthUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   // admin権限でユーザーを削除（auth.usersから削除するとRLSのcascadeでprofilesも消える）

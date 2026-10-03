@@ -25,7 +25,7 @@ function adminSupabase() {
 export async function POST(req: NextRequest) {
   // staff/adminのみ許可
   const authClient = createServerClient()
-  const user = await getAuthUser(authClient)
+  const user = await getAuthUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { data: staffProfile } = await authClient

@@ -8,8 +8,11 @@ import type { Character, Message, Profile, CharacterPhoto } from '@/types'
 import Link from 'next/link'
 import Image from 'next/image'
 import Lightbox from '@/components/Lightbox'
-import { compressImage } from '@/lib/compress-image'
+import { AvatarImage } from '@/components/AvatarImage'
+import { CharacterActionMenu } from '@/components/CharacterActionMenu'
+import { compressImage, isHeic, heicToBlob } from '@/lib/compress-image'
 import { PointsShortageDialog } from '@/components/PointsShortageDialog'
+import { LevelUpToast } from '@/components/LevelUpToast'
 
 const MAX_CACHED_MSGS = 60
 const CHAT_ENABLED = process.env.NEXT_PUBLIC_CHAT_ENABLED !== 'false'
@@ -45,16 +48,25 @@ export default function ChatPage() {
   const [pendingMedia, setPendingMedia] = useState<{ file: File; mediaType: 'photo' | 'video'; previewUrl: string } | null>(null)
   const [pointsShortage, setPointsShortage] = useState<{ current: number; required: number } | null>(null)
   const [unlockedVideos, setUnlockedVideos] = useState<Set<string>>(new Set())
+  const [subInfo, setSubInfo] = useState<{ plan: string | null; used: number; limit: number } | null>(null)
+  const [levelUp, setLevelUp] = useState<{ level: number } | null>(null)
 
   const bottomRef = useRef<HTMLDivElement>(null)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const photoInputRef = useRef<HTMLInputElement>(null)
-  const videoInputRef = useRef<HTMLInputElement>(null)
+  const editableRef = useRef<HTMLDivElement>(null)
+  // file input は DOM に置かず動的生成（iOS AutoFill ツールバーを抑制するため）
+  const openFilePicker = (accept: string, onFile: (f: File) => void) => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = accept
+    input.onchange = () => { const f = input.files?.[0]; if (f) onFile(f) }
+    input.click()
+  }
   const supabaseRef = useRef(createClient())
   const channelRef = useRef<ReturnType<typeof supabaseRef.current.channel> | null>(null)
   const typingTimerRef = useRef<NodeJS.Timeout | null>(null)
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const convIdRef = useRef<string | null>(null)
+  const initializedRef = useRef(false)
   const supabase = supabaseRef.current
 
   const addMessage = useCallback((msg: Message) => {
@@ -70,6 +82,8 @@ export default function ChatPage() {
   }, [])
 
   useEffect(() => {
+    if (initializedRef.current) return
+    initializedRef.current = true
     if (!characterId) { router.push('/characters'); return }
     loadData()
     return () => {
@@ -163,7 +177,13 @@ export default function ChatPage() {
         supabase.from('character_photos').select('*').eq('character_id', characterId).order('order_index'),
         supabase.from('messages').select('*').eq('conversation_id', cachedConvId).eq('is_deleted', false).order('created_at', { ascending: true }),
       ])
-      if (profRes.data) setProfile(profRes.data)
+      if (profRes.data) {
+        setProfile(profRes.data)
+        const p = profRes.data as any
+        if (p.subscription_status === 'active' || p.subscription_status === 'trialing') {
+          setSubInfo({ plan: p.subscription_plan, used: p.monthly_messages_used ?? 0, limit: p.monthly_messages_limit ?? 0 })
+        }
+      }
       if (charRes.data) {
         setCharacter(charRes.data)
         writeCache(`charData:${characterId}`, charRes.data)
@@ -186,7 +206,13 @@ export default function ChatPage() {
           body: JSON.stringify({ characterId }),
         }),
       ])
-      setProfile(profRes.data)
+      if (profRes.data) {
+        setProfile(profRes.data)
+        const p = profRes.data as any
+        if (p.subscription_status === 'active' || p.subscription_status === 'trialing') {
+          setSubInfo({ plan: p.subscription_plan, used: p.monthly_messages_used ?? 0, limit: p.monthly_messages_limit ?? 0 })
+        }
+      }
       if (charRes.data) {
         setCharacter(charRes.data)
         writeCache(`charData:${characterId}`, charRes.data)
@@ -240,7 +266,8 @@ export default function ChatPage() {
   }
 
   const sendMessage = async () => {
-    if (!input.trim() || sending || !conversationId || !profile || !character) return
+    const rawContent = editableRef.current?.innerText ?? input
+    if (!rawContent.trim() || sending || !conversationId || !profile || !character) return
 
     const SEND_COST = 0
 
@@ -255,9 +282,9 @@ export default function ChatPage() {
     }
 
     setSending(true)
-    const content = input.trim()
+    const content = rawContent.trim()
     setInput('')
-    if (textareaRef.current) textareaRef.current.style.height = 'auto'
+    if (editableRef.current) editableRef.current.innerText = ''
 
 
     // ユーザーメッセージをDBに保存
@@ -304,6 +331,17 @@ export default function ChatPage() {
       if (res.ok) {
         const { message: aiMsg } = await res.json()
         if (aiMsg) addMessage(aiMsg)
+
+        // 好感度加算（fire-and-forget）
+        fetch('/api/chat/add-affection', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ characterId: character.id }),
+        }).then(r => r.json()).then(data => {
+          if (data.ok && data.leveled_up) {
+            setLevelUp({ level: data.affection_level })
+          }
+        }).catch(() => {})
       } else {
         console.error('[chat] AI返信エラー:', await res.text())
       }
@@ -314,10 +352,9 @@ export default function ChatPage() {
     }
   }
 
-  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInput(e.target.value)
-    e.target.style.height = 'auto'
-    e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'
+  const handleEditableInput = (e: React.FormEvent<HTMLDivElement>) => {
+    const text = (e.target as HTMLDivElement).innerText
+    setInput(text)
   }
 
   const openAlbumLightbox = async (index: number) => {
@@ -345,7 +382,8 @@ export default function ChatPage() {
     let uploadExt = file.name.split('.').pop() ?? (mediaType === 'video' ? 'mp4' : 'jpg')
 
     if (mediaType === 'photo') {
-      const { blob } = await compressImage(file)
+      const sourceFile = isHeic(file) ? new File([await heicToBlob(file)], file.name + '.jpg', { type: 'image/jpeg' }) : file
+      const { blob } = await compressImage(sourceFile)
       uploadBlob = blob
       uploadContentType = 'image/webp'
       uploadExt = 'webp'
@@ -464,15 +502,23 @@ export default function ChatPage() {
             <span className="online-dot" style={{ width: '6px', height: '6px' }} />
             <p className="text-[var(--color-text-muted)] text-xs">オンライン</p>
           </div>
+          {subInfo && subInfo.limit > 0 && (
+            <div style={{ fontSize: 10, color: 'var(--color-text-muted)', marginTop: 1 }}>
+              {subInfo.used}/{subInfo.limit}通
+            </div>
+          )}
         </div>
-        {hasPhotos && (
-          <button
-            onClick={() => setShowAlbum(true)}
-            className="p-2 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
-          >
-            <Images size={19} />
-          </button>
-        )}
+        <div className="flex items-center gap-1">
+          {hasPhotos && (
+            <button
+              onClick={() => setShowAlbum(true)}
+              className="p-2 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
+            >
+              <Images size={19} />
+            </button>
+          )}
+          <CharacterActionMenu characterId={character.id} characterName={character.name} />
+        </div>
       </div>
 
       {/* Messages */}
@@ -509,20 +555,6 @@ export default function ChatPage() {
         style={{ borderTop: '1px solid var(--color-border)', background: 'rgba(255, 245, 248, 0.97)' }}>
         {CHAT_ENABLED ? (
           <div className="flex flex-col gap-2">
-            <input
-              ref={photoInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={e => { const f = e.target.files?.[0]; if (f) { stageMedia(f, 'photo'); e.target.value = '' } }}
-            />
-            <input
-              ref={videoInputRef}
-              type="file"
-              accept="video/*"
-              className="hidden"
-              onChange={e => { const f = e.target.files?.[0]; if (f) { stageMedia(f, 'video'); e.target.value = '' } }}
-            />
             {/* メディアプレビュー */}
             {pendingMedia && (
               <div className="flex items-center gap-2 px-1">
@@ -552,10 +584,10 @@ export default function ChatPage() {
                 </button>
               </div>
             )}
-            <form autoComplete="off" onSubmit={e => e.preventDefault()} className="flex gap-2 items-end">
+            <div className="flex gap-2 items-end">
               <button
                 type="button"
-                onClick={() => photoInputRef.current?.click()}
+                onClick={() => openFilePicker('image/*,image/heic,image/heif', f => stageMedia(f, 'photo'))}
                 disabled={!!pendingMedia || sendingPhoto || sendingVideo}
                 className="p-2.5 flex-shrink-0 rounded-[10px] transition-colors text-[var(--color-text-muted)] hover:text-[var(--color-text)] disabled:opacity-40"
                 title="写真を送る (15pt)"
@@ -564,7 +596,7 @@ export default function ChatPage() {
               </button>
               <button
                 type="button"
-                onClick={() => videoInputRef.current?.click()}
+                onClick={() => openFilePicker('video/*', f => stageMedia(f, 'video'))}
                 disabled={!!pendingMedia || sendingPhoto || sendingVideo}
                 className="p-2.5 flex-shrink-0 rounded-[10px] transition-colors text-[var(--color-text-muted)] hover:text-[var(--color-text)] disabled:opacity-40"
                 title="動画を送る (30pt)"
@@ -572,23 +604,22 @@ export default function ChatPage() {
                 <VideoIcon size={17} />
               </button>
               <div className="flex-1 flex flex-col min-w-0">
-                <textarea
-                  ref={textareaRef}
-                  value={input}
-                  onChange={handleTextareaChange}
+                <div
+                  ref={editableRef}
+                  contentEditable={!pendingMedia}
+                  suppressContentEditableWarning
+                  onInput={handleEditableInput}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendPendingOrText() } }}
-                  placeholder={pendingMedia ? '（メディアを送信します）' : 'メッセージを送る…'}
-                  disabled={!!pendingMedia}
-                  rows={1}
-                  maxLength={300}
-                  name="message"
-                  autoComplete="off"
-                  autoCorrect="off"
-                  autoCapitalize="off"
-                  className="flex-1 input-warm px-4 py-2.5 resize-none disabled:opacity-60"
-                  style={{ minHeight: '42px', maxHeight: '120px', lineHeight: '1.5', fontSize: '16px' }}
+                  data-placeholder={pendingMedia ? '（メディアを送信します）' : 'メッセージを送る…'}
+                  className="input-warm px-4 py-2.5 outline-none"
+                  style={{
+                    minHeight: '42px', maxHeight: '120px', overflowY: 'auto',
+                    lineHeight: '1.5', fontSize: '16px',
+                    opacity: pendingMedia ? 0.6 : 1,
+                    whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+                  }}
                 />
-                {input.length > 0 && (
+                {input.length > 200 && (
                   <p className="text-right text-[11px] mt-0.5 mr-1" style={{ color: input.length >= 300 ? '#e8438f' : 'var(--color-text-muted)' }}>
                     {input.length}/300
                   </p>
@@ -603,7 +634,7 @@ export default function ChatPage() {
               >
                 <Send size={17} />
               </button>
-            </form>
+            </div>
           </div>
         ) : (
           <div className="rounded-2xl px-4 py-3 text-center"
@@ -705,6 +736,15 @@ export default function ChatPage() {
           currentPoints={pointsShortage.current}
           requiredPoints={pointsShortage.required}
           onClose={() => setPointsShortage(null)}
+        />
+      )}
+
+      {/* レベルアップトースト */}
+      {levelUp && character && (
+        <LevelUpToast
+          level={levelUp.level}
+          characterName={character.name}
+          onClose={() => setLevelUp(null)}
         />
       )}
     </div>

@@ -2,8 +2,9 @@
 
 import { TOKEN_PACKAGES } from '@/types'
 import { createClient } from '@/lib/supabase/client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { X, Sparkles } from 'lucide-react'
+import { logAction } from '@/lib/action-log'
 
 interface Props {
   currentPoints: number
@@ -13,10 +14,35 @@ interface Props {
 
 export function PointsShortageDialog({ currentPoints, requiredPoints, onClose }: Props) {
   const [purchasing, setPurchasing] = useState<string | null>(null)
+  const [campaignBonusRate, setCampaignBonusRate] = useState<number>(1.0)
+  const [campaignMinPrice, setCampaignMinPrice] = useState<number | null>(null)
+  const [campaignMaxPrice, setCampaignMaxPrice] = useState<number | null>(null)
   const shortage = requiredPoints - currentPoints
+
+  useEffect(() => {
+    fetch('/api/campaigns/active')
+      .then(r => r.ok ? r.json() : { campaign: null })
+      .then(d => {
+        const rate = d?.campaign?.bonus_rate ?? 1.0
+        setCampaignBonusRate(typeof rate === 'number' ? rate : parseFloat(rate) || 1.0)
+        setCampaignMinPrice(d?.campaign?.min_price_yen ?? null)
+        setCampaignMaxPrice(d?.campaign?.max_price_yen ?? null)
+      })
+      .catch(() => {})
+  }, [])
+
+  const getCampaignPoints = (pkg: typeof TOKEN_PACKAGES[0]): number | null => {
+    if (campaignBonusRate <= 1.0) return null
+    const inRange =
+      (campaignMinPrice == null || pkg.price_yen >= campaignMinPrice) &&
+      (campaignMaxPrice == null || pkg.price_yen <= campaignMaxPrice)
+    if (!inRange) return null
+    return Math.floor(Math.floor(pkg.price_yen / 10) * campaignBonusRate)
+  }
 
   const handlePurchase = async (pkg: typeof TOKEN_PACKAGES[0]) => {
     setPurchasing(pkg.id)
+    logAction('point_purchase', { metadata: { price_yen: pkg.price_yen, tokens: pkg.tokens } })
     try {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
@@ -74,8 +100,18 @@ export function PointsShortageDialog({ currentPoints, requiredPoints, onClose }:
 
         {/* パック一覧 */}
         <div className="px-4 pt-3 pb-6 flex flex-col gap-2.5">
+          {campaignBonusRate > 1.0 && (
+            <div className="rounded-xl px-4 py-2.5 flex items-center gap-2 mb-1"
+              style={{ background: 'linear-gradient(135deg, rgba(232,67,127,0.12), rgba(249,168,212,0.15))', border: '1px solid rgba(232,67,127,0.3)' }}>
+              <Sparkles size={14} style={{ color: 'var(--color-primary)', flexShrink: 0 }} />
+              <p className="text-xs font-bold" style={{ color: 'var(--color-primary)' }}>
+                キャンペーン中！ポイント ×{campaignBonusRate}倍
+              </p>
+            </div>
+          )}
           {sorted.map((pkg) => {
             const covers = pkg.tokens >= shortage
+            const campaignPoints = getCampaignPoints(pkg)
             const bonusPct = pkg.bonus_points > 0
               ? Math.round(pkg.bonus_points / (pkg.tokens - pkg.bonus_points) * 100)
               : 0
@@ -92,19 +128,32 @@ export function PointsShortageDialog({ currentPoints, requiredPoints, onClose }:
               >
                 <div className="text-left">
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-sm">{pkg.tokens.toLocaleString()}pt</span>
-                    {pkg.bonus_points > 0 && (
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5"
-                        style={{ background: 'rgba(232,121,160,0.15)', color: 'var(--color-primary)' }}>
-                        <Sparkles size={9} />+{bonusPct}%
-                      </span>
+                    {campaignPoints ? (
+                      <>
+                        <span className="font-bold text-sm" style={{ color: 'var(--color-primary)' }}>{campaignPoints.toLocaleString()}pt</span>
+                        <span className="text-xs line-through" style={{ color: 'var(--color-text-muted)' }}>{pkg.tokens.toLocaleString()}pt</span>
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5"
+                          style={{ background: 'rgba(232,67,127,0.15)', color: 'var(--color-primary)' }}>
+                          <Sparkles size={9} />×{campaignBonusRate}倍
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="font-bold text-sm">{pkg.tokens.toLocaleString()}pt</span>
+                        {pkg.bonus_points > 0 && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5"
+                            style={{ background: 'rgba(232,121,160,0.15)', color: 'var(--color-primary)' }}>
+                            <Sparkles size={9} />+{bonusPct}%
+                          </span>
+                        )}
+                      </>
                     )}
                     {covers && pkg.is_popular && (
                       <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
                         style={{ background: 'var(--color-primary)', color: '#fff' }}>人気</span>
                     )}
                   </div>
-                  {pkg.bonus_points > 0 && (
+                  {!campaignPoints && pkg.bonus_points > 0 && (
                     <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
                       {(pkg.tokens - pkg.bonus_points).toLocaleString()}pt + ボーナス{pkg.bonus_points.toLocaleString()}pt
                     </p>

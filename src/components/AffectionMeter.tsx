@@ -1,0 +1,81 @@
+'use client'
+
+import { getAffectionLevel, getAffectionProgress, AFFECTION_LEVELS } from '@/lib/affection'
+
+export function AffectionMeter({
+  points = 0,
+  messageCount = 0,
+  compact = false,
+}: {
+  points?: number
+  messageCount?: number
+  compact?: boolean
+}) {
+  const current = getAffectionLevel(points)
+  const progress = getAffectionProgress(points)
+  const nextLevel = AFFECTION_LEVELS.find(l => l.level === current.level + 1)
+
+  if (compact) {
+    return (
+      <span
+        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold"
+        style={{ background: `${current.color}22`, color: current.color, border: `1px solid ${current.color}44` }}
+      >
+        {current.emoji} {current.title}
+      </span>
+    )
+  }
+
+  return (
+    <div>
+      {/* レベルバッジ + タイトル */}
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <span style={{ fontSize: 22 }}>{current.emoji}</span>
+          <div>
+            <p style={{ fontSize: 14, fontWeight: 700 }}>{current.title}</p>
+            <p style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>Lv.{current.level}</p>
+          </div>
+        </div>
+        <div className="text-right">
+          <p style={{ fontSize: 18, fontWeight: 800, color: current.color }}>{points.toLocaleString()}</p>
+          <p style={{ fontSize: 10, color: 'var(--color-text-muted)' }}>好感度pt</p>
+        </div>
+      </div>
+
+      {/* プログレスバー */}
+      {nextLevel && (
+        <div className="mb-1.5">
+          <div
+            style={{
+              height: 6, borderRadius: 99, overflow: 'hidden',
+              background: 'var(--color-surface-2)',
+            }}
+          >
+            <div
+              style={{
+                height: '100%', borderRadius: 99,
+                width: `${progress}%`,
+                background: `linear-gradient(90deg, ${current.color}, ${nextLevel.color})`,
+                transition: 'width 0.8s ease',
+              }}
+            />
+          </div>
+          <div className="flex justify-between mt-1">
+            <p style={{ fontSize: 10, color: 'var(--color-text-muted)' }}>{progress}%</p>
+            <p style={{ fontSize: 10, color: 'var(--color-text-muted)' }}>
+              次: {nextLevel.emoji} {nextLevel.title}（{nextLevel.threshold.toLocaleString()}pt~）
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* メッセージ数 */}
+      {messageCount > 0 && (
+        <p style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 4 }}>
+          💬 {messageCount.toLocaleString()}通のメッセージ
+        </p>
+      )}
+    </div>
+  )
+}

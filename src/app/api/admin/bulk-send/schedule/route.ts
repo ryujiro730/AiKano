@@ -18,7 +18,7 @@ function adminSupabase() {
 
 async function assertStaff() {
   const authClient = createServerClient()
-  const user = await getAuthUser(authClient)
+  const user = await getAuthUser()
   if (!user) return null
   const { data } = await authClient.from('profiles').select('role').eq('id', user.id).single()
   if (!data || !['admin', 'staff'].includes(data.role)) return null

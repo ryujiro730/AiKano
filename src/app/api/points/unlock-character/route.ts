@@ -8,7 +8,7 @@ const UNLOCK_COST = 300
 
 export async function POST() {
   const authClient = createServerClient()
-  const user = await getAuthUser(authClient)
+  const user = await getAuthUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const adminClient = createClient(

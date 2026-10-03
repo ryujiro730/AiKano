@@ -14,7 +14,7 @@ function getSupabaseAdmin() {
 export async function POST(request: Request) {
   // 呼び出し元がadmin/staffか確認
   const supabase = createClient()
-  const user = await getAuthUser(supabase)
+  const user = await getAuthUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { data: profile } = await supabase
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
 export async function GET(request: Request) {
   // 呼び出し元がadmin/staffか確認
   const supabase = createClient()
-  const user = await getAuthUser(supabase)
+  const user = await getAuthUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { data: profile } = await supabase

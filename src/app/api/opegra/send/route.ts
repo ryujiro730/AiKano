@@ -19,7 +19,7 @@ function adminSupabase() {
 
 export async function POST(req: NextRequest) {
   const authClient = createServerClient()
-  const user = await getAuthUser(authClient)
+  const user = await getAuthUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { data: profile } = await authClient.from('profiles').select('role').eq('id', user.id).single()

@@ -4,9 +4,11 @@ import { useEffect, useState } from 'react'
 
 interface BonusResult {
   awarded: boolean
+  amount?: number
   bonus_points?: number
   expires_at?: string
   regular_points?: number
+  free_points?: number
 }
 
 export function LoginBonusDialog() {
@@ -14,17 +16,21 @@ export function LoginBonusDialog() {
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
-    fetch('/api/points/login-bonus', { method: 'POST' })
-      .then(r => r.json())
-      .then((data: BonusResult) => {
-        if (data.awarded) {
-          setResult(data)
-          setVisible(true)
-          const total = (data.regular_points ?? 0) + (data.bonus_points ?? 0)
-          window.dispatchEvent(new CustomEvent('pointsUpdated', { detail: { points: total } }))
-        }
-      })
-      .catch(() => {})
+    const run = async () => {
+      const todayKey = `login_bonus_${new Date().toISOString().split('T')[0]}`
+      if (localStorage.getItem(todayKey)) return
+
+      const data: BonusResult = await fetch('/api/points/login-bonus', { method: 'POST' }).then(r => r.json())
+      if (!data.awarded) return
+
+      localStorage.setItem(todayKey, '1')
+      setResult(data)
+      const total = (data.regular_points ?? 0) + (data.free_points ?? 0) + (data.bonus_points ?? 0)
+      window.dispatchEvent(new CustomEvent('pointsUpdated', { detail: { points: total } }))
+      setVisible(true)
+    }
+
+    run().catch(() => {})
   }, [])
 
   if (!visible || !result) return null
@@ -59,10 +65,10 @@ export function LoginBonusDialog() {
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          background: 'linear-gradient(150deg, #fff5f8 0%, #fde8f2 100%)',
+          background: '#ffffff',
           borderRadius: '24px',
-          border: '1.5px solid rgba(232,67,143,0.3)',
-          boxShadow: '0 24px 64px rgba(232,67,143,0.28)',
+          border: '1px solid rgba(0,0,0,0.08)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
           padding: '28px 24px 24px',
           width: '100%',
           maxWidth: '320px',
@@ -88,7 +94,7 @@ export function LoginBonusDialog() {
           ログインボーナス
         </p>
         <p style={{ fontSize: '40px', fontWeight: 800, color: '#1a1a2e', lineHeight: 1, margin: '8px 0' }}>
-          +2 <span style={{ fontSize: '20px', fontWeight: 600 }}>pt</span>
+          +{result.amount ?? 2} <span style={{ fontSize: '20px', fontWeight: 600 }}>pt</span>
         </p>
         <p style={{ fontSize: '12px', color: '#888', marginBottom: '20px' }}>
           ボーナスポイント残高：{(result.bonus_points ?? 0).toLocaleString()} pt

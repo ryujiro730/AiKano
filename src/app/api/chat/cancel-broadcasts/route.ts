@@ -14,7 +14,7 @@ import { getAuthUser } from '@/lib/supabase/get-auth-user'
 
 export async function POST(req: NextRequest) {
   const authClient = createServerClient()
-  const user = await getAuthUser(authClient)
+  const user = await getAuthUser()
   if (!user) return NextResponse.json({ ok: false }, { status: 401 })
 
   const { characterId } = await req.json().catch(() => ({}))

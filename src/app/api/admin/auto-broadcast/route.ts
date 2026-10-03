@@ -6,7 +6,7 @@ import { createAdminSupabase } from '@/lib/auto-broadcast'
 
 async function checkAuth(req: NextRequest) {
   const authClient = createServerClient()
-  const user = await getAuthUser(authClient)
+  const user = await getAuthUser()
   if (!user) return null
   const { data: profile } = await authClient.from('profiles').select('role').eq('id', user.id).single()
   if (!profile || !['admin', 'staff'].includes(profile.role)) return null

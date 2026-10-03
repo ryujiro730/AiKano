@@ -13,7 +13,7 @@ function adminSupabase() {
 
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
   const authClient = createServerClient()
-  const user = await getAuthUser(authClient)
+  const user = await getAuthUser()
   if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   const { data: profile } = await authClient.from('profiles').select('role').eq('id', user.id).single()
   if (!profile || !['admin', 'staff'].includes(profile.role)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })

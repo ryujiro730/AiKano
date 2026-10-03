@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { ChevronLeft, Lock, Play, Loader2, X } from 'lucide-react'
 import Link from 'next/link'
+import { logAction } from '@/lib/action-log'
 
 interface VideoItem {
   id: string
@@ -25,7 +26,7 @@ export default function VideosPage() {
   const [purchasing, setPurchasing] = useState<string | null>(null)
   const [playingVideo, setPlayingVideo] = useState<VideoItem | null>(null)
 
-  useEffect(() => { loadData() }, [])
+  useEffect(() => { loadData(); logAction('videos_view') }, [])
 
   const loadData = async () => {
     const [videosRes, itemsRes] = await Promise.all([

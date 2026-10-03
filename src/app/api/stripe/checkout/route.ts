@@ -1,16 +1,19 @@
 export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
+import { getAuthUser } from '@/lib/supabase/get-auth-user'
 
 export async function POST(request: Request) {
+  const user = await getAuthUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   try {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-      apiVersion: '2026-02-25.clover',
+      apiVersion: '2026-09-30.endive' as any,
     })
-    const { packageId, userId, tokens, priceYen } = await request.json()
+    const { packageId, tokens, priceYen } = await request.json()
 
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
       line_items: [
         {
           price_data: {
@@ -24,14 +27,16 @@ export async function POST(request: Request) {
         },
       ],
       mode: 'payment',
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/payment?success=true&points=${tokens}`,
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/payment?success=true&points=${tokens}&price=${priceYen}`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/payment?canceled=true`,
       metadata: {
-        userId,
+        userId: user.id,
         packageId,
         tokens: String(tokens),
+        priceYen: String(priceYen),
       },
-    })
+      managed_payments: { enabled: false },
+    } as any)
 
     return NextResponse.json({ url: session.url })
   } catch (error) {
