@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Send, ChevronLeft, Images, X, ImagePlus, VideoIcon } from 'lucide-react'
+import { Send, ChevronLeft, Images, X } from 'lucide-react'
+import { getAffectionLevel, getAffectionProgress, AFFECTION_LEVELS } from '@/lib/affection'
 import type { Character, Message, Profile, CharacterPhoto } from '@/types'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -551,16 +552,44 @@ export default function ChatPage() {
         </div>
       </div>
 
+      {/* 友好度バー（ヘッダー直下に固定表示） */}
+      {affection && (() => {
+        const lvData = getAffectionLevel(affection.points)
+        const progress = getAffectionProgress(affection.points)
+        const nextLv = AFFECTION_LEVELS.find(l => l.level === lvData.level + 1)
+        return (
+          <div className="flex items-center gap-2.5 px-4 py-2 flex-shrink-0"
+            style={{ background: 'var(--color-surface)', borderBottom: '1px solid var(--color-border)' }}>
+            <div className="relative w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border-2"
+              style={{ borderColor: lvData.color }}>
+              <Image src={character.avatar_url} alt={character.name} fill className="object-cover" sizes="32px" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-semibold" style={{ color: lvData.color }}>
+                  {lvData.emoji} {lvData.title}
+                </span>
+                <span className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
+                  {affection.points.toLocaleString()}pt
+                </span>
+              </div>
+              <div style={{ height: 4, borderRadius: 99, overflow: 'hidden', background: 'var(--color-surface-2)' }}>
+                <div style={{
+                  height: '100%', borderRadius: 99,
+                  width: `${progress}%`,
+                  background: nextLv
+                    ? `linear-gradient(90deg, ${lvData.color}, ${nextLv.color})`
+                    : lvData.color,
+                  transition: 'width 0.8s ease',
+                }} />
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        {/* 好感度カード */}
-        {affection && (
-          <div className="rounded-2xl p-4 flex-shrink-0"
-            style={{ border: '1px solid var(--color-border-warm)', background: 'var(--color-surface)' }}>
-            <p className="text-xs font-semibold text-[var(--color-text-muted)] mb-3">好感度</p>
-            <AffectionMeter points={affection.points} messageCount={affection.messageCount} />
-          </div>
-        )}
 
         {messages.length === 0 && (
           <div className="flex-1 flex flex-col items-center justify-center py-12 animate-fade-in text-center">
@@ -594,54 +623,7 @@ export default function ChatPage() {
         style={{ borderTop: '1px solid var(--color-border)', background: 'rgba(255, 245, 248, 0.97)' }}>
         {CHAT_ENABLED ? (
           <div className="flex flex-col gap-2">
-            {/* メディアプレビュー */}
-            {pendingMedia && (
-              <div className="flex items-center gap-2 px-1">
-                <div className="relative rounded-xl overflow-hidden flex-shrink-0" style={{ width: 64, height: 64 }}>
-                  {pendingMedia.mediaType === 'photo' ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={pendingMedia.previewUrl} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center" style={{ background: 'var(--color-surface-2)' }}>
-                      <VideoIcon size={24} className="text-[var(--color-text-muted)]" />
-                    </div>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium truncate">{pendingMedia.file.name}</p>
-                  <p className="text-[11px] text-[var(--color-text-muted)]">
-                    {pendingMedia.mediaType === 'photo' ? '15pt' : '30pt'} · 送信ボタンで送る
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={cancelPendingMedia}
-                  className="p-1.5 rounded-full flex-shrink-0 text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
-                  style={{ background: 'var(--color-surface-2)' }}
-                >
-                  <X size={14} />
-                </button>
-              </div>
-            )}
             <div className="flex gap-2 items-end">
-              <button
-                type="button"
-                onClick={() => openFilePicker('image/*,image/heic,image/heif', f => stageMedia(f, 'photo'))}
-                disabled={!!pendingMedia || sendingPhoto || sendingVideo}
-                className="p-2.5 flex-shrink-0 rounded-[10px] transition-colors text-[var(--color-text-muted)] hover:text-[var(--color-text)] disabled:opacity-40"
-                title="写真を送る (15pt)"
-              >
-                <ImagePlus size={17} />
-              </button>
-              <button
-                type="button"
-                onClick={() => openFilePicker('video/*', f => stageMedia(f, 'video'))}
-                disabled={!!pendingMedia || sendingPhoto || sendingVideo}
-                className="p-2.5 flex-shrink-0 rounded-[10px] transition-colors text-[var(--color-text-muted)] hover:text-[var(--color-text)] disabled:opacity-40"
-                title="動画を送る (30pt)"
-              >
-                <VideoIcon size={17} />
-              </button>
               <div className="flex-1 flex flex-col min-w-0">
                 <div
                   ref={editableRef}
@@ -667,7 +649,7 @@ export default function ChatPage() {
               <button
                 type="button"
                 onClick={sendPendingOrText}
-                disabled={(!input.trim() && !pendingMedia) || input.length > 300 || sending || sendingPhoto || sendingVideo}
+                disabled={(!input.trim() && !pendingMedia) || input.length > 300 || sending}
                 className="btn-primary p-2.5 flex-shrink-0 disabled:opacity-40"
                 style={{ borderRadius: '10px' }}
               >
