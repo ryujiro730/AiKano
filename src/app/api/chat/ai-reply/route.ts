@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
-import { generateReply, type LLMMessage } from '@/lib/llm-service'
+import { generateReply, extractMemoryUpdate, type LLMMessage } from '@/lib/llm-service'
 import { sendNotificationEmail } from '@/lib/send-notification-email'
 import { PLANS, type PlanId } from '@/lib/plans'
 
@@ -29,35 +29,62 @@ export async function POST(req: NextRequest) {
 
   const { conversationId, characterId, userMessage } = body
   if (!conversationId || !characterId || !userMessage?.trim()) {
-    return NextResponse.json({ error: 'conversationId, characterId, userMessage are required' }, { status: 400 })
+    return NextResponse.json(
+      { error: 'conversationId, characterId, userMessage are required' },
+      { status: 400 },
+    )
   }
   if (userMessage.trim().length > 300) {
-    return NextResponse.json({ error: 'メッセージは300文字以内にしてください' }, { status: 400 })
+    return NextResponse.json(
+      { error: 'メッセージは300文字以内にしてください' },
+      { status: 400 },
+    )
   }
 
   const admin = adminSupabase()
+  const isOpenAI = (process.env.LLM_PROVIDER ?? 'claude') === 'openai'
 
-  // ── 独立クエリを最初から並列で発火 ────────────────────────────
-  // キャラ情報・会話履歴は課金チェックと無関係なので先に始める
+  // ── 独立クエリを並列で発火 ────────────────────────────────────────────
   const characterPromise = admin
     .from('characters')
     .select('id, name, age, description, personality, system_prompt')
     .eq('id', characterId)
     .single()
 
-  const msgsPromise = admin
-    .from('messages')
-    .select('sender_role, content')
-    .eq('conversation_id', conversationId)
-    .order('created_at', { ascending: true })
-    .limit(30)
+  // OpenAI の場合は DB の会話履歴は不要（OpenAI 側が保持）
+  // それ以外は直近30件を取得
+  const msgsPromise = isOpenAI
+    ? Promise.resolve({ data: [] })
+    : admin
+        .from('messages')
+        .select('sender_role, content')
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true })
+        .limit(30)
+
+  // OpenAI: 前回の response_id とメモリを取得
+  const openaiContextPromise = isOpenAI
+    ? Promise.all([
+        admin
+          .from('conversations')
+          .select('openai_last_response_id')
+          .eq('id', conversationId)
+          .single(),
+        admin
+          .from('user_character_memories')
+          .select('memory_text')
+          .eq('user_id', user.id)
+          .eq('character_id', characterId)
+          .maybeSingle(),
+      ])
+    : Promise.resolve(null)
 
   const freeCheckPromise = admin.rpc('use_daily_free_message', {
     p_user_id: user.id,
     p_character_id: characterId,
   })
 
-  // ── 課金チェック（直列が必要な部分）────────────────────────────
+  // ── 課金チェック（直列が必要な部分）────────────────────────────────────
   type FreeResult = { ok: boolean; used: number; limit: number }
   const { data: freeResult } = await freeCheckPromise
   const free = freeResult as FreeResult | null
@@ -65,7 +92,7 @@ export async function POST(req: NextRequest) {
   let modelOverride: string | undefined
   let pointsToDeduct = 0
   const freeUsed = free?.used ?? 0
-  const freeLimit = free?.limit ?? 2
+  const freeLimit = free?.limit ?? 0
 
   if (!free?.ok) {
     type SubResult = { ok: boolean; reason?: string; model?: string; used?: number; limit?: number }
@@ -87,10 +114,15 @@ export async function POST(req: NextRequest) {
         .single()
       const now = new Date()
       const bonusValid = profileForPoints?.bonus_points_expires_at
-        ? new Date(profileForPoints.bonus_points_expires_at) > now : false
-      const balance = (profileForPoints?.points ?? 0) + (bonusValid ? (profileForPoints?.bonus_points ?? 0) : 0)
+        ? new Date(profileForPoints.bonus_points_expires_at) > now
+        : false
+      const balance =
+        (profileForPoints?.points ?? 0) + (bonusValid ? (profileForPoints?.bonus_points ?? 0) : 0)
       if (balance < overageCost) {
-        return NextResponse.json({ error: 'ポイントが不足しています', code: 'insufficient_points' }, { status: 402 })
+        return NextResponse.json(
+          { error: 'ポイントが不足しています', code: 'insufficient_points' },
+          { status: 402 },
+        )
       }
       pointsToDeduct = overageCost
     } else {
@@ -101,54 +133,81 @@ export async function POST(req: NextRequest) {
         .single()
       const now = new Date()
       const bonusValid = profileForPoints?.bonus_points_expires_at
-        ? new Date(profileForPoints.bonus_points_expires_at) > now : false
-      const balance = (profileForPoints?.points ?? 0) + (bonusValid ? (profileForPoints?.bonus_points ?? 0) : 0)
+        ? new Date(profileForPoints.bonus_points_expires_at) > now
+        : false
+      const balance =
+        (profileForPoints?.points ?? 0) + (bonusValid ? (profileForPoints?.bonus_points ?? 0) : 0)
       if (balance < DEFAULT_POINTS_PER_MESSAGE) {
-        return NextResponse.json({ error: 'ポイントが不足しています', code: 'insufficient_points' }, { status: 402 })
+        return NextResponse.json(
+          { error: 'ポイントが不足しています', code: 'insufficient_points' },
+          { status: 402 },
+        )
       }
       pointsToDeduct = DEFAULT_POINTS_PER_MESSAGE
     }
   }
 
-  // ── 並列発火済みクエリを回収 ────────────────────────────────────
-  const [{ data: character, error: charErr }, { data: msgs }] = await Promise.all([
+  // ── 並列発火済みクエリを回収 ────────────────────────────────────────────
+  const [{ data: character, error: charErr }, { data: msgs }, openaiCtx] = await Promise.all([
     characterPromise,
     msgsPromise,
+    openaiContextPromise,
   ])
 
   if (charErr || !character) {
     return NextResponse.json({ error: 'Character not found' }, { status: 404 })
   }
 
-  const history: LLMMessage[] = (msgs ?? []).map(m => ({
+  // OpenAI用コンテキスト
+  let previousResponseId: string | null = null
+  let currentMemory = ''
+  if (isOpenAI && openaiCtx) {
+    const [convData, memData] = openaiCtx
+    previousResponseId = (convData.data as any)?.openai_last_response_id ?? null
+    currentMemory = (memData.data as any)?.memory_text ?? ''
+  }
+
+  const history: LLMMessage[] = ((msgs as any[]) ?? []).map((m: any) => ({
     role: m.sender_role === 'user' ? 'user' : 'assistant',
     content: m.content,
   }))
 
-  // ── LLM 生成（最も時間がかかる処理）────────────────────────────
+  // ── LLM 生成 ──────────────────────────────────────────────────────────
   let replyText: string
+  let newResponseId: string | undefined
+
   try {
-    replyText = await generateReply(character, history, userMessage.trim(), modelOverride)
+    const result = await generateReply(character, history, userMessage.trim(), {
+      modelOverride,
+      previousResponseId: isOpenAI ? previousResponseId : undefined,
+      memoryText: isOpenAI ? currentMemory : undefined,
+    })
+    replyText = result.text
+    newResponseId = result.newResponseId
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     console.error('[ai-reply] LLM error:', msg)
     return NextResponse.json({ error: 'LLM generation failed', detail: msg }, { status: 502 })
   }
 
-  // ── 生成成功後: ポイント消費・メッセージ保存・会話更新を並列 ──
+  // ── 生成成功後: ポイント消費・メッセージ保存を並列 ──────────────────────
   const now = new Date().toISOString()
 
   const [, { data: newMsg, error: insertErr }] = await Promise.all([
     pointsToDeduct > 0
       ? admin.rpc('add_points', { p_user_id: user.id, p_amount: -pointsToDeduct })
       : Promise.resolve(null),
-    admin.from('messages').insert({
-      conversation_id: conversationId,
-      sender_role: 'character',
-      content: replyText,
-      points_used: pointsToDeduct,
-      is_read: false,
-    }).select().single(),
+    admin
+      .from('messages')
+      .insert({
+        conversation_id: conversationId,
+        sender_role: 'character',
+        content: replyText,
+        points_used: pointsToDeduct,
+        is_read: false,
+      })
+      .select()
+      .single(),
   ])
 
   if (insertErr || !newMsg) {
@@ -156,21 +215,47 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to save reply' }, { status: 500 })
   }
 
-  // conversation 更新は fire-and-forget
-  admin.from('conversations').update({ last_message_at: now, is_unread_staff: false }).eq('id', conversationId)
+  // ── 非同期後処理（fire-and-forget）─────────────────────────────────────
 
-  // メール通知（非同期・非クリティカル）
-  Promise.all([admin.auth.admin.getUserById(user.id)]).then(([{ data: authData }]) => {
-    const email = authData?.user?.email
-    if (email) {
-      sendNotificationEmail({
-        toEmail: email,
-        characterName: character.name,
-        messageContent: replyText,
-        conversationId,
+  // conversations 更新: last_message_at + OpenAI response ID
+  const convUpdate: Record<string, unknown> = { last_message_at: now, is_unread_staff: false }
+  if (newResponseId) convUpdate.openai_last_response_id = newResponseId
+  admin.from('conversations').update(convUpdate).eq('id', conversationId)
+
+  // メモリ更新（OpenAIプロバイダーのみ）
+  if (isOpenAI) {
+    extractMemoryUpdate(currentMemory, userMessage.trim(), replyText, character.name)
+      .then(async (updatedMemory) => {
+        if (!updatedMemory) return
+        await admin
+          .from('user_character_memories')
+          .upsert(
+            {
+              user_id: user.id,
+              character_id: characterId,
+              memory_text: updatedMemory,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'user_id,character_id' },
+          )
       })
-    }
-  }).catch(() => {})
+      .catch(() => {})
+  }
+
+  // メール通知
+  Promise.all([admin.auth.admin.getUserById(user.id)])
+    .then(([{ data: authData }]) => {
+      const email = authData?.user?.email
+      if (email) {
+        sendNotificationEmail({
+          toEmail: email,
+          characterName: character.name,
+          messageContent: replyText,
+          conversationId,
+        })
+      }
+    })
+    .catch(() => {})
 
   return NextResponse.json({
     message: newMsg,
