@@ -308,11 +308,7 @@ export default function PaymentPage() {
         </table>
       </div>
 
-      {/* テスト注意書き */}
-      <div className="text-xs mb-8 leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
-        <p>・現在テストモードで動作しています（実際の請求は発生しません）</p>
-        <p>・テストカード: 4242 4242 4242 4242 / 任意の有効期限 / 任意のCVC</p>
-      </div>
+
 
       {/* 友達紹介 */}
       {profile?.user_code && (() => {

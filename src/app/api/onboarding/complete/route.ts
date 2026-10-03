@@ -4,7 +4,7 @@ import { createClient as createServerClient } from '@/lib/supabase/server'
 import { createClient } from '@supabase/supabase-js'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
 
-const REGISTRATION_BONUS = 40
+const REGISTRATION_BONUS = 20
 const IP_WINDOW_DAYS = 30
 const REFERRAL_BONUS = 100
 

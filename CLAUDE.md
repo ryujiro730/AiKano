@@ -125,7 +125,7 @@ Supabase RPC → 集計・計算・複雑なフィルタ（SQL/PostgreSQL）
 
 | 項目 | 値 |
 |------|-----|
-| 登録ボーナス | 40pt（`type: 'registration_bonus'`） |
+| 登録ボーナス | 20pt（2通分。2通目送信後に購入ダイアログ表示）（`type: 'registration_bonus'`） |
 | 送信コスト | 10pt/通（`DEFAULT_POINTS_PER_MESSAGE = 10`） |
 | 紹介ボーナス | 100pt（紹介者・被紹介者双方、`type: 'referral_bonus'`） |
 | ログインボーナス | `bonus_points` カラム（有効期限付き） |

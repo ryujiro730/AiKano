@@ -6,7 +6,6 @@ import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { generateReply, extractMemoryUpdate, type LLMMessage } from '@/lib/llm-service'
 import { PLANS, type PlanId } from '@/lib/plans'
 
-const DEFAULT_POINTS_PER_MESSAGE = 10
 
 function adminSupabase() {
   return createAdminClient(
@@ -50,11 +49,12 @@ export async function POST(req: NextRequest) {
     .eq('id', characterId)
     .single()
 
+  // 最新30件を降順取得後、昇順に並べ直してLLMに渡す
   const msgsPromise = admin
     .from('messages')
     .select('sender_role, content')
     .eq('conversation_id', conversationId)
-    .order('created_at', { ascending: true })
+    .order('created_at', { ascending: false })
     .limit(30)
 
   // OpenAI: メモリを取得（キャラ設定注入に使う）
@@ -67,53 +67,50 @@ export async function POST(req: NextRequest) {
         .maybeSingle()
     : Promise.resolve(null)
 
-  const freeCheckPromise = admin.rpc('use_daily_free_message', {
-    p_user_id: user.id,
-    p_character_id: characterId,
-  })
+  // ポイント消費・サブスク通数カウントは送信時（send-message API）で完結済み。
+  // ここではサブスクユーザーのモデル切り替えのみ（カウントは増やさない）。
+  const profilePromise = admin
+    .from('profiles')
+    .select('subscription_plan, subscription_status')
+    .eq('id', user.id)
+    .single()
 
-  // ── 課金チェック（直列が必要な部分）────────────────────────────────────
-  type FreeResult = { ok: boolean; used: number; limit: number }
-  const { data: freeResult } = await freeCheckPromise
-  const free = freeResult as FreeResult | null
-
-  let modelOverride: string | undefined
-  let pointsToDeduct = 0
-  const freeUsed = free?.used ?? 0
-  const freeLimit = free?.limit ?? 0
-
-  if (!free?.ok) {
-    type SubResult = { ok: boolean; reason?: string; model?: string; used?: number; limit?: number }
-    const { data: subResult } = await admin.rpc('use_subscription_message', { p_user_id: user.id })
-    const sub = subResult as SubResult | null
-
-    if (sub?.ok) {
-      const planId = sub.model as PlanId | undefined
-      modelOverride = planId ? PLANS[planId]?.model : undefined
-    } else if (sub?.reason === 'over_limit') {
-      const planId = sub.model as PlanId | undefined
-      const overageCost = planId ? PLANS[planId].overage_points : DEFAULT_POINTS_PER_MESSAGE
-      modelOverride = planId ? PLANS[planId].model : undefined
-      pointsToDeduct = overageCost
-    } else {
-      pointsToDeduct = DEFAULT_POINTS_PER_MESSAGE
-    }
-  }
+  const convPromise = admin
+    .from('conversations')
+    .select('user_id, character_id')
+    .eq('id', conversationId)
+    .single()
 
   // ── 並列発火済みクエリを回収 ────────────────────────────────────────────
-  const [{ data: character, error: charErr }, { data: msgs }, memData] = await Promise.all([
+  const [{ data: character, error: charErr }, { data: msgs }, memData, { data: prof }, { data: conv }] = await Promise.all([
     characterPromise,
     msgsPromise,
     memoryPromise,
+    profilePromise,
+    convPromise,
   ])
+
+  if (!conv || conv.user_id !== user.id || conv.character_id !== characterId) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+  // 返信待ちのユーザーメッセージがない場合は生成しない（送信なしでの無料返信を防止）
+  if ((msgs as any[] | null)?.[0]?.sender_role !== 'user') {
+    return NextResponse.json({ error: 'No pending user message' }, { status: 409 })
+  }
 
   if (charErr || !character) {
     return NextResponse.json({ error: 'Character not found' }, { status: 404 })
   }
 
+  let modelOverride: string | undefined
+  if (prof?.subscription_status === 'active' || prof?.subscription_status === 'trialing') {
+    const planId = prof.subscription_plan as PlanId | null
+    modelOverride = planId ? PLANS[planId]?.model : undefined
+  }
+
   const currentMemory: string = (memData as any)?.data?.memory_text ?? ''
 
-  const history: LLMMessage[] = ((msgs as any[]) ?? []).map((m: any) => ({
+  const history: LLMMessage[] = ((msgs as any[]) ?? []).reverse().map((m: any) => ({
     role: m.sender_role === 'user' ? 'user' : 'assistant',
     content: m.content,
   }))
@@ -132,25 +129,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'LLM generation failed', detail: msg }, { status: 502 })
   }
 
-  // ── 生成成功後: ポイント消費・メッセージ保存を並列 ──────────────────────
+  // ── 生成成功後: メッセージ保存 ──────────────────────────────────────────
   const now = new Date().toISOString()
 
-  const [, { data: newMsg, error: insertErr }] = await Promise.all([
-    pointsToDeduct > 0
-      ? admin.rpc('add_points', { p_user_id: user.id, p_amount: -pointsToDeduct })
-      : Promise.resolve(null),
-    admin
-      .from('messages')
-      .insert({
-        conversation_id: conversationId,
-        sender_role: 'character',
-        content: replyText,
-        points_used: pointsToDeduct,
-        is_read: false,
-      })
-      .select()
-      .single(),
-  ])
+  const { data: newMsg, error: insertErr } = await admin
+    .from('messages')
+    .insert({
+      conversation_id: conversationId,
+      sender_role: 'character',
+      content: replyText,
+      points_used: 0,
+      is_read: false,
+    })
+    .select()
+    .single()
 
   if (insertErr || !newMsg) {
     console.error('[ai-reply] insert error:', insertErr?.message)
@@ -181,11 +173,5 @@ export async function POST(req: NextRequest) {
       .catch(() => {})
   }
 
-  return NextResponse.json({
-    message: newMsg,
-    freeUsed,
-    freeLimit,
-    wasFree: free?.ok ?? false,
-    pointsDeducted: pointsToDeduct,
-  })
+  return NextResponse.json({ message: newMsg })
 }

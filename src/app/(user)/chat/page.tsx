@@ -282,18 +282,8 @@ export default function ChatPage() {
     const rawContent = editableRef.current?.innerText ?? input
     if (!rawContent.trim() || sending || !conversationId || !profile || !character) return
 
+    // 残高・サブスク判定はサーバー（send-message）側で行い、不足時は 402 で返る
     const SEND_COST = 10
-
-    // ポイントチェック（送信前）
-    const nowTs = new Date()
-    const bonusValid = (profile as any).bonus_points_expires_at
-      ? new Date((profile as any).bonus_points_expires_at) > nowTs
-      : false
-    const balance = (profile.points ?? 0) + (bonusValid ? ((profile as any).bonus_points ?? 0) : 0)
-    if (balance < SEND_COST) {
-      setPointsShortage({ current: balance, required: SEND_COST })
-      return
-    }
 
     // 初回メッセージの場合はキャラクターを登録
     const isFirstUserMessage = !messages.some(m => m.sender_role === 'user')
@@ -310,14 +300,29 @@ export default function ChatPage() {
     setInput('')
     if (editableRef.current) editableRef.current.innerText = ''
 
-    // ユーザーメッセージをDBに保存
-    const { data: msg } = await supabase.from('messages').insert({
-      conversation_id: conversationId, sender_role: 'user',
-      content, points_used: SEND_COST,
-    }).select().single()
+    // ポイント消費＋メッセージ保存をサーバー側で一括実行
+    const sendRes = await fetch('/api/chat/send-message', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ conversationId, content }),
+    })
+    const sendData = await sendRes.json().catch(() => ({}))
+    if (!sendRes.ok || !sendData.message) {
+      if (sendRes.status === 402) {
+        setPointsShortage({ current: sendData.current ?? 0, required: sendData.required ?? SEND_COST })
+      }
+      // 送信できなかったので入力内容を戻す
+      setInput(content)
+      if (editableRef.current) editableRef.current.innerText = content
+      setSending(false)
+      return
+    }
+    setProfile(prev => prev ? { ...prev, points: sendData.points, bonus_points: sendData.bonus_points } : prev)
+    window.dispatchEvent(new CustomEvent('pointsUpdated', { detail: { points: sendData.points + sendData.bonus_points } }))
+    // 今回の送信で残高が尽きた → AI返信を受け取った後に購入ダイアログを出す
+    const showPurchaseAfterReply = sendData.canSendNext === false
 
-    if (!msg) { setSending(false); return }
-
+    const msg: Message = sendData.message
     addMessage(msg)
 
     // 返信した → このキャラへの自動同報を即時キャンセル（fire-and-forget）
@@ -327,10 +332,6 @@ export default function ChatPage() {
       body: JSON.stringify({ characterId: character.id }),
     }).catch(() => {})
 
-    await supabase.from('conversations').update({
-      last_message_at: new Date().toISOString(), is_unread_staff: true,
-    }).eq('id', conversationId)
-
     channelRef.current?.send({
       type: 'broadcast',
       event: 'new_message',
@@ -339,7 +340,7 @@ export default function ChatPage() {
 
     setSending(false)
 
-    // AI自動返信を非同期でリクエスト（isTypingで「入力中」表示）
+    // AI自動返信を非同期でリクエスト（ポイント消費は送信時に完了済み）
     setIsTyping(true)
     try {
       const res = await fetch('/api/chat/ai-reply', {
@@ -354,13 +355,6 @@ export default function ChatPage() {
       if (res.ok) {
         const data = await res.json()
         if (data.message) addMessage(data.message)
-
-        // ポイント残高を更新
-        if (data.pointsDeducted > 0) {
-          const newPts = Math.max(0, (profile.points ?? 0) - data.pointsDeducted)
-          setProfile(prev => prev ? { ...prev, points: newPts } : prev)
-          window.dispatchEvent(new CustomEvent('pointsUpdated', { detail: { points: newPts } }))
-        }
 
         // 好感度加算（fire-and-forget）
         fetch('/api/chat/add-affection', {
@@ -380,6 +374,9 @@ export default function ChatPage() {
       console.error('[chat] AI返信ネットワークエラー:', err)
     } finally {
       setIsTyping(false)
+      if (showPurchaseAfterReply) {
+        setPointsShortage({ current: sendData.points + sendData.bonus_points, required: SEND_COST })
+      }
     }
   }
 
