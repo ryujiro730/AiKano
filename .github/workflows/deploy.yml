@@ -6,7 +6,7 @@ on:
       - main
 
 env:
-  IMAGE: ghcr.io/${{ github.repository }}
+  IMAGE: ghcr.io/ryujiro730/aikano
 
 jobs:
   build:
@@ -35,7 +35,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/${{ github.repository }}:latest
+          tags: ${{ env.IMAGE }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
@@ -96,14 +96,14 @@ jobs:
           ssh ${{ secrets.VULTR_USER }}@${{ secrets.VULTR_HOST }} \
             "docker logout ghcr.io; \
              echo '$TOKEN' | docker login ghcr.io -u $ACTOR --password-stdin && \
-             docker pull ghcr.io/${{ github.repository }}:latest && \
+             docker pull ghcr.io/ryujiro730/aikano:latest && \
              docker stop lovechat-app-1 || true && \
              docker rm lovechat-app-1 || true && \
              docker run -d --name lovechat-app-1 -p 127.0.0.1:3001:3000 \
                --env-file /opt/lovechat/.env \
                -e NODE_ENV=production \
                --restart unless-stopped \
-               ghcr.io/${{ github.repository }}:latest && \
+               ghcr.io/ryujiro730/aikano:latest && \
              docker image prune -f"
 
       - name: Setup crontab on VPS
