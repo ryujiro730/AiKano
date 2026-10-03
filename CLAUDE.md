@@ -1,0 +1,252 @@
+# CLAUDE.md — AiKano プロジェクト作業ガイド
+
+## ホスティング構成（最重要）
+
+**Vercel は使っていない。** VPS (Vultr) + GitHub Actions でホスティングしている。
+
+| 要素 | 内容 |
+|------|------|
+| 本番サーバー | Vultr VPS（Cloudflare経由） |
+| アプリ | Docker コンテナ、ポート `localhost:3001` で稼働 |
+| デプロイ | `main` push → GitHub Actions → GHCR に Docker build → Vultr で pull & restart |
+| イメージ | `ghcr.io/ryujiro730/aikano` |
+| ワークフロー | `.github/workflows/deploy.yml` |
+| 本番URL | `https://aikano.chat` |
+| Cron | VPS の `crontab` で管理（`* * * * *` = 1分間隔）、`deploy.yml` で設定・上書き |
+| DB | Supabase Cloud (`ojvqsxyqdwmficqicqmy.supabase.co`) |
+| ローカル開発 | 別VPS (49.98.0.210) で `next dev --turbo` ポート3000 |
+
+**vercel.json があっても使用していない。**
+
+---
+
+## 設計方針（重要）
+
+### フロントに計算させない
+
+**ブラウザ（React）は表示だけ。計算・集計・フィルタはサーバーかDBに任せる。**
+
+```
+ブラウザ     → クリック・入力・表示のみ
+Next.js SC  → データ取得・整形（Server Component）
+Supabase RPC → 集計・計算・複雑なフィルタ（SQL/PostgreSQL）
+```
+
+- JS で `filter()` `reduce()` して集計するのは禁止
+- DB で GROUP BY・SUM できるならそちらに移す
+- 例：analytics は `get_analytics_stats` RPC で全集計をDB側に寄せた
+
+### Server Component を優先する
+
+- `'use client'` はリアルタイム操作が必要な箇所のみ（チャット送信ボタン等）
+- データ取得・表示ロジックは Server Component に置く
+- クライアント側の状態管理は最小限に
+
+---
+
+## 作業前の必須確認事項
+
+### 1. コードを修正する前に必ず全体を把握する
+
+- 修正対象のファイルだけ読んで直すのは禁止
+- 関連するファイル（APIルート・UIコンポーネント・ライブラリ・型定義・ワークフロー）を全て確認してから手を付ける
+- `grep` や `glob` で使用箇所を網羅的に探す
+
+### 2. 修正後は動作確認まで行う
+
+- コードを直して「終わり」にしない
+- ローカル（`http://localhost:3000`）で実際にAPIを叩いてレスポンスを確認する
+- DBの状態（Supabaseへの直接クエリ）も確認する
+- 本番（`https://aikano.chat`）との差分を把握する
+
+### 3. 本番と開発の区別を常に意識する
+
+- ローカルの変更は本番に自動反映されない
+- 本番反映には `main` push → GitHub Actions 完了が必要
+- cronの設定変更はワークフロー（`deploy.yml`）を直さないとデプロイのたびに上書きされる
+
+---
+
+## よくあるミスと禁止事項
+
+### ❌ Vercel関連の言及
+- Vercel cron、Vercel関数、Vercelダッシュボードへの言及は不要
+
+### ❌ 調べずに決めつける
+- 「おそらく〜だと思います」で修正しない
+- ホスティング方法・Cron設定・DB構成は必ずコードとファイルを確認してから話す
+
+### ❌ 関連ファイルを見ずに1ファイルだけ直す
+- 例：`auto-broadcast.ts` を直すなら、cronルート・UIコンポーネント・ワークフロー・DBログも全部確認する
+
+### ❌ git commit/push を無断で行う
+- 明示的に指示されるまで commit も push もしない
+
+---
+
+## デバッグの進め方
+
+1. **ローカルで再現確認** → `http://localhost:3000/api/...` を直接叩く
+2. **DBを直接確認** → Supabase REST API（service role key）で状態確認
+3. **本番確認** → `https://aikano.chat/api/...` を叩いてローカルと比較
+4. **ログ確認** → 本番ログは VPS の `/var/log/humanchat-cron.log` 等
+5. **仮説を立てて検証** → 推測で直さず、必ず原因を特定してから修正
+
+---
+
+## Supabase JS SDK の既知の注意点
+
+- `!inner` ネストジョインを使うクエリは `.limit(N)` を必ず付ける（付けないと空配列を返すバグあり）
+- service role key は `SUPABASE_SERVICE_ROLE_KEY` 環境変数から取得
+- `NOT IN` は NULL を除外するため `.not('col', 'in', '...')` は `.or('col.is.null,col.not.in.(...)')` に置き換える
+- デフォルトの行上限は1000件。大量データを扱うクエリには必ず `.limit()` を明示する（上限なしで ASC ソートすると最新データが切り捨てられる）
+- RPC に UUID[] を渡すと型ミスマッチになる。JS からは TEXT[] として渡し、SQL 側で `::text` キャストで比較する
+
+---
+
+## Next.js キャッシュの注意点
+
+- 管理画面ナビ（`AdminNav`）の `<Link>` は `prefetch={false}` 済み。データが古くなる問題を防ぐため
+- `force-dynamic` ページでもルーターキャッシュが効いてしまうことがある（Next.js 14.2 の挙動）
+- 集計ページなど常に最新データが必要なページには `<RefreshOnMount />` パターンを使う
+  ```tsx
+  // app/admin/analytics/RefreshOnMount.tsx
+  'use client'
+  export function RefreshOnMount() {
+    const router = useRouter()
+    useEffect(() => { router.refresh() }, [])
+    return null
+  }
+  ```
+
+---
+
+## ポイント・課金システム
+
+| 項目 | 値 |
+|------|-----|
+| 登録ボーナス | 40pt（`type: 'registration_bonus'`） |
+| 送信コスト | 10pt/通（`DEFAULT_POINTS_PER_MESSAGE = 10`） |
+| 紹介ボーナス | 100pt（紹介者・被紹介者双方、`type: 'referral_bonus'`） |
+| ログインボーナス | `bonus_points` カラム（有効期限付き） |
+
+**ポイント消費タイミング**: ユーザーが**送信するとき**にチェック・消費。AI返信はポイント残高に関係なく必ず返す。
+
+`point_transactions.type` の有効値:
+- `'purchase'` = 実際に課金した取引のみ（これだけが集計の「課金額」に使われる）
+- `'spend'` = ポイント消費
+- `'login_bonus'` = ログインボーナス
+- `'registration_bonus'` = 新規登録ボーナス
+- `'referral_bonus'` = 友達紹介ボーナス
+- `'admin_adjust'` = 管理者手動調整
+
+---
+
+## 集計システム（analytics）
+
+- `get_analytics_stats(p_from_iso, p_to_iso, p_period, p_exclude_ids)` RPC で全集計をDB側に寄せている
+- `p_period`: `'hourly'` | `'daily'` | `'monthly'`
+- `p_exclude_ids`: TEXT[]（UUID[]ではない）
+- 返却: バケット別の revenue, points_spent, payer_count, registration_count, login_count 等
+- JST 変換は SQL 内で `AT TIME ZONE 'Asia/Tokyo'` で処理
+- ログインカウントは `login_events` テーブルで蓄積（`last_login_at` は上書きされるため）
+
+---
+
+## UTM / 流入元トラッキング
+
+- LP → `onboarding` へ UTM params と `ref` をクエリパラメータで渡す
+- `register/page.tsx` の useEffect で sessionStorage に保存
+- `UtmCapture` コンポーネント（root layout に配置）が localStorage にも保存（30日TTL）
+- gclid は localStorage に90日保持（`getStoredGclid()` でアクセス）
+- `complete()` は URL → sessionStorage → localStorage → user_metadata の順で参照
+- profiles に `referral_source`, `utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, `utm_term`, `fbclid`, `gclid` を保存
+- `signUp()` の metadata に UTM を渡す（メール確認を別ブラウザで開いた場合のフォールバック）
+
+---
+
+## 自動同報システム
+
+- `auto_broadcast_sequences`: シーケンス定義（キャラ・トリガー・ターゲット・ラベル条件）
+- `auto_broadcast_steps`: 各ステップ（delay_minutes・メッセージ・画像）
+- `auto_broadcast_logs`: 送信ログ（pending → processing → sent/failed/cancelled）
+- cron が1分おきに `processAutoBroadcast()` を実行
+- `trigger: 'registration'` = ユーザー登録日時 + delay_minutes で送信時刻を計算
+
+---
+
+## LLMサービス
+
+- 環境変数 `LLM_PROVIDER` で切り替え（`'claude'`（デフォルト）| `'openai'`）
+- OpenAI の場合のみ `user_character_memories` でメモリを管理
+- キャラクターごとに `system_prompt` を設定（管理画面 → キャラ管理 → 鉛筆アイコン）
+
+---
+
+## プロジェクト構成
+
+```
+src/
+  app/
+    (user)/          # ユーザー向けページ
+      chat/          # チャット画面（メイン機能）
+      characters/    # キャラ一覧・詳細
+      conversations/ # 会話一覧
+      payment/       # 決済
+      points/        # ポイント履歴
+      settings/      # 設定（SNSシェアで枠解放含む）
+      shop/          # ショップ
+      support/       # サポート
+      videos/        # 動画
+    admin/           # 管理画面
+      analytics/     # 集計（get_analytics_stats RPC使用）
+      auto-broadcast-schedule/ # 自動同報管理
+      campaigns/     # キャンペーン管理
+      characters/    # キャラ管理（system_prompt設定）
+      conversations/ # やり取り検索・受信トレイ
+      individual/    # 個別送信（ユーザー検索→メッセージ送信）
+      items/         # アイテム管理
+      kpi/           # KPI
+      labels/        # ラベル管理
+      monitor/       # リアルタイムモニター
+      opegra/        # オペグラ（写真・動画管理）
+      reports/       # 通報管理
+      training/      # AI学習データ
+      users/         # ユーザー管理・詳細
+      videos/        # 動画販売管理
+    api/
+      cron/          # cronエンドポイント（auto-broadcast, broadcast, bulk-send）
+      admin/         # 管理系API（staff-reply, individual-send, adjust-points等）
+      chat/          # チャット系API（ai-reply, add-affection等）
+      auth/          # 認証系
+      onboarding/    # オンボーディング完了API
+      share/         # SNSシェアで枠解放
+    auth/            # 認証ページ（login, register, callback）
+    lp/              # ランディングページ
+    onboarding/      # オンボーディング
+  lib/
+    auto-broadcast.ts       # 自動同報ロジック
+    broadcast.ts            # 同報ロジック
+    llm-service.ts          # LLM（Claude/OpenAI）
+    affection.ts            # 友好度レベル定義・計算
+    plans.ts                # サブスクプラン定義
+    message-variables.ts    # メッセージ変数（{name}等）
+    internal-accounts.ts    # 除外アカウント定義
+    gtag.ts                 # Google Analytics
+    supabase/               # Supabaseクライアント
+  components/
+    admin/                  # 管理画面コンポーネント
+    AffectionMeter.tsx      # 友好度ゲージ
+    UtmCapture.tsx          # UTMパラメータ捕捉
+    PointsShortageDialog.tsx # ポイント不足ダイアログ
+.github/workflows/deploy.yml  # デプロイ＆cron設定
+supabase/migrations/          # マイグレーション（061まで適用済み）
+```
+
+---
+
+## DB マイグレーション運用
+
+- ファイルは `supabase/migrations/NNN_name.sql` の連番
+- **デプロイしても自動適用されない** — Supabase の SQL Editor で手動実行が必要
+- 現在未適用の可能性があるもの: `058`（analytics RPC）、`059`〜`061`（UTM・集計バグ修正・シェア）
