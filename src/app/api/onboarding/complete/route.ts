@@ -32,12 +32,12 @@ async function applyReferralBonus(adminClient: any, newUserId: string, refCode: 
     // 紹介者
     adminClient.from('profiles').update({ points: referrer.points + REFERRAL_BONUS }).eq('id', referrer.id),
     adminClient.from('point_transactions').insert({
-      user_id: referrer.id, amount: REFERRAL_BONUS, type: 'purchase', description: '友達紹介ボーナス',
+      user_id: referrer.id, amount: REFERRAL_BONUS, type: 'referral_bonus', description: '友達紹介ボーナス',
     }),
     // 被紹介者
     adminClient.from('profiles').update({ referred_by_user_id: referrer.id }).eq('id', newUserId),
     adminClient.from('point_transactions').insert({
-      user_id: newUserId, amount: REFERRAL_BONUS, type: 'purchase', description: '紹介登録ボーナス',
+      user_id: newUserId, amount: REFERRAL_BONUS, type: 'referral_bonus', description: '紹介登録ボーナス',
     }),
   ])
 
@@ -132,7 +132,7 @@ export async function POST(req: NextRequest) {
     }
 
     await adminClient.from('point_transactions').insert({
-      user_id: user.id, amount: REGISTRATION_BONUS, type: 'purchase', description: '新規登録ボーナス',
+      user_id: user.id, amount: REGISTRATION_BONUS, type: 'registration_bonus', description: '新規登録ボーナス',
     })
 
     // 紹介ボーナス処理
