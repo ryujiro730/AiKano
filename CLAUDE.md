@@ -199,6 +199,7 @@ Supabase RPC → 集計・計算・複雑なフィルタ（SQL/PostgreSQL）
 - 環境変数 `LLM_PROVIDER` で切り替え（`'claude'`（デフォルト）| `'openai'`）。本番は `openai`
 - モデル: `OPENAI_MODEL`（GitHub Secret、現在 `gpt-6-luna`）、記憶抽出は `OPENAI_MEMORY_MODEL`（未設定時 `gpt-6-luna`）。サブスクは `plans.ts` の model（standard=gpt-6-luna / premium=gpt-6-sol）
 - 共通会話ルール `BASE_CONVERSATION_RULES`（llm-service.ts）はキャラ個別 system_prompt の有無に関わらず常に入る
+- 好感度レベル（1〜7）を ai-reply から渡し、`RELATIONSHIP_STAGES`（llm-service.ts）で距離感を変える。口調はキャラ設定を維持し、心の距離だけ変わる
 - ユーザーメッセージは `/api/chat/send-message`（ポイント消費＋保存）経由のみ。ブラウザからの直接INSERTは 062 のトリガーで禁止
 - OpenAI の場合のみ `user_character_memories` でメモリを管理
 - キャラクターごとに `system_prompt` を設定（管理画面 → キャラ管理 → 鉛筆アイコン）

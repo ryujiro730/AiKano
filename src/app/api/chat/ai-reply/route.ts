@@ -74,6 +74,14 @@ export async function POST(req: NextRequest) {
     .eq('id', user.id)
     .single()
 
+  // 現在の好感度レベル（会話の距離感に使う）
+  const affectionPromise = admin
+    .from('user_characters')
+    .select('affection_level')
+    .eq('user_id', user.id)
+    .eq('character_id', characterId)
+    .maybeSingle()
+
   const convPromise = admin
     .from('conversations')
     .select('user_id, character_id')
@@ -81,12 +89,13 @@ export async function POST(req: NextRequest) {
     .single()
 
   // ── 並列発火済みクエリを回収 ────────────────────────────────────────────
-  const [{ data: character, error: charErr }, { data: msgs }, memData, { data: prof }, { data: conv }] = await Promise.all([
+  const [{ data: character, error: charErr }, { data: msgs }, memData, { data: prof }, { data: conv }, { data: uc }] = await Promise.all([
     characterPromise,
     msgsPromise,
     memoryPromise,
     profilePromise,
     convPromise,
+    affectionPromise,
   ])
 
   if (!conv || conv.user_id !== user.id || conv.character_id !== characterId) {
@@ -120,7 +129,7 @@ export async function POST(req: NextRequest) {
     const result = await generateReply(character, history, userMessage, {
       modelOverride,
       memoryText: isOpenAI ? currentMemory : undefined,
-      user: { name: prof?.display_name, age: prof?.age },
+      user: { name: prof?.display_name, age: prof?.age, affectionLevel: uc?.affection_level ?? 1 },
     })
     replyText = result.text
   } catch (err) {
