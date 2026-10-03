@@ -1,430 +1,202 @@
-import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { Search } from 'lucide-react'
+import { unstable_noStore as noStore } from 'next/cache'
+import { formatDistanceToNow } from 'date-fns'
+import { ja } from 'date-fns/locale'
+import { serviceDb } from '@/lib/admin-auth'
 import { LabelFilter } from '@/components/admin/LabelFilter'
 
-type SearchParams = {
-  user_code?: string
-  name?: string
-  gender?: string
-  age_min?: string
-  age_max?: string
-  points_min?: string
-  points_max?: string
-  charged_min?: string
-  charged_max?: string
-  registered_from?: string
-  registered_to?: string
-  login_from?: string
-  login_to?: string
-  payment_from?: string
-  payment_to?: string
-  sort?: string
-  order?: string
-  label_ids?: string | string[]
-  label_mode?: string
+const PAGE_SIZE = 50
+
+type SP = Record<string, string | string[] | undefined>
+type Row = {
+  id: string; user_code: string; email: string; display_name: string | null; age: number | null; gender: string | null
+  points: number; bonus_points: number | null; total_charged: number; purchase_count: number; last_payment_at: string | null
+  last_login_at: string | null; created_at: string; utm_source: string | null; referral_source: string | null
+  subscription_status: string | null; subscription_plan: string | null; total_count: number
 }
 
-const GENDER_LABEL: Record<string, string> = {
-  male: '男性',
-  female: '女性',
-  other: 'その他',
-}
+const s = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? ''
+const n = (v: string | string[] | undefined) => (s(v) ? parseInt(s(v), 10) : null)
+// 日付入力（JST の日付）を timestamptz に変換。to は当日の終わりまで含める
+const jst = (v: string, end = false) => (v ? `${v}T${end ? '23:59:59' : '00:00:00'}+09:00` : null)
+const ago = (d: string | null) => (d ? formatDistanceToNow(new Date(d), { addSuffix: true, locale: ja }) : '—')
+const GENDER: Record<string, string> = { male: '男性', female: '女性', other: 'その他' }
 
-export default async function AdminUsersPage({
-  searchParams,
-}: {
-  searchParams: SearchParams
-}) {
-  const supabase = createClient()
+// 管理画面: ユーザー一覧（絞り込み・並び替え・ページングはすべて DB 関数 search_admin_users で処理）
+export default async function AdminUsersPage({ searchParams }: { searchParams: SP }) {
+  noStore()
+  const db = serviceDb()
+  const page = Math.max(1, n(searchParams.page) ?? 1)
+  const labelIds = ([] as string[]).concat(searchParams.label_ids ?? []).filter(Boolean)
 
-  // Fetch labels for the filter UI
-  const { data: allLabels } = await supabase.from('admin_labels').select('id, name, color').order('name')
+  const [{ data: labels }, { data, error }] = await Promise.all([
+    db.from('admin_labels').select('id, name, color').order('name'),
+    db.rpc('search_admin_users', {
+      p_q: s(searchParams.q) || null,
+      p_gender: s(searchParams.gender) || null,
+      p_age_min: n(searchParams.age_min),
+      p_age_max: n(searchParams.age_max),
+      p_registered_from: jst(s(searchParams.registered_from)),
+      p_registered_to: jst(s(searchParams.registered_to), true),
+      p_login_from: jst(s(searchParams.login_from)),
+      p_login_to: jst(s(searchParams.login_to), true),
+      p_payment_from: jst(s(searchParams.payment_from)),
+      p_payment_to: jst(s(searchParams.payment_to), true),
+      p_charged_min: n(searchParams.charged_min),
+      p_charged_max: n(searchParams.charged_max),
+      p_points_min: n(searchParams.points_min),
+      p_points_max: n(searchParams.points_max),
+      p_payer: s(searchParams.payer) || null,
+      p_member: s(searchParams.member) || null,
+      p_utm_source: s(searchParams.utm_source) || null,
+      p_label_ids: labelIds.length ? labelIds : null,
+      p_label_mode: s(searchParams.label_mode) || 'or',
+      p_sort: s(searchParams.sort) || 'created_at',
+      p_order: s(searchParams.order) || 'desc',
+      p_limit: PAGE_SIZE,
+      p_offset: (page - 1) * PAGE_SIZE,
+    }),
+  ])
 
-  // Parse label filter
-  const rawLabelIds = searchParams.label_ids
-  const selectedLabelIds = rawLabelIds ? (Array.isArray(rawLabelIds) ? rawLabelIds : [rawLabelIds]) : []
-  const labelMode = (searchParams.label_mode ?? 'or') as 'or' | 'and' | 'not'
-
-  let query = supabase
-    .from('admin_users_view')
-    .select('id, user_code, email, display_name, age, gender, points, total_charged, last_login_at, last_payment_at, created_at, referral_source, referral_article')
-
-  let noResults = false
-
-  // Label filter
-  if (selectedLabelIds.length > 0) {
-    const { data: assignments } = await supabase
-      .from('user_label_assignments')
-      .select('user_id, label_id')
-      .in('label_id', selectedLabelIds)
-
-    if (labelMode === 'or') {
-      const ids = Array.from(new Set((assignments ?? []).map(a => a.user_id)))
-      if (ids.length === 0) { noResults = true } else { query = query.in('id', ids) }
-    } else if (labelMode === 'and') {
-      const userLabelMap = new Map<string, Set<string>>()
-      for (const a of assignments ?? []) {
-        if (!userLabelMap.has(a.user_id)) userLabelMap.set(a.user_id, new Set())
-        userLabelMap.get(a.user_id)!.add(a.label_id)
-      }
-      const ids = Array.from(userLabelMap.entries())
-        .filter(([, labelSet]) => selectedLabelIds.every(lid => labelSet.has(lid)))
-        .map(([uid]) => uid)
-      if (ids.length === 0) { noResults = true } else { query = query.in('id', ids) }
-    } else if (labelMode === 'not') {
-      const excludeIds = Array.from(new Set((assignments ?? []).map(a => a.user_id)))
-      if (excludeIds.length > 0) query = query.not('id', 'in', `(${excludeIds.join(',')})`)
+  const rows = (data ?? []) as Row[]
+  const total = Number(rows[0]?.total_count ?? 0)
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+  const qs = (p: number) => {
+    const q = new URLSearchParams()
+    for (const [k, v] of Object.entries(searchParams)) {
+      if (k === 'page' || v === undefined) continue
+      for (const x of ([] as string[]).concat(v)) if (x) q.append(k, x)
     }
+    q.set('page', String(p))
+    return `/admin/users?${q}`
   }
+  const advancedOpen = ['age_min', 'age_max', 'registered_from', 'registered_to', 'login_from', 'login_to', 'payment_from', 'payment_to', 'charged_min', 'charged_max', 'points_min', 'points_max', 'utm_source', 'gender']
+    .some(k => s(searchParams[k])) || labelIds.length > 0
 
-  // テキスト検索
-  if (searchParams.user_code?.trim()) {
-    query = query.ilike('user_code', `%${searchParams.user_code.trim()}%`)
-  }
-  if (searchParams.name?.trim()) {
-    query = query.ilike('display_name', `%${searchParams.name.trim()}%`)
-  }
-
-  // 性別
-  if (searchParams.gender) {
-    query = query.eq('gender', searchParams.gender)
-  }
-
-  // 年齢範囲
-  if (searchParams.age_min) query = query.gte('age', parseInt(searchParams.age_min))
-  if (searchParams.age_max) query = query.lte('age', parseInt(searchParams.age_max))
-
-  // 所有ポイント範囲
-  if (searchParams.points_min) query = query.gte('points', parseInt(searchParams.points_min))
-  if (searchParams.points_max) query = query.lte('points', parseInt(searchParams.points_max))
-
-  // 課金額範囲
-  if (searchParams.charged_min) query = query.gte('total_charged', parseInt(searchParams.charged_min))
-  if (searchParams.charged_max) query = query.lte('total_charged', parseInt(searchParams.charged_max))
-
-  // 登録日時
-  if (searchParams.registered_from) query = query.gte('created_at', searchParams.registered_from)
-  if (searchParams.registered_to) query = query.lte('created_at', `${searchParams.registered_to}T23:59:59`)
-
-  // 最終ログイン日時
-  if (searchParams.login_from) query = query.gte('last_login_at', searchParams.login_from)
-  if (searchParams.login_to) query = query.lte('last_login_at', `${searchParams.login_to}T23:59:59`)
-
-  // 最終入金日時
-  if (searchParams.payment_from) query = query.gte('last_payment_at', searchParams.payment_from)
-  if (searchParams.payment_to) query = query.lte('last_payment_at', `${searchParams.payment_to}T23:59:59`)
-
-  // ソート
-  const sortCol = searchParams.sort ?? 'created_at'
-  const sortAsc = searchParams.order === 'asc'
-  query = query.order(sortCol, { ascending: sortAsc }).limit(100)
-
-  let users: any[] | null = null
-  let error: any = null
-  if (!noResults) {
-    const result = await query
-    users = result.data
-    error = result.error
-  }
-
-  const hasFilters = Object.entries(searchParams).some(
-    ([k, v]) => !['sort', 'order'].includes(k) && v
+  const input = 'input-warm w-full px-2.5 py-1.5 text-sm'
+  const Range = ({ label, a, b, type = 'number' }: { label: string; a: string; b: string; type?: string }) => (
+    <div>
+      <label className="text-[11px] mb-1 block" style={{ color: 'var(--color-text-muted)' }}>{label}</label>
+      <div className="flex items-center gap-1.5">
+        <input type={type} name={a} defaultValue={s(searchParams[a])} className={input} />
+        <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>〜</span>
+        <input type={type} name={b} defaultValue={s(searchParams[b])} className={input} />
+      </div>
+    </div>
   )
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-1">ユーザー管理</h1>
-        <p className="text-[var(--color-text-muted)] text-sm">最大100件表示</p>
+    <div className="max-w-6xl">
+      <div className="flex items-baseline justify-between mb-4">
+        <h1 className="text-xl font-bold">ユーザー</h1>
+        <p className="text-sm tabular-nums" style={{ color: 'var(--color-text-muted)' }}>{total.toLocaleString()}人</p>
       </div>
 
-      {/* 検索フォーム */}
-      <form method="GET" className="glass rounded-2xl p-5 mb-6 space-y-4">
-        {/* テキスト検索 */}
-        <div className="grid grid-cols-2 gap-3">
+      <form method="GET" className="card p-4 mb-4 space-y-3">
+        <div className="flex flex-wrap gap-2 items-end">
+          <div className="flex-1 min-w-[220px]">
+            <label className="text-[11px] mb-1 block" style={{ color: 'var(--color-text-muted)' }}>名前・ユーザーID・メール</label>
+            <input name="q" defaultValue={s(searchParams.q)} className={input} />
+          </div>
           <div>
-            <label className="text-xs text-[var(--color-text-muted)] mb-1.5 block">ユーザーID</label>
-            <div className="relative">
-              <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" />
-              <input
-                type="text" name="user_code" defaultValue={searchParams.user_code}
-                placeholder="12345"
-                className="w-full pl-8 pr-3 py-2 rounded-lg bg-[var(--color-surface-2)] text-sm border border-[var(--color-border)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
-              />
+            <label className="text-[11px] mb-1 block" style={{ color: 'var(--color-text-muted)' }}>課金</label>
+            <select name="payer" defaultValue={s(searchParams.payer)} className={input}>
+              <option value="">すべて</option><option value="payer">課金した人</option><option value="nonpayer">未課金</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-[11px] mb-1 block" style={{ color: 'var(--color-text-muted)' }}>会員</label>
+            <select name="member" defaultValue={s(searchParams.member)} className={input}>
+              <option value="">すべて</option><option value="member">会員</option><option value="nonmember">非会員</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-[11px] mb-1 block" style={{ color: 'var(--color-text-muted)' }}>並び順</label>
+            <div className="flex gap-1">
+              <select name="sort" defaultValue={s(searchParams.sort) || 'created_at'} className={input}>
+                <option value="created_at">登録日時</option><option value="last_login_at">最終ログイン</option>
+                <option value="last_payment_at">最終課金</option><option value="total_charged">累計課金額</option>
+                <option value="points">ポイント残高</option><option value="age">年齢</option>
+              </select>
+              <select name="order" defaultValue={s(searchParams.order) || 'desc'} className={input}>
+                <option value="desc">降順</option><option value="asc">昇順</option>
+              </select>
             </div>
           </div>
-          <div>
-            <label className="text-xs text-[var(--color-text-muted)] mb-1.5 block">名前</label>
-            <input
-              type="text" name="name" defaultValue={searchParams.name}
-              placeholder="ニックネーム"
-              className="w-full px-3 py-2 rounded-lg bg-[var(--color-surface-2)] text-sm border border-[var(--color-border)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
-            />
-          </div>
+          <button className="btn-primary px-5 py-1.5 text-sm">検索</button>
+          <Link href="/admin/users" className="text-sm px-2 py-1.5" style={{ color: 'var(--color-text-muted)' }}>クリア</Link>
         </div>
 
-        {/* 性別・年齢 */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div>
-            <label className="text-xs text-[var(--color-text-muted)] mb-1.5 block">性別</label>
-            <select
-              name="gender" defaultValue={searchParams.gender ?? ''}
-              className="w-full px-3 py-2 rounded-lg bg-[var(--color-surface-2)] text-sm border border-[var(--color-border)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
-            >
-              <option value="">すべて</option>
-              <option value="male">男性</option>
-              <option value="female">女性</option>
-              <option value="other">その他</option>
-            </select>
+        <details open={advancedOpen}>
+          <summary className="text-xs font-semibold cursor-pointer" style={{ color: 'var(--color-text-muted)' }}>詳しい条件</summary>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-3">
+            <div>
+              <label className="text-[11px] mb-1 block" style={{ color: 'var(--color-text-muted)' }}>性別</label>
+              <select name="gender" defaultValue={s(searchParams.gender)} className={input}>
+                <option value="">すべて</option><option value="male">男性</option><option value="female">女性</option><option value="other">その他</option>
+              </select>
+            </div>
+            <Range label="年齢" a="age_min" b="age_max" />
+            <div>
+              <label className="text-[11px] mb-1 block" style={{ color: 'var(--color-text-muted)' }}>流入元（utm_source）</label>
+              <input name="utm_source" defaultValue={s(searchParams.utm_source)} className={input} placeholder="例: matchkoi" />
+            </div>
+            <Range label="登録日" a="registered_from" b="registered_to" type="date" />
+            <Range label="最終ログイン日" a="login_from" b="login_to" type="date" />
+            <Range label="最終課金日" a="payment_from" b="payment_to" type="date" />
+            <Range label="累計課金額（円）" a="charged_min" b="charged_max" />
+            <Range label="ポイント残高" a="points_min" b="points_max" />
           </div>
-          <div>
-            <label className="text-xs text-[var(--color-text-muted)] mb-1.5 block">年齢（以上）</label>
-            <input
-              type="number" name="age_min" defaultValue={searchParams.age_min}
-              placeholder="例: 20" min="0" max="120"
-              className="w-full px-3 py-2 rounded-lg bg-[var(--color-surface-2)] text-sm border border-[var(--color-border)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
-            />
+          <div className="mt-3">
+            <LabelFilter labels={labels ?? []} selectedIds={labelIds} mode={s(searchParams.label_mode) || 'or'} />
           </div>
-          <div>
-            <label className="text-xs text-[var(--color-text-muted)] mb-1.5 block">年齢（以下）</label>
-            <input
-              type="number" name="age_max" defaultValue={searchParams.age_max}
-              placeholder="例: 30" min="0" max="120"
-              className="w-full px-3 py-2 rounded-lg bg-[var(--color-surface-2)] text-sm border border-[var(--color-border)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
-            />
-          </div>
-        </div>
-
-        {/* 登録日時 */}
-        <div>
-          <label className="text-xs text-[var(--color-text-muted)] mb-1.5 block">登録日時</label>
-          <div className="flex items-center gap-2">
-            <input
-              type="date" name="registered_from" defaultValue={searchParams.registered_from}
-              className="flex-1 px-3 py-2 rounded-lg bg-[var(--color-surface-2)] text-sm border border-[var(--color-border)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
-            />
-            <span className="text-[var(--color-text-muted)] text-xs">〜</span>
-            <input
-              type="date" name="registered_to" defaultValue={searchParams.registered_to}
-              className="flex-1 px-3 py-2 rounded-lg bg-[var(--color-surface-2)] text-sm border border-[var(--color-border)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
-            />
-          </div>
-        </div>
-
-        {/* 最終ログイン日時 */}
-        <div>
-          <label className="text-xs text-[var(--color-text-muted)] mb-1.5 block">最終ログイン日時</label>
-          <div className="flex items-center gap-2">
-            <input
-              type="date" name="login_from" defaultValue={searchParams.login_from}
-              className="flex-1 px-3 py-2 rounded-lg bg-[var(--color-surface-2)] text-sm border border-[var(--color-border)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
-            />
-            <span className="text-[var(--color-text-muted)] text-xs">〜</span>
-            <input
-              type="date" name="login_to" defaultValue={searchParams.login_to}
-              className="flex-1 px-3 py-2 rounded-lg bg-[var(--color-surface-2)] text-sm border border-[var(--color-border)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
-            />
-          </div>
-        </div>
-
-        {/* 所有ポイント */}
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="text-xs text-[var(--color-text-muted)] mb-1.5 block">所有ポイント（以上）</label>
-            <input
-              type="number" name="points_min" defaultValue={searchParams.points_min}
-              placeholder="例: 10" min="0"
-              className="w-full px-3 py-2 rounded-lg bg-[var(--color-surface-2)] text-sm border border-[var(--color-border)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
-            />
-          </div>
-          <div>
-            <label className="text-xs text-[var(--color-text-muted)] mb-1.5 block">所有ポイント（以下）</label>
-            <input
-              type="number" name="points_max" defaultValue={searchParams.points_max}
-              placeholder="例: 100" min="0"
-              className="w-full px-3 py-2 rounded-lg bg-[var(--color-surface-2)] text-sm border border-[var(--color-border)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
-            />
-          </div>
-        </div>
-
-        {/* 課金額・最終入金 */}
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="text-xs text-[var(--color-text-muted)] mb-1.5 block">課金額（以上）</label>
-            <input
-              type="number" name="charged_min" defaultValue={searchParams.charged_min}
-              placeholder="例: 1000" min="0"
-              className="w-full px-3 py-2 rounded-lg bg-[var(--color-surface-2)] text-sm border border-[var(--color-border)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
-            />
-          </div>
-          <div>
-            <label className="text-xs text-[var(--color-text-muted)] mb-1.5 block">課金額（以下）</label>
-            <input
-              type="number" name="charged_max" defaultValue={searchParams.charged_max}
-              placeholder="例: 10000" min="0"
-              className="w-full px-3 py-2 rounded-lg bg-[var(--color-surface-2)] text-sm border border-[var(--color-border)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
-            />
-          </div>
-        </div>
-
-        {/* 最終入金日時 */}
-        <div>
-          <label className="text-xs text-[var(--color-text-muted)] mb-1.5 block">最終入金日時</label>
-          <div className="flex items-center gap-2">
-            <input
-              type="date" name="payment_from" defaultValue={searchParams.payment_from}
-              className="flex-1 px-3 py-2 rounded-lg bg-[var(--color-surface-2)] text-sm border border-[var(--color-border)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
-            />
-            <span className="text-[var(--color-text-muted)] text-xs">〜</span>
-            <input
-              type="date" name="payment_to" defaultValue={searchParams.payment_to}
-              className="flex-1 px-3 py-2 rounded-lg bg-[var(--color-surface-2)] text-sm border border-[var(--color-border)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
-            />
-          </div>
-        </div>
-
-        {/* ラベル */}
-        <div>
-          <label className="text-xs text-[var(--color-text-muted)] mb-1.5 block">ラベル</label>
-          <LabelFilter
-            labels={allLabels ?? []}
-            selectedIds={selectedLabelIds}
-            mode={searchParams.label_mode ?? 'or'}
-          />
-        </div>
-
-        {/* ソート */}
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="text-xs text-[var(--color-text-muted)] mb-1.5 block">並び順</label>
-            <select
-              name="sort" defaultValue={searchParams.sort ?? 'created_at'}
-              className="w-full px-3 py-2 rounded-lg bg-[var(--color-surface-2)] text-sm border border-[var(--color-border)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
-            >
-              <option value="created_at">登録日時</option>
-              <option value="last_login_at">最終ログイン</option>
-              <option value="last_payment_at">最終入金</option>
-              <option value="points">所有ポイント</option>
-              <option value="total_charged">課金額</option>
-              <option value="age">年齢</option>
-            </select>
-          </div>
-          <div>
-            <label className="text-xs text-[var(--color-text-muted)] mb-1.5 block">昇順 / 降順</label>
-            <select
-              name="order" defaultValue={searchParams.order ?? 'desc'}
-              className="w-full px-3 py-2 rounded-lg bg-[var(--color-surface-2)] text-sm border border-[var(--color-border)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
-            >
-              <option value="desc">新しい順（降順）</option>
-              <option value="asc">古い順（昇順）</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="flex gap-2 pt-1">
-          <button
-            type="submit"
-            className="btn-primary px-5 py-2 text-sm"
-          >
-            検索
-          </button>
-          {hasFilters && (
-            <a href="/admin/users" className="btn-ghost px-5 py-2 text-sm">
-              リセット
-            </a>
-          )}
-        </div>
+        </details>
       </form>
 
-      {/* 件数 */}
-      <div className="text-xs text-[var(--color-text-muted)] mb-3">
-        {users?.length ?? 0}件
-        {(users?.length ?? 0) === 100 && '（上限100件）'}
+      {error && <p className="text-sm text-red-500 mb-3">エラー: {error.message}</p>}
+
+      <div className="card overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left" style={{ color: 'var(--color-text-muted)' }}>
+              {['ユーザー', '性別・年齢', '残高', '累計課金', '会員', '最終ログイン', '登録', '流入元'].map(h => (
+                <th key={h} className="px-3 py-2.5 text-xs font-semibold whitespace-nowrap">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 ? (
+              <tr><td colSpan={8} className="text-center py-10" style={{ color: 'var(--color-text-muted)' }}>該当するユーザーはいません</td></tr>
+            ) : rows.map(u => {
+              const member = u.subscription_status === 'active' || u.subscription_status === 'trialing'
+              return (
+                <tr key={u.id} className="hover:bg-[var(--color-surface-2)]" style={{ borderTop: '1px solid var(--color-border)' }}>
+                  <td className="px-3 py-2">
+                    <Link href={`/admin/users/${u.id}`} className="font-semibold hover:underline">{u.display_name ?? '未設定'}</Link>
+                    <p className="text-[11px] font-mono" style={{ color: 'var(--color-text-muted)' }}>{u.user_code}</p>
+                  </td>
+                  <td className="px-3 whitespace-nowrap">{GENDER[u.gender ?? ''] ?? '—'}{u.age ? ` · ${u.age}歳` : ''}</td>
+                  <td className="px-3 tabular-nums whitespace-nowrap">{(u.points ?? 0).toLocaleString()}pt</td>
+                  <td className="px-3 tabular-nums whitespace-nowrap">
+                    {u.total_charged > 0 ? <span className="font-semibold" style={{ color: '#16a34a' }}>¥{Number(u.total_charged).toLocaleString()}</span> : '—'}
+                    {u.purchase_count > 0 && <span className="text-[11px] ml-1" style={{ color: 'var(--color-text-muted)' }}>{u.purchase_count}回</span>}
+                  </td>
+                  <td className="px-3 whitespace-nowrap">{member ? <span className="text-xs font-bold" style={{ color: 'var(--color-primary)' }}>{u.subscription_plan}</span> : '—'}</td>
+                  <td className="px-3 whitespace-nowrap text-xs">{ago(u.last_login_at)}</td>
+                  <td className="px-3 whitespace-nowrap text-xs">{ago(u.created_at)}</td>
+                  <td className="px-3 whitespace-nowrap text-xs" style={{ color: 'var(--color-text-muted)' }}>{u.utm_source ?? u.referral_source ?? '—'}</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
       </div>
 
-      {/* 結果テーブル */}
-      {error && (
-        <div className="text-red-400 text-sm mb-4">エラー: {error.message}</div>
-      )}
-
-      <div className="space-y-2">
-        {users?.map((user) => (
-          <Link key={user.id} href={`/admin/users/${user.id}`} className="block glass rounded-xl px-5 py-4 hover:border-[var(--color-primary-light)]/40 transition-all">
-            <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0 flex-1">
-                {/* 1行目: ID・名前・性別・年齢 */}
-                <div className="flex items-center gap-2 mb-1 flex-wrap">
-                  <span className="font-mono text-sm font-semibold text-[var(--color-primary-light)]">
-                    {user.user_code}
-                  </span>
-                  <span className="text-sm font-medium">
-                    {user.display_name ?? '—'}
-                  </span>
-                  {user.gender && (
-                    <span className="text-xs text-[var(--color-text-muted)] bg-[var(--color-surface-2)] px-1.5 py-0.5 rounded">
-                      {GENDER_LABEL[user.gender]}
-                    </span>
-                  )}
-                  {user.age != null && (
-                    <span className="text-xs text-[var(--color-text-muted)]">
-                      {user.age}歳
-                    </span>
-                  )}
-                </div>
-                {/* 2行目: メール */}
-                <div className="text-xs text-[var(--color-text-muted)] truncate mb-2">
-                  {user.email}
-                </div>
-                {/* 3行目: 日時情報 */}
-                <div className="flex items-center gap-4 text-xs text-[var(--color-text-muted)] flex-wrap">
-                  <span>登録: {fmtDate(user.created_at)}</span>
-                  <span>最終ログイン: {user.last_login_at ? fmtDate(user.last_login_at) : '—'}</span>
-                  <span>最終入金: {user.last_payment_at ? fmtDate(user.last_payment_at) : '—'}</span>
-                  {user.referral_source && (
-                    <span className="bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded font-mono">
-                      流入: {user.referral_source}
-                    </span>
-                  )}
-                  {user.referral_article && (
-                    <span className="bg-purple-500/10 text-purple-400 px-1.5 py-0.5 rounded font-mono">
-                      記事: {user.referral_article}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* 右側: ポイント・課金額 */}
-              <div className="flex items-center gap-3 flex-shrink-0 text-right">
-                <div>
-                  <div className="text-sm font-semibold">{user.points}T</div>
-                  <div className="text-xs text-[var(--color-text-muted)]">残高</div>
-                </div>
-                <div>
-                  <div className="text-sm font-semibold">
-                    {user.total_charged > 0 ? `¥${user.total_charged.toLocaleString()}` : '—'}
-                  </div>
-                  <div className="text-xs text-[var(--color-text-muted)]">課金額</div>
-                </div>
-              </div>
-            </div>
-          </Link>
-        ))}
+      <div className="flex items-center justify-between mt-3 text-sm">
+        {page > 1 ? <Link href={qs(page - 1)} className="font-semibold">← 前へ</Link> : <span />}
+        <span className="tabular-nums" style={{ color: 'var(--color-text-muted)' }}>{page} / {pages}ページ</span>
+        {page < pages ? <Link href={qs(page + 1)} className="font-semibold">次へ →</Link> : <span />}
       </div>
-
-      {(!users || users.length === 0) && (
-        <div className="text-center py-20 text-[var(--color-text-muted)]">
-          <p>該当するユーザーがいません</p>
-        </div>
-      )}
     </div>
   )
-}
-
-function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString('ja-JP', {
-    year: 'numeric', month: 'short', day: 'numeric',
-    hour: '2-digit', minute: '2-digit',
-    timeZone: 'Asia/Tokyo',
-  })
 }

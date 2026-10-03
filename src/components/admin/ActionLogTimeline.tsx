@@ -9,6 +9,7 @@ export type ActionLog = {
   page_path: string | null
   metadata: Record<string, unknown> | null
   created_at: string
+  points_delta: number | null
   points_balance: number | null
 }
 
@@ -17,7 +18,12 @@ type Category = 'money' | 'message' | 'view' | 'other'
 // 行動の表示名・分類・色（マチコイの管理画面を踏襲し、AiKano のイベントに合わせて拡張）
 const ACTIONS: Record<string, { label: string; cat: Category; color: string }> = {
   signup_complete:             { label: '会員登録完了',           cat: 'other',   color: '#16a34a' },
+  login:                       { label: 'ログイン',               cat: 'view',    color: '#9ca3af' },
+  registration_bonus:          { label: '登録ボーナス',           cat: 'other',   color: '#16a34a' },
+  referral_bonus:              { label: '紹介ボーナス',           cat: 'other',   color: '#16a34a' },
+  bonus_grant:                 { label: 'ボーナス付与',           cat: 'other',   color: '#16a34a' },
   login_bonus:                 { label: 'ログインボーナス',       cat: 'other',   color: '#16a34a' },
+  points_spent:                { label: 'ポイント消費',           cat: 'money',   color: '#ef4444' },
   chat_open:                   { label: 'チャットを開いた',       cat: 'message', color: '#d4386f' },
   message_sent:                { label: 'メッセージ送信',         cat: 'message', color: '#d4386f' },
   level_up:                    { label: '好感度レベルアップ',     cat: 'message', color: '#b8862b' },
@@ -54,7 +60,7 @@ const META_LABEL: Record<string, string> = {
   character_name: 'キャラ', title: '対象', cost: '消費pt', tokens: '付与pt', points: 'pt', price_yen: '金額¥',
   plan: 'プラン', method: '決済', current: '残高', required: '必要', context: '場面', via: '支払い',
   level: 'Lv', amount: '増減', reason: '理由', source: '流入元', bonus: 'ボーナス', campaign: 'キャンペーン',
-  placement: '場所', site: 'サイト', action: '操作',
+  placement: '場所', site: 'サイト', action: '操作', description: '内容', content: '本文',
 }
 const META_VALUE: Record<string, string> = {
   message: 'メッセージ', video: '動画', item: 'アイテム', points: 'ポイント', subscription: 'サブスク枠',
@@ -140,11 +146,11 @@ export function ActionLogTimeline({ userId, compact = false }: { userId: string;
             // 新しい順なので、1つ前（より新しい）とのあいだが3時間以上空いていれば「◯時間ぶり」を表示
             const gapH = prev ? (new Date(prev.created_at).getTime() - dt.getTime()) / 3.6e6 : 0
             const showGap = !showDate && gapH >= 3
-            // 残高の増減: 1つ古いログとの差（「すべて」表示のときのみ。絞り込み時は間の行動が抜けるため出さない）
-            const older = shown[i + 1]
-            const delta = filter === 'all' && log.points_balance != null && older?.points_balance != null ? log.points_balance - older.points_balance : null
+            // 増減はメッセージ・取引から確定値を使う（行動ログの行は増減なし）
+            const delta = log.points_delta
             const def = ACTIONS[log.action_type]
-            const meta = Object.entries(log.metadata ?? {}).filter(([, v]) => v !== null && v !== undefined && v !== '')
+            const content = typeof log.metadata?.content === 'string' ? log.metadata.content : null
+            const meta = Object.entries(log.metadata ?? {}).filter(([k, v]) => k !== 'content' && v !== null && v !== undefined && v !== '')
             return (
               <div key={log.id}>
                 {showDate && (
@@ -167,6 +173,9 @@ export function ActionLogTimeline({ userId, compact = false }: { userId: string;
                         {meta.map(([k, v]) => `${META_LABEL[k] ?? k}: ${META_VALUE[String(v)] ?? String(v)}`).join(' · ')}
                       </span>
                     )}
+                    {content && (
+                      <p className="text-xs mt-0.5 break-words" style={{ color: 'var(--color-text)' }}>「{content}」</p>
+                    )}
                   </div>
                   <span className="text-[11px] flex-shrink-0 tabular-nums flex items-center gap-1.5" style={{ color: 'var(--color-text-muted)' }}>
                     {delta ? (
@@ -174,7 +183,7 @@ export function ActionLogTimeline({ userId, compact = false }: { userId: string;
                         {delta > 0 ? `+${delta}` : delta}pt
                       </span>
                     ) : null}
-                    {delta && log.points_balance != null ? <span>残{log.points_balance.toLocaleString()}</span> : null}
+                    {log.points_balance != null && (delta || def?.cat === 'money') ? <span>残{log.points_balance.toLocaleString()}</span> : null}
                     {jstTime(dt)}
                   </span>
                 </div>

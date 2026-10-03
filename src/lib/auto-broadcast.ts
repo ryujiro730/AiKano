@@ -17,60 +17,26 @@ export async function processAutoBroadcast(): Promise<{ scheduled: number; sent:
   let scheduled = 0
 
   // アクティブなシーケンスのステップを取得
-  const { data: activeSteps } = await adminClient
-    .from('auto_broadcast_steps')
-    .select('id, delay_minutes, sequence_id, auto_broadcast_sequences!inner(id, character_id, is_active, created_at)')
-    .eq('auto_broadcast_sequences.is_active', true)
+  // 送信予定の作成は DB 側で一括（全ユーザー × 有効ステップ。既存の予定はそのまま）
+  const { data: scheduledCount, error: schedErr } = await adminClient.rpc('schedule_auto_broadcasts')
+  if (schedErr) console.error('auto broadcast schedule error:', schedErr.message)
+  scheduled = Number(scheduledCount ?? 0)
 
-  if (activeSteps && activeSteps.length > 0) {
-    // 一般ユーザー全員を取得
-    const { data: users } = await adminClient
-      .from('profiles')
-      .select('id, created_at, display_name, age, gender')
-      .not('role', 'in', '(admin,staff)')
-
-    if (users && users.length > 0) {
-      for (const step of activeSteps) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const seq = (step as any).auto_broadcast_sequences
-        const seqCreatedAt = new Date(seq.created_at).getTime()
-
-        // 全ユーザー対象。ユーザー登録がシーケンス作成より前の場合は
-        // シーケンス作成時点を起算にする（既存ユーザーも漏れなく受信できる）
-        const inserts = users.map(user => {
-          const baseTime = Math.max(new Date(user.created_at).getTime(), seqCreatedAt)
-          return {
-            user_id: user.id,
-            step_id: step.id,
-            scheduled_at: new Date(baseTime + step.delay_minutes * 60 * 1000).toISOString(),
-            status: 'pending',
-          }
-        })
-
-        // ON CONFLICT DO NOTHING で重複スキップ
-        const { error } = await adminClient
-          .from('auto_broadcast_logs')
-          .upsert(inserts, { onConflict: 'user_id,step_id', ignoreDuplicates: true })
-
-        if (!error) scheduled += inserts.length
-      }
-    }
-  }
-
-  // pending → processing にアトミック更新（同時実行で同じログを二重送信しない）
-  const now = new Date().toISOString()
-  const { data: pendingLogs } = await adminClient
-    .from('auto_broadcast_logs')
-    .update({ status: 'processing' })
-    .eq('status', 'pending')
-    .lte('scheduled_at', now)
-    .select(`
-      id, user_id,
-      auto_broadcast_steps!inner(
-        message, image_url, step_number,
-        auto_broadcast_sequences!inner(character_id)
-      )
-    `)
+  // 送信時刻を過ぎた予定を最大300件ずつ取り出す（processing に更新済み・同時実行でも重複しない）
+  const { data: claimedIds } = await adminClient.rpc('claim_auto_broadcast_logs', { p_limit: 300 })
+  const ids = ((claimedIds ?? []) as unknown[]).map(r => (typeof r === 'string' ? r : (r as { claim_auto_broadcast_logs: string }).claim_auto_broadcast_logs))
+  const { data: pendingLogs } = ids.length > 0
+    ? await adminClient
+        .from('auto_broadcast_logs')
+        .select(`
+          id, user_id,
+          auto_broadcast_steps!inner(
+            message, image_url, step_number,
+            auto_broadcast_sequences!inner(character_id)
+          )
+        `)
+        .in('id', ids)
+    : { data: [] as never[] }
 
   let sent = 0
   let skipped = 0
@@ -84,33 +50,17 @@ export async function processAutoBroadcast(): Promise<{ scheduled: number; sent:
   // ── バッチ判定：pending なユーザーの会話・メッセージをまとめて取得 ──────────
   const pendingUserIds = Array.from(new Set(pendingLogs.map(l => l.user_id)))
 
-  // 該当ユーザーの全会話
+  // 該当ユーザーの全会話（返信済みかどうかは has_user_reply で判定。メッセージ全件は読まない）
   const { data: conversations } = await adminClient
     .from('conversations')
-    .select('id, user_id, character_id')
+    .select('id, user_id, character_id, has_user_reply')
     .in('user_id', pendingUserIds)
+    .limit(10000)
 
-  const convIds = (conversations ?? []).map(c => c.id)
-
-  // 全会話のメッセージ（sender_role だけ取得）
-  const { data: allMessages } = convIds.length > 0
-    ? await adminClient
-        .from('messages')
-        .select('conversation_id, sender_role')
-        .in('conversation_id', convIds)
-    : { data: [] as { conversation_id: string; sender_role: string }[] }
-
-  // ルックアップマップを構築
   // userRepliedToChar: `${userId}:${characterId}` → そのキャラに返信済み
-  const userRepliedToChar = new Set<string>()
-
-  for (const msg of allMessages ?? []) {
-    const conv = (conversations ?? []).find(c => c.id === msg.conversation_id)
-    if (!conv) continue
-    if (msg.sender_role === 'user') {
-      userRepliedToChar.add(`${conv.user_id}:${conv.character_id}`)
-    }
-  }
+  const userRepliedToChar = new Set<string>(
+    (conversations ?? []).filter(c => c.has_user_reply).map(c => `${c.user_id}:${c.character_id}`),
+  )
 
   // ユーザー起点の会話（ウェルカム送信済み = source='user'）を取得
   // → step1 はスキップするが step2 以降は送信する
@@ -172,10 +122,11 @@ export async function processAutoBroadcast(): Promise<{ scheduled: number; sent:
         if (convError || !newConv) throw new Error('conv create failed: ' + convError?.message)
         conversationId = newConv.id
         // 同バッチ内の後続ステップが同じ会話を再利用できるようにキャッシュに追加
-        ;(conversations as { id: string; user_id: string; character_id: string }[]).push({
+        ;(conversations as { id: string; user_id: string; character_id: string; has_user_reply: boolean }[]).push({
           id: conversationId,
           user_id: log.user_id,
           character_id: characterId,
+          has_user_reply: false,
         })
       }
 

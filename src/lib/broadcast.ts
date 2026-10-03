@@ -44,17 +44,26 @@ export async function getTargetUsers(
   characterId: string,
   filters: BroadcastFilters
 ): Promise<TargetUser[]> {
-  const { data: users, error } = await buildUserQuery(adminClient, filters)
-  if (error || !users) return []
-
-  let targetUsers: TargetUser[] = users
+  // PostgREST は1リクエスト最大1000件なので、ページングして全員取得する
+  const PAGE = 1000
+  let targetUsers: TargetUser[] = []
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await buildUserQuery(adminClient, filters).order('id').range(from, from + PAGE - 1)
+    if (error) { console.error('getTargetUsers:', error.message); return [] }
+    targetUsers = targetUsers.concat(data ?? [])
+    if (!data || data.length < PAGE) break
+  }
 
   if (filters.excludeWithConv && targetUsers.length > 0) {
-    const userIds = targetUsers.map(u => u.id)
-    const { data: existingConvs } = await adminClient
-      .from('conversations').select('user_id')
-      .eq('character_id', characterId).in('user_id', userIds)
-    const existingSet = new Set<string>((existingConvs ?? []).map((c: { user_id: string }) => c.user_id))
+    // 既に会話があるユーザーを除外（IDを200件ずつに分けて問い合わせ、URL長の上限を避ける）
+    const existingSet = new Set<string>()
+    const ids = targetUsers.map(u => u.id)
+    for (let i = 0; i < ids.length; i += 200) {
+      const { data: existingConvs } = await adminClient
+        .from('conversations').select('user_id')
+        .eq('character_id', characterId).in('user_id', ids.slice(i, i + 200))
+      for (const c of existingConvs ?? []) existingSet.add((c as { user_id: string }).user_id)
+    }
     targetUsers = targetUsers.filter(u => !existingSet.has(u.id))
   }
 

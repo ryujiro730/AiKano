@@ -36,6 +36,10 @@ export async function POST(req: NextRequest) {
   const cost = mediaType === 'video' ? VIDEO_COST : PHOTO_COST
   const admin = adminSupabase()
 
+  // 自分の会話にだけ送信できる
+  const { data: conv } = await admin.from('conversations').select('user_id').eq('id', conversationId).single()
+  if (!conv || conv.user_id !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
   // ポイント確認・消費
   const { data: profile } = await admin
     .from('profiles')
