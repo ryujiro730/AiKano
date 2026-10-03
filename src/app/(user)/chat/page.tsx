@@ -16,6 +16,8 @@ import { PointsShortageDialog } from '@/components/PointsShortageDialog'
 import { LevelUpToast } from '@/components/LevelUpToast'
 import { AffectionMeter } from '@/components/AffectionMeter'
 import { AffectionIcon } from '@/components/AffectionIcon'
+import { LockedPhotoTile } from '@/components/LockedPhotoTile'
+import { PLANS, type PlanId } from '@/lib/plans'
 import { notifyBadgesChanged } from '@/lib/badge-events'
 
 const MAX_CACHED_MSGS = 60
@@ -198,7 +200,7 @@ export default function ChatPage() {
       const [profRes, charRes, photosRes, msgsRes, ucRes] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', userId).single(),
         supabase.from('characters').select('*').eq('id', characterId).single(),
-        supabase.from('character_photos').select('*').eq('character_id', characterId).order('order_index'),
+        fetch(`/api/characters/${characterId}/photos`).then(r => r.json()).then(j => ({ data: (j.photos ?? null) as CharacterPhoto[] | null })),
         supabase.from('messages').select('*').eq('conversation_id', cachedConvId).eq('is_deleted', false).order('created_at', { ascending: true }),
         supabase.from('user_characters').select('affection_points,affection_level,message_count').eq('user_id', userId).eq('character_id', characterId!).maybeSingle(),
       ])
@@ -228,7 +230,7 @@ export default function ChatPage() {
       const [profRes, charRes, photosRes, startRes, ucRes] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', userId).single(),
         supabase.from('characters').select('*').eq('id', characterId).single(),
-        supabase.from('character_photos').select('*').eq('character_id', characterId).order('order_index'),
+        fetch(`/api/characters/${characterId}/photos`).then(r => r.json()).then(j => ({ data: (j.photos ?? null) as CharacterPhoto[] | null })),
         fetch('/api/chat/start-conversation', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -369,17 +371,12 @@ export default function ChatPage() {
         const data = await res.json()
         if (data.message) addMessage(data.message)
 
-        // 好感度加算（fire-and-forget）
-        fetch('/api/chat/add-affection', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ characterId: character.id }),
-        }).then(r => r.json()).then(d => {
-          if (d.ok) {
-            setAffection({ points: d.affection_points, level: d.affection_level, messageCount: d.message_count })
-            if (d.leveled_up) setLevelUp({ level: d.affection_level })
-          }
-        }).catch(() => {})
+        // 好感度はサーバー側（ai-reply）で加算済み
+        const aff = data.affection
+        if (aff) {
+          setAffection({ points: aff.affection_points, level: aff.affection_level, messageCount: aff.message_count })
+          if (aff.leveled_up) setLevelUp({ level: aff.affection_level })
+        }
       } else {
         console.error('[chat] AI返信エラー:', await res.text())
       }
@@ -401,7 +398,8 @@ export default function ChatPage() {
   const openAlbumLightbox = async (index: number) => {
     if (!character || !profile) return
 
-    const all = [character.avatar_url, ...photos.map(p => p.url)]
+    // 会員限定でロック中のフォトはライトボックスに含めない
+    const all = [character.avatar_url, ...photos.filter(p => !p.locked).map(p => p.url)]
     setLightboxPhotos(all)
     setLightboxIndex(index)
     setShowAlbum(false)
@@ -571,6 +569,16 @@ export default function ChatPage() {
                 <AffectionIcon level={lvData.level} size={13} style={{ color: lvData.color }} />
                 {lvData.title}
                 <span className="font-normal tabular-nums" style={{ color: 'var(--color-text-muted)' }}>Lv.{lvData.level}</span>
+                {subInfo?.plan ? (
+                  <span className="text-[10px] font-bold px-1.5 py-px rounded-md tabular-nums"
+                    style={{ background: 'var(--color-primary-soft)', color: 'var(--color-primary)' }}>
+                    会員 ×{PLANS[subInfo.plan as PlanId]?.affection_multiplier ?? 1}
+                  </span>
+                ) : (
+                  <Link href="/payment" className="text-[10px] font-semibold" style={{ color: 'var(--color-primary)' }}>
+                    会員は2倍
+                  </Link>
+                )}
               </span>
               <span className="text-[11px] tabular-nums" style={{ color: 'var(--color-text-muted)' }}>
                 {nextLv ? `次の「${nextLv.title}」まで ${(nextLv.threshold - affection.points).toLocaleString()}pt` : `${affection.points.toLocaleString()}pt`}
@@ -692,7 +700,7 @@ export default function ChatPage() {
               >
                 <Image src={character.avatar_url} alt="" fill className="object-cover hover:scale-105 transition-transform duration-300" sizes="33vw" />
               </div>
-              {photos.map((photo, i) => (
+              {photos.filter(p => !p.locked).map((photo, i) => (
                 <div
                   key={photo.id}
                   className="relative overflow-hidden rounded-xl cursor-pointer"
@@ -701,6 +709,9 @@ export default function ChatPage() {
                 >
                   <Image src={photo.url} alt="" fill className="object-cover hover:scale-105 transition-transform duration-300" sizes="33vw" />
                 </div>
+              ))}
+              {photos.filter(p => p.locked).map(photo => (
+                <LockedPhotoTile key={photo.id} className="rounded-xl" />
               ))}
             </div>
           </div>

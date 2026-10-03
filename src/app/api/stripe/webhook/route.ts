@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createAdminClient } from '@/lib/supabase/server'
 import { PLANS, type PlanId } from '@/lib/plans'
+import { grantSubscriptionBonus } from '@/lib/subscription-bonus'
 
 export async function POST(request: Request) {
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2026-09-30.endive' as any })
@@ -61,6 +62,7 @@ export async function POST(request: Request) {
                 price_yen: session.amount_total ?? plan.price_yen,
                 stripe_session_id: session.id,
               })
+              await grantSubscriptionBonus(admin, userId, planId, `pass:${session.id}`)
             }
           }
         }
@@ -114,6 +116,8 @@ export async function POST(request: Request) {
       monthly_messages_limit: plan.monthly_messages,
       monthly_reset_at: periodEnd,
     }).eq('id', userId)
+
+    await grantSubscriptionBonus(admin, userId, planId, `stripe:${subscriptionId}:${subscription.current_period_start}`)
   }
 
   // ── サブスク更新（プラン変更・更新）────────────────────────────
@@ -171,6 +175,12 @@ export async function POST(request: Request) {
       monthly_messages_used: 0,
       monthly_reset_at: periodEnd,
     }).eq('stripe_customer_id', customerId)
+
+    const { data: renewed } = await admin
+      .from('profiles').select('id, subscription_plan').eq('stripe_customer_id', customerId).single()
+    if (renewed) {
+      await grantSubscriptionBonus(admin, renewed.id, renewed.subscription_plan, `stripe:${subscriptionId}:${subscription.current_period_start}`)
+    }
   }
 
   // ── 支払い失敗 ─────────────────────────────────────────────────

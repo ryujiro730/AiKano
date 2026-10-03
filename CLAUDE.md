@@ -150,6 +150,14 @@ Supabase RPC → 集計・計算・複雑なフィルタ（SQL/PostgreSQL）
 - `'registration_bonus'` = 新規登録ボーナス
 - `'referral_bonus'` = 友達紹介ボーナス
 - `'admin_adjust'` = 管理者手動調整
+- `'subscription_bonus'` = サブスク会員の毎月ボーナス
+
+## サブスク会員特典（plans.ts で定義）
+
+- 毎月ボーナスpt（standard 300 / premium 1000）: `grant_subscription_bonus` RPC で period_key ごとに1回だけ付与（webhook のカード初回・毎月更新・コンビニパス、銀行振込承認の4経路から呼ぶ）
+- 好感度倍率（standard ×2 / premium ×3）: 好感度は `ai-reply` 内でサーバー加算（クライアントから加算する API は廃止）
+- 会員限定フォト: `character_photos.members_only`。非会員には URL を返さない（`lib/character-photos.ts`）。RLS でも直読み不可
+- 会員判定は `getActivePlan(profile)`（期限切れパスは非会員扱い）
 
 ---
 
@@ -254,7 +262,7 @@ src/
     UtmCapture.tsx          # UTMパラメータ捕捉
     PointsShortageDialog.tsx # ポイント不足ダイアログ
 .github/workflows/deploy.yml  # デプロイ＆cron設定
-supabase/migrations/          # マイグレーション（063まで適用済み）
+supabase/migrations/          # マイグレーション（064まで適用済み）
 ```
 
 ---

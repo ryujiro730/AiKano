@@ -56,6 +56,10 @@ export interface CharacterPhoto {
   caption: string | null
   order_index: number
   created_at: string
+  /** 会員限定フォト */
+  members_only?: boolean
+  /** 非会員に返す会員限定フォト（url は空） */
+  locked?: boolean
 }
 
 export interface Conversation {

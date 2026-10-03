@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { PLANS, type PlanId } from '@/lib/plans'
+import { grantSubscriptionBonus } from '@/lib/subscription-bonus'
 
 function adminDb() {
   return createAdminClient(
@@ -58,6 +59,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }).eq('id', params.id)
 
   if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 })
+
+  await grantSubscriptionBonus(admin, request.user_id, request.plan_id, `bank:${request.id}`)
 
   return NextResponse.json({ ok: true })
 }

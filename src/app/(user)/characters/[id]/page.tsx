@@ -2,6 +2,7 @@ import { createAdminClientStatic } from '@/lib/supabase/server'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { redirect } from 'next/navigation'
 import { CharacterDetailClient } from './CharacterDetailClient'
+import { getCharacterPhotosForUser } from '@/lib/character-photos'
 
 export default async function CharacterDetailPage({ params }: { params: { id: string } }) {
   const [user, admin] = [await getAuthUser(), createAdminClientStatic()]
@@ -10,7 +11,7 @@ export default async function CharacterDetailPage({ params }: { params: { id: st
   // 全クエリ並列（キャラ情報 + ユーザー固有データ 1ウォーターフォール）
   const [charRes, photosRes, ucRes, achRes] = await Promise.all([
     admin.from('characters').select('*').eq('id', params.id).single(),
-    admin.from('character_photos').select('*').eq('character_id', params.id).order('order_index'),
+    getCharacterPhotosForUser(admin, params.id, userId),
     userId
       ? admin.from('user_characters')
           .select('affection_points, affection_level, message_count, last_chat_at')
@@ -29,7 +30,7 @@ export default async function CharacterDetailPage({ params }: { params: { id: st
   return (
     <CharacterDetailClient
       character={charRes.data as any}
-      photos={(photosRes.data ?? []) as any}
+      photos={photosRes}
       userChar={(ucRes.data ?? null) as any}
       achievements={(achRes.data ?? []) as any}
     />

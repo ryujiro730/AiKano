@@ -4,7 +4,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { generateReply, extractMemoryUpdate, type LLMMessage } from '@/lib/llm-service'
-import { PLANS, type PlanId } from '@/lib/plans'
+import { getActivePlan } from '@/lib/plans'
+
+// 1通あたりの好感度上昇（会員はプランの倍率を掛ける）
+const BASE_AFFECTION_POINTS = 3
 
 
 function adminSupabase() {
@@ -67,7 +70,7 @@ export async function POST(req: NextRequest) {
   // ここではサブスクユーザーのモデル切り替えのみ（カウントは増やさない）。
   const profilePromise = admin
     .from('profiles')
-    .select('subscription_plan, subscription_status, display_name, age')
+    .select('subscription_plan, subscription_status, subscription_period_end, display_name, age')
     .eq('id', user.id)
     .single()
 
@@ -99,11 +102,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Character not found' }, { status: 404 })
   }
 
-  let modelOverride: string | undefined
-  if (prof?.subscription_status === 'active' || prof?.subscription_status === 'trialing') {
-    const planId = prof.subscription_plan as PlanId | null
-    modelOverride = planId ? PLANS[planId]?.model : undefined
-  }
+  const activePlan = getActivePlan(prof)
+  const modelOverride: string | undefined = activePlan?.model
 
   const currentMemory: string = (memData as any)?.data?.memory_text ?? ''
 
@@ -149,6 +149,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to save reply' }, { status: 500 })
   }
 
+  // 好感度加算（返信1回につき1回。会員は倍率適用）
+  const { data: affection, error: affErr } = await admin.rpc('add_affection', {
+    p_user_id: user.id,
+    p_character_id: characterId,
+    p_points: BASE_AFFECTION_POINTS * (activePlan?.affection_multiplier ?? 1),
+  })
+  if (affErr) console.error('[ai-reply] add_affection error:', affErr.message)
+
   // ── 非同期後処理（fire-and-forget）─────────────────────────────────────
 
   admin.from('conversations').update({ last_message_at: now, is_unread_staff: false }).eq('id', conversationId)
@@ -174,5 +182,5 @@ export async function POST(req: NextRequest) {
       .catch(() => {})
   }
 
-  return NextResponse.json({ message: newMsg })
+  return NextResponse.json({ message: newMsg, affection: affErr ? null : affection })
 }

@@ -228,6 +228,12 @@ export default function AdminCharactersPage() {
     if (photoInputRef.current) photoInputRef.current.value = ''
   }
 
+  const toggleMembersOnly = async (photoId: string, membersOnly: boolean) => {
+    const { error } = await supabase.from('character_photos').update({ members_only: membersOnly }).eq('id', photoId)
+    if (error) { alert('更新に失敗しました: ' + error.message); return }
+    setPhotos(prev => prev.map(p => p.id === photoId ? { ...p, members_only: membersOnly } : p))
+  }
+
   const deletePhoto = async (photoId: string) => {
     await supabase.from('character_photos').delete().eq('id', photoId)
     setPhotos(prev => prev.filter(p => p.id !== photoId))
@@ -892,6 +898,14 @@ export default function AdminCharactersPage() {
                           style={{ background: 'rgba(0,0,0,0.6)' }}
                         >
                           <Trash2 size={12} className="text-red-400" />
+                        </button>
+                        <button
+                          onClick={() => toggleMembersOnly(photo.id, !photo.members_only)}
+                          className="absolute bottom-0 left-0 right-0 py-1 text-[10px] font-bold text-white"
+                          style={{ background: photo.members_only ? 'rgba(212,56,111,0.92)' : 'rgba(0,0,0,0.55)' }}
+                          title="会員限定の切り替え"
+                        >
+                          {photo.members_only ? '会員限定' : '全員に公開'}
                         </button>
                       </div>
                     ))}

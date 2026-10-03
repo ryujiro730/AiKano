@@ -9,6 +9,7 @@ import Lightbox from '@/components/Lightbox'
 import { SpiderChart } from '@/components/SpiderChart'
 import { AffectionMeter } from '@/components/AffectionMeter'
 import { AffectionIcon } from '@/components/AffectionIcon'
+import { LockedPhotoTile } from '@/components/LockedPhotoTile'
 import { ACHIEVEMENTS } from '@/lib/affection'
 import type { Character, CharacterPhoto } from '@/types'
 
@@ -35,7 +36,9 @@ export function CharacterDetailClient({ character, photos, userChar, achievement
   const router = useRouter()
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
 
-  const allPhotos = [character.avatar_url, ...photos.map(p => p.url)]
+  const unlockedPhotos = photos.filter(p => !p.locked)
+  const lockedPhotos = photos.filter(p => p.locked)
+  const allPhotos = [character.avatar_url, ...unlockedPhotos.map(p => p.url)]
   const stats = (character as any).stats ?? null
   const age = (character as any).age
   const personality = (character as any).personality
@@ -155,12 +158,22 @@ export function CharacterDetailClient({ character, photos, userChar, achievement
       {/* フォト */}
       {photos.length > 0 && (
         <div className="mb-5">
-          <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', marginBottom: 10, letterSpacing: '0.04em' }}>フォト</p>
+          <div className="flex items-baseline justify-between" style={{ marginBottom: 10 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', letterSpacing: '0.04em' }}>フォト</p>
+            {lockedPhotos.length > 0 && (
+              <Link href="/payment" style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-primary)' }}>
+                会員限定 {lockedPhotos.length}枚を見る
+              </Link>
+            )}
+          </div>
           <div className="grid grid-cols-3 gap-1.5">
-            {photos.map((photo, i) => (
+            {unlockedPhotos.map((photo, i) => (
               <div key={photo.id} className="relative overflow-hidden rounded-xl cursor-pointer" style={{ aspectRatio: '1' }} onClick={() => setLightboxIndex(i + 1)}>
                 <Image src={photo.url} alt="" fill className="object-cover hover:scale-105 transition-transform duration-300" sizes="33vw" />
               </div>
+            ))}
+            {lockedPhotos.map(photo => (
+              <LockedPhotoTile key={photo.id} className="rounded-xl" />
             ))}
           </div>
         </div>
