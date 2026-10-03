@@ -7,8 +7,10 @@ import type { Item, ItemCategory, UserItem } from '@/types'
 import Link from 'next/link'
 import Image from 'next/image'
 import { logAction } from '@/lib/action-log'
+import { PointsShortageDialog } from '@/components/PointsShortageDialog'
 
 export default function ShopPage() {
+  const [shortage, setShortage] = useState<{ current: number; required: number } | null>(null)
   const [items, setItems] = useState<Item[]>([])
   const [categories, setCategories] = useState<ItemCategory[]>([])
   const [inventory, setInventory] = useState<UserItem[]>([])
@@ -43,7 +45,8 @@ export default function ShopPage() {
     })
     const data = await res.json()
     if (!res.ok) {
-      alert(data.error || '購入に失敗しました')
+      if (data.error === 'insufficient_points') setShortage({ current: data.current, required: data.required })
+      else alert(data.error || '購入に失敗しました')
       setBuying(null)
       return
     }
@@ -180,10 +183,13 @@ export default function ShopPage() {
       )}
 
       <div className="mt-6 text-center">
-        <Link href="/payment" className="text-sm text-[var(--color-primary)] underline-offset-2 hover:underline">
+        <Link href="/payment#points" className="text-sm text-[var(--color-primary)] underline-offset-2 hover:underline">
           ポイントを購入する →
         </Link>
       </div>
+      {shortage && (
+        <PointsShortageDialog currentPoints={shortage.current} requiredPoints={shortage.required} title="アイテムの購入にはポイントが必要です" onClose={() => setShortage(null)} />
+      )}
     </div>
   )
 }

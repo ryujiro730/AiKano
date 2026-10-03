@@ -17,7 +17,7 @@ export function PointsDisplay({ initialPoints }: { initialPoints: number }) {
 
   return (
     <Link
-      href="/payment"
+      href="/payment#points"
       className="flex items-center gap-1.5 rounded-lg pl-2.5 pr-1 py-1 transition-opacity hover:opacity-80"
       style={{ background: 'var(--color-surface-2)' }}
     >

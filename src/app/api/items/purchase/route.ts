@@ -1,15 +1,16 @@
 export const dynamic = 'force-dynamic'
-import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { getAuthUser } from '@/lib/supabase/get-auth-user'
 
 // POST /api/items/purchase - アイテム購入（ポイント消費）
 export async function POST(req: NextRequest) {
-  const supabase = createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const user = session.user
+  const user = await getAuthUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  // 書き込みはサーバー権限で行う（ユーザー権限ではポイント・所持品を書き換えられない）
+  const supabase = createAdminClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
-  const { itemId } = await req.json()
+  const { itemId } = await req.json().catch(() => ({}))
   if (!itemId) return NextResponse.json({ error: 'itemId required' }, { status: 400 })
 
   // アイテム情報取得
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest) {
       : 0
   const totalPoints = profile.points + bonusAvailable
   if (totalPoints < item.price_points) {
-    return NextResponse.json({ error: 'ポイントが不足しています' }, { status: 400 })
+    return NextResponse.json({ error: 'insufficient_points', current: totalPoints, required: item.price_points }, { status: 402 })
   }
 
   // ボーナスptから先に消費
@@ -40,11 +41,15 @@ export async function POST(req: NextRequest) {
   const updatePayload: Record<string, number> = { points: newPoints }
   if (bonusDeduct > 0) updatePayload.bonus_points = newBonusPoints
 
-  const { error: pointsError } = await supabase
+  // 読み取った残高を条件にした更新で、同時購入による二重消費を防ぐ
+  const { data: updated, error: pointsError } = await supabase
     .from('profiles')
     .update(updatePayload)
     .eq('id', user.id)
+    .eq('points', profile.points)
+    .select('id')
   if (pointsError) return NextResponse.json({ error: 'ポイント更新失敗' }, { status: 500 })
+  if (!updated?.length) return NextResponse.json({ error: 'もう一度お試しください' }, { status: 409 })
 
   // インベントリ追加 or 数量+1
   const { data: existing } = await supabase

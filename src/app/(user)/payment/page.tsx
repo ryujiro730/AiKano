@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Loader2, Crown, Settings, Gift, Copy, Check, CreditCard, Store, Building2, RefreshCw } from 'lucide-react'
 import { CardBrands, FamilyMartBadge, LawsonBadge, MinistopBadge, SeicomartBadge, PayPayBadge } from '@/components/icons/payment-brands'
 import { PLANS } from '@/lib/plans'
+import { PointPackageList } from '@/components/PointPackageList'
 import type { Profile } from '@/types'
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
@@ -16,6 +17,7 @@ export default function PaymentPage() {
   const subscribedPlan = searchParams.get('plan')
   const isCanceled = searchParams.get('canceled') === 'true'
   const isPassPending = searchParams.get('pass') === 'pending'
+  const pointsPurchased = searchParams.get('success') === 'true' ? Number(searchParams.get('points')) || null : null
 
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
@@ -35,6 +37,13 @@ export default function PaymentPage() {
     }
     load()
   }, [])
+
+  // /payment#points で来たら、読み込み完了後にポイント購入欄へスクロール
+  useEffect(() => {
+    if (!loading && window.location.hash === '#points') {
+      document.getElementById('points')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }, [loading])
 
   const handleSubscribe = async (planId: string) => {
     setSubscribing(planId)
@@ -88,6 +97,8 @@ export default function PaymentPage() {
   const periodEnd = (profile as any)?.subscription_period_end ? new Date((profile as any).subscription_period_end) : null
   const usagePct = messagesLimit > 0 ? Math.min(100, messagesUsed / messagesLimit * 100) : 0
   const isOverLimit = messagesUsed >= messagesLimit && messagesLimit > 0
+  const bonusValid = (profile as any)?.bonus_points_expires_at && new Date((profile as any).bonus_points_expires_at) > new Date()
+  const pointBalance = (profile?.points ?? 0) + (bonusValid ? ((profile as any)?.bonus_points ?? 0) : 0)
 
   return (
     <div className="pt-2 max-w-lg">
@@ -107,6 +118,12 @@ export default function PaymentPage() {
         <div className="rounded-xl p-4 mb-5 text-sm" style={{ background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.3)' }}>
           <p className="font-semibold mb-0.5" style={{ color: '#f59e0b' }}>お支払い番号が発行されました</p>
           <p style={{ color: 'var(--color-text-muted)' }}>コンビニ・PayPayでのお支払い確認後（通常1〜3日以内）、プランが有効になります。</p>
+        </div>
+      )}
+      {pointsPurchased && (
+        <div className="rounded-xl p-4 mb-5 text-sm" style={{ background: 'var(--color-primary-soft)', border: '1px solid var(--color-primary-border)' }}>
+          <p className="font-semibold mb-0.5" style={{ color: 'var(--color-primary)' }}>{pointsPurchased.toLocaleString()}ptのご購入ありがとうございます</p>
+          <p style={{ color: 'var(--color-text-muted)' }}>決済の確認後、ポイントが反映されます（カードは通常すぐ、コンビニ払い等は入金確認後）。</p>
         </div>
       )}
       {isCanceled && (
@@ -273,6 +290,22 @@ export default function PaymentPage() {
             )}
           </div>
         ))}
+      </div>
+
+      {/* ─── ポイント購入（会員・非会員とも）─── */}
+      <div id="points" className="mb-6 scroll-mt-20">
+        <div className="flex items-baseline justify-between mb-1">
+          <h2 className="text-base font-bold">ポイントを購入</h2>
+          <span className="text-xs tabular-nums" style={{ color: 'var(--color-text-muted)' }}>
+            残高 <strong style={{ color: 'var(--color-text)' }}>{pointBalance.toLocaleString()}pt</strong>
+          </span>
+        </div>
+        <p className="text-xs mb-3" style={{ color: 'var(--color-text-muted)' }}>
+          {isSubscribed
+            ? '動画・ショップの購入や、月間上限を超えた後のメッセージ（1通5pt）に使えます。'
+            : 'メッセージ（1通10pt）・動画・ショップに使えます。'}
+        </p>
+        <PointPackageList />
       </div>
 
       {/* 支払い方法比較表 */}

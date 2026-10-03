@@ -134,6 +134,10 @@ Supabase RPC → 集計・計算・複雑なフィルタ（SQL/PostgreSQL）
 
 ## ポイント・課金システム
 
+**課金導線**: ポイント購入は `PointPackageList`（購入ダイアログと /payment#points で共用）→ `/api/stripe/checkout`（packageId のみ受け取り、価格・付与pt・キャンペーン倍率はサーバーで決定）→ webhook で付与。キャンペーン判定は `lib/campaigns.ts`、付与pt計算は `lib/point-packages.ts` を表示とサーバーで共用。
+
+**書き込み権限**: profiles・point_transactions・user_items・動画購入はブラウザから書けない（065）。必ず service role のサーバーAPI経由で書く
+
 | 項目 | 値 |
 |------|-----|
 | 登録ボーナス | 20pt（2通分。2通目送信後に購入ダイアログ表示）（`type: 'registration_bonus'`） |
@@ -263,7 +267,7 @@ src/
     UtmCapture.tsx          # UTMパラメータ捕捉
     PointsShortageDialog.tsx # ポイント不足ダイアログ
 .github/workflows/deploy.yml  # デプロイ＆cron設定
-supabase/migrations/          # マイグレーション（064まで適用済み）
+supabase/migrations/          # マイグレーション（065まで適用済み）
 ```
 
 ---

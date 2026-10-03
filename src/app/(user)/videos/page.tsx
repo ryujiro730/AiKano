@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { ChevronLeft, Lock, Play, Loader2, X } from 'lucide-react'
 import Link from 'next/link'
 import { logAction } from '@/lib/action-log'
+import { PointsShortageDialog } from '@/components/PointsShortageDialog'
 
 interface VideoItem {
   id: string
@@ -19,6 +20,7 @@ interface VideoItem {
 }
 
 export default function VideosPage() {
+  const [shortage, setShortage] = useState<{ current: number; required: number } | null>(null)
   const [videos, setVideos] = useState<VideoItem[]>([])
   const [purchasedIds, setPurchasedIds] = useState<Set<string>>(new Set())
   const [points, setPoints] = useState<number>(0)
@@ -59,7 +61,7 @@ export default function VideosPage() {
 
     if (!res.ok) {
       if (data.error === 'insufficient_points') {
-        alert(`ポイントが不足しています。\n現在: ${data.current}pt / 必要: ${data.required}pt`)
+        setShortage({ current: data.current, required: data.required })
       } else if (data.error === 'already_purchased') {
         alert('この動画は既に購入済みです。')
         setPurchasedIds(prev => { const next = new Set(Array.from(prev)); next.add(video.id); return next })
@@ -231,7 +233,7 @@ export default function VideosPage() {
       )}
 
       <div className="mt-6 text-center">
-        <Link href="/payment" className="text-sm text-[var(--color-primary)] underline-offset-2 hover:underline">
+        <Link href="/payment#points" className="text-sm text-[var(--color-primary)] underline-offset-2 hover:underline">
           ポイントを購入する →
         </Link>
       </div>
@@ -239,6 +241,9 @@ export default function VideosPage() {
       {/* 動画モーダルプレイヤー */}
       {playingVideo && (
         <VideoModal video={playingVideo} onClose={() => setPlayingVideo(null)} />
+      )}
+      {shortage && (
+        <PointsShortageDialog currentPoints={shortage.current} requiredPoints={shortage.required} title="動画の購入にはポイントが必要です" onClose={() => setShortage(null)} />
       )}
     </div>
   )
