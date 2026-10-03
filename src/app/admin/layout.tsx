@@ -1,6 +1,5 @@
 import { createClient, createAdminClientStatic } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import RealtimeRefresher from './conversations/RealtimeRefresher'
 import { unstable_cache } from 'next/cache'
 import { AdminNav } from '@/components/admin/AdminNav'
 
@@ -16,18 +15,6 @@ const getAdminProfile = unstable_cache(
   { revalidate: 30 }
 )
 
-// unreadカウントは5秒キャッシュ
-const getUnreadCount = unstable_cache(
-  async () => {
-    const adminDb = createAdminClientStatic()
-    const { count } = await adminDb
-      .from('conversations').select('id', { count: 'exact', head: true }).eq('is_unread_staff', true)
-    return count ?? 0
-  },
-  ['admin-unread-count'],
-  { revalidate: 5 }
-)
-
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   // getSession() はクッキー読み取りのみ（ネットワーク不要）→ 高速
   const supabase = createClient()
@@ -36,37 +23,26 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   if (!user) redirect('/auth/login')
 
-  // roleチェックとunreadを並列取得（どちらもキャッシュ済みなら即座）
-  const [profile, unread] = await Promise.all([
-    getAdminProfile(user.id),
-    getUnreadCount(),
-  ])
+  const profile = await getAdminProfile(user.id)
 
   if (!profile || profile.role !== 'admin') {
     redirect('/characters')
   }
 
+  // AIが返信する運用のため、人手で返信するための画面（受信トレイ・モニター・オペグラ・個別送信・通報など）はメニューから外している
   const navItems = [
     { href: '/admin', label: '概要' },
-    { href: '/admin/conversations', label: `受信トレイ${(unread ?? 0) > 0 ? ` (${unread})` : ''}` },
-    { href: '/admin/conversations/search', label: 'やり取り検索' },
     { href: '/admin/users', label: 'ユーザー' },
-    { href: '/admin/labels', label: 'ラベル' },
+    { href: '/admin/conversations', label: '会話' },
     { href: '/admin/characters', label: 'キャラ管理' },
-    { href: '/admin/auto-broadcast-schedule', label: '同報スケジュール' },
-    { href: '/admin/items', label: 'アイテム' },
-    { href: '/admin/videos', label: '動画販売' },
-    { href: '/admin/opegra', label: 'オペグラ' },
-    { href: '/admin/individual', label: '個別送信' },
-    { href: '/admin/campaigns', label: 'キャンペーン' },
-    { href: '/admin/monitor', label: 'モニター' },
     { href: '/admin/analytics', label: '集計' },
-    { href: '/admin/kpi', label: 'KPI' },
-    { href: '/admin/reports', label: '通報' },
-    { href: '/admin/training', label: 'AI学習データ' },
-    { href: '/admin/inquiries', label: 'お問い合わせ' },
-    { href: '/admin/promo-submissions', label: 'プロモ申請' },
     { href: '/admin/bank-transfers', label: '銀行振込' },
+    { href: '/admin/inquiries', label: 'お問い合わせ' },
+    { href: '/admin/videos', label: '動画販売' },
+    { href: '/admin/items', label: 'アイテム' },
+    { href: '/admin/campaigns', label: 'キャンペーン' },
+    { href: '/admin/auto-broadcast-schedule', label: '自動同報' },
+    { href: '/admin/promo-submissions', label: 'プロモ申請' },
   ]
 
   return (
@@ -79,7 +55,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </div>
       </header>
 
-      <RealtimeRefresher />
       <main className="w-full px-4 py-5">
         {children}
       </main>

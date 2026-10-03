@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
+import { logUserAction } from '@/lib/user-action-log'
 
 // POST /api/items/purchase - アイテム購入（ポイント消費）
 export async function POST(req: NextRequest) {
@@ -30,6 +31,7 @@ export async function POST(req: NextRequest) {
       : 0
   const totalPoints = profile.points + bonusAvailable
   if (totalPoints < item.price_points) {
+    await logUserAction(supabase, user.id, 'points_shortage', { context: 'item', title: item.name, current: totalPoints, required: item.price_points })
     return NextResponse.json({ error: 'insufficient_points', current: totalPoints, required: item.price_points }, { status: 402 })
   }
 
@@ -73,6 +75,8 @@ export async function POST(req: NextRequest) {
     type: 'spend',
     description: `アイテム購入: ${item.name}`,
   })
+
+  await logUserAction(supabase, user.id, 'item_purchase', { title: item.name, cost: item.price_points })
 
   return NextResponse.json({ success: true, remainingPoints: newPoints + newBonusPoints })
 }

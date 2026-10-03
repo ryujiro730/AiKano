@@ -5,6 +5,7 @@ import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { generateReply, extractMemoryUpdate, type LLMMessage } from '@/lib/llm-service'
 import { getActivePlan } from '@/lib/plans'
+import { logUserAction } from '@/lib/user-action-log'
 
 // 1通あたりの好感度上昇（会員はプランの倍率を掛ける）
 const BASE_AFFECTION_POINTS = 3
@@ -165,6 +166,9 @@ export async function POST(req: NextRequest) {
     p_points: BASE_AFFECTION_POINTS * (activePlan?.affection_multiplier ?? 1),
   })
   if (affErr) console.error('[ai-reply] add_affection error:', affErr.message)
+  if ((affection as { leveled_up?: boolean } | null)?.leveled_up) {
+    await logUserAction(admin, user.id, 'level_up', { character_name: character.name, level: (affection as { affection_level?: number }).affection_level })
+  }
 
   // ── 非同期後処理（fire-and-forget）─────────────────────────────────────
 

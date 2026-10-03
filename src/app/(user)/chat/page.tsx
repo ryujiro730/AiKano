@@ -19,6 +19,7 @@ import { AffectionIcon } from '@/components/AffectionIcon'
 import { LockedPhotoTile } from '@/components/LockedPhotoTile'
 import { PLANS, type PlanId } from '@/lib/plans'
 import { notifyBadgesChanged } from '@/lib/badge-events'
+import { logAction } from '@/lib/action-log'
 
 const MAX_CACHED_MSGS = 60
 const CHAT_ENABLED = process.env.NEXT_PUBLIC_CHAT_ENABLED !== 'false'
@@ -103,6 +104,14 @@ export default function ChatPage() {
       return next
     })
   }, [markRead])
+
+  // チャットを開いたことを記録（キャラ情報が揃った最初の1回）
+  const loggedOpenRef = useRef(false)
+  useEffect(() => {
+    if (!character || loggedOpenRef.current) return
+    loggedOpenRef.current = true
+    logAction('chat_open', { metadata: { character_name: character.name } })
+  }, [character])
 
   // 別タブ・バックグラウンドから戻ったときに既読化
   useEffect(() => {

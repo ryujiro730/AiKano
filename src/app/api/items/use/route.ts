@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
+import { logUserAction } from '@/lib/user-action-log'
 
 // POST /api/items/use - アイテムをチャットで使用（1回消費 + メッセージ送信）
 // 書き込みはサーバー権限で行う（ユーザー権限では user_items / ユーザーメッセージを書けない）
@@ -68,6 +69,8 @@ export async function POST(req: NextRequest) {
     .from('conversations')
     .update({ last_message_at: new Date().toISOString(), is_unread_staff: true })
     .eq('id', conversationId)
+
+  await logUserAction(db, user.id, 'item_use', { title: item.name })
 
   return NextResponse.json({ success: true, message: msg, remainingQuantity: userItem.quantity - 1 })
 }

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { PLANS, type PlanId } from '@/lib/plans'
+import { logUserAction } from '@/lib/user-action-log'
 
 /**
  * サブスク会員の毎月ボーナスptを付与する（period_key ごとに1回だけ。DB関数側で冪等）
@@ -13,11 +14,12 @@ export async function grantSubscriptionBonus(
 ) {
   const plan = planId ? PLANS[planId as PlanId] : null
   if (!plan) return
-  const { error } = await admin.rpc('grant_subscription_bonus', {
+  const { data: granted, error } = await admin.rpc('grant_subscription_bonus', {
     p_user_id: userId,
     p_period_key: periodKey,
     p_plan_id: plan.id,
     p_amount: plan.monthly_bonus_points,
   })
   if (error) console.error('[subscription-bonus] grant error:', error.message)
+  else if (granted) await logUserAction(admin, userId, 'subscription_bonus', { plan: plan.name, points: plan.monthly_bonus_points })
 }

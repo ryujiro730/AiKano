@@ -10,6 +10,7 @@ import { PointPackageList } from '@/components/PointPackageList'
 import type { Profile } from '@/types'
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
+import { logAction } from '@/lib/action-log'
 
 export default function PaymentPage() {
   const searchParams = useSearchParams()
@@ -37,6 +38,8 @@ export default function PaymentPage() {
     }
     load()
   }, [])
+
+  useEffect(() => { logAction('payment_page') }, [])
 
   // /payment#points で来たら、読み込み完了後にポイント購入欄へスクロール
   useEffect(() => {

@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { logUserAction } from '@/lib/user-action-log'
 
 function admin() {
   return createAdminClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
@@ -16,6 +17,9 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
     { onConflict: 'user_id,character_id', ignoreDuplicates: true }
   )
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  const { data: ch } = await admin().from('characters').select('name').eq('id', params.id).single()
+  await logUserAction(admin(), user.id, 'character_block', { character_name: ch?.name })
 
   return NextResponse.json({ ok: true })
 }

@@ -1,6 +1,8 @@
 'use client'
 
+import { useEffect } from 'react'
 import { X } from 'lucide-react'
+import { logAction } from '@/lib/action-log'
 import { PointPackageList } from './PointPackageList'
 
 interface Props {
@@ -13,6 +15,11 @@ interface Props {
 
 export function PointsShortageDialog({ currentPoints, requiredPoints, onClose, title = '続けて話すにはポイントが必要です' }: Props) {
   const shortage = Math.max(0, requiredPoints - currentPoints)
+
+  useEffect(() => {
+    logAction('purchase_dialog_open', { metadata: { title, current: currentPoints, required: requiredPoints } })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <div

@@ -4,6 +4,7 @@ import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { PLANS, type PlanId } from '@/lib/plans'
 import { POINTS_PER_MESSAGE } from '@/lib/pricing'
+import { logUserAction } from '@/lib/user-action-log'
 
 // ユーザーメッセージ送信：ポイント消費 → メッセージ保存をサーバー側で一括実行。
 // AI返信は ai-reply 側でポイント残高に関係なく返す。
@@ -37,12 +38,18 @@ export async function POST(req: NextRequest) {
 
   const db = adminDb()
 
-  const { data: conv } = await db.from('conversations').select('user_id').eq('id', conversationId).single()
+  const { data: conv } = await db.from('conversations').select('user_id, characters(name)').eq('id', conversationId).single()
   if (!conv || conv.user_id !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   // ── ポイント消費 ────────────────────────────────────────────────────────
+  const characterName = (conv.characters as { name?: string } | null)?.name
   const charge = await chargeForMessage(db, user.id)
-  if (!charge.ok) return NextResponse.json(charge.body, { status: charge.status })
+  if (!charge.ok) {
+    if (charge.status === 402) {
+      await logUserAction(db, user.id, 'points_shortage', { context: 'message', character_name: characterName, current: charge.body.current, required: charge.body.required })
+    }
+    return NextResponse.json(charge.body, { status: charge.status })
+  }
 
   // ── メッセージ保存（失敗したら消費分を返却）──────────────────────────────
   const { data: msg, error: insertErr } = await db
@@ -60,6 +67,12 @@ export async function POST(req: NextRequest) {
   await db.from('conversations')
     .update({ last_message_at: new Date().toISOString(), is_unread_staff: true })
     .eq('id', conversationId)
+
+  await logUserAction(db, user.id, 'message_sent', {
+    character_name: characterName,
+    cost: charge.deducted,
+    via: charge.usedSubscription ? 'subscription' : 'points',
+  })
 
   return NextResponse.json({
     message: msg,

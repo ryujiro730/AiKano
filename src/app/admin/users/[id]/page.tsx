@@ -1,457 +1,353 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useState, useEffect, useCallback } from 'react'
+import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { ChevronLeft, Save, Loader2, Tag, X } from 'lucide-react'
+import { ChevronLeft, Save, Loader2, Tag, X, Ban, ShieldCheck, ChevronRight } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { ja } from 'date-fns/locale'
+import { ActionLogTimeline } from '@/components/admin/ActionLogTimeline'
+import { PLANS, type PlanId } from '@/lib/plans'
 
-type UserDetail = {
-  id: string
-  user_code: string
-  email: string
-  display_name: string | null
-  age: number | null
-  gender: string | null
-  points: number
-  bonus_points: number | null
-  bonus_points_expires_at: string | null
-  admin_note: string | null
-  last_login_at: string | null
-  created_at: string
-  referral_source: string | null
-  referral_article: string | null
-  registration_ip: string | null
-  registration_ua: string | null
-  utm_source: string | null
-  utm_medium: string | null
-  utm_campaign: string | null
-  utm_content: string | null
-  utm_term: string | null
-  fbclid: string | null
-  gclid: string | null
+type Profile = {
+  id: string; user_code: string; email: string; display_name: string | null; age: number | null; gender: string | null
+  role: string; points: number; bonus_points: number | null; bonus_points_expires_at: string | null
+  last_login_at: string | null; created_at: string
+  referral_source: string | null; referral_article: string | null; registration_ip: string | null; registration_ua: string | null
+  utm_source: string | null; utm_medium: string | null; utm_campaign: string | null; utm_content: string | null; utm_term: string | null
+  fbclid: string | null; gclid: string | null
+  subscription_status: string | null; subscription_plan: string | null; subscription_period_end: string | null
+  monthly_messages_used: number | null; monthly_messages_limit: number | null
 }
+type ConvStat = {
+  id: string; last_message_at: string | null; character_id: string; character_name: string; avatar_url: string
+  user_messages: number; total_messages: number; affection_level: number | null; affection_points: number | null
+}
+type Stats = {
+  total_charged: number; purchase_count: number; last_purchase_at: string | null; points_spent: number
+  messages_sent: number; last_message_at: string | null; banned_until: string | null; conversations: ConvStat[]
+}
+type Transaction = { id: string; amount: number; type: string; description: string; price_yen: number | null; created_at: string }
+type Label = { id: string; name: string; color: string }
+type Tab = 'info' | 'logs' | 'conversations' | 'payments'
 
-type Label = {
-  id: string
-  name: string
-  color: string
+const TX_TYPE: Record<string, string> = {
+  purchase: '購入', spend: '消費', login_bonus: 'ログインボーナス', admin_adjust: '管理者調整',
+  registration_bonus: '登録ボーナス', referral_bonus: '紹介ボーナス', subscription_bonus: '会員ボーナス',
 }
-
-type AssignedLabel = {
-  label_id: string
-}
-
-type Conversation = {
-  id: string
-  last_message_at: string
-  is_unread_staff: boolean
-  characters: { name: string; avatar_url: string } | null
-}
-
-type Transaction = {
-  id: string
-  amount: number
-  type: string
-  description: string
-  price_yen: number | null
-  created_at: string
-}
+const fmt = (d: string | null) => d ? new Date(d).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo', year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'
+const ago = (d: string | null) => d ? formatDistanceToNow(new Date(d), { addSuffix: true, locale: ja }) : '—'
 
 export default function AdminUserDetailPage() {
   const { id } = useParams<{ id: string }>()
-  const router = useRouter()
   const supabase = createClient()
 
-  const [user, setUser] = useState<UserDetail | null>(null)
-  const [labels, setLabels] = useState<Label[]>([])
-  const [assignedLabelIds, setAssignedLabelIds] = useState<Set<string>>(new Set())
-  const [conversations, setConversations] = useState<Conversation[]>([])
+  const [tab, setTab] = useState<Tab>('info')
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [stats, setStats] = useState<Stats | null>(null)
   const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [adminNote, setAdminNote] = useState('')
-  const [noteLoading, setNoteLoading] = useState(false)
-  const [noteSaved, setNoteSaved] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const [labels, setLabels] = useState<Label[]>([])
+  const [assigned, setAssigned] = useState<Set<string>>(new Set())
+  const [note, setNote] = useState('')
+  const [noteState, setNoteState] = useState<'idle' | 'saving' | 'saved'>('idle')
   const [loadError, setLoadError] = useState<string | null>(null)
-  const [newLabelName, setNewLabelName] = useState('')
-  const [creatingLabel, setCreatingLabel] = useState(false)
+  const [newLabel, setNewLabel] = useState('')
   const [adjustAmount, setAdjustAmount] = useState('')
   const [adjustDesc, setAdjustDesc] = useState('')
   const [adjusting, setAdjusting] = useState(false)
-  const [adjustError, setAdjustError] = useState('')
+  const [banBusy, setBanBusy] = useState(false)
+  const [banConfirm, setBanConfirm] = useState(false)
 
-  useEffect(() => {
-    loadAll()
-  }, [id])
-
-  const loadAll = async () => {
-    const [userRes, labelsRes, assignRes, convRes, txRes, noteRes] = await Promise.all([
-      supabase.from('profiles').select('id, user_code, email, display_name, age, gender, points, bonus_points, bonus_points_expires_at, last_login_at, created_at, referral_source, referral_article, registration_ip, registration_ua, utm_source, utm_medium, utm_campaign, utm_content, utm_term, fbclid, gclid').eq('id', id).single(),
+  const loadAll = useCallback(async () => {
+    const [detailRes, labelsRes, assignRes, noteRes] = await Promise.all([
+      fetch(`/api/admin/user-detail/${id}`).then(r => r.json()),
       supabase.from('admin_labels').select('*').order('name'),
       supabase.from('user_label_assignments').select('label_id').eq('user_id', id),
-      supabase.from('conversations').select('id, last_message_at, is_unread_staff, characters(name, avatar_url)').eq('user_id', id).order('last_message_at', { ascending: false }).limit(10),
-      supabase.from('point_transactions').select('id, amount, type, description, price_yen, created_at').eq('user_id', id).order('created_at', { ascending: false }).limit(50),
       fetch(`/api/admin/profile-note?userId=${id}`).then(r => r.json()),
     ])
-
-    if (userRes.error) { setLoadError(userRes.error.message); setLoading(false); return }
-    if (!userRes.data) { setLoadError('ユーザーが見つかりません'); setLoading(false); return }
-
-    setUser(userRes.data as UserDetail)
-    setAdminNote(noteRes.admin_note ?? '')
+    if (detailRes.error) { setLoadError(detailRes.error); return }
+    setProfile(detailRes.profile); setStats(detailRes.stats); setTransactions(detailRes.transactions)
     setLabels(labelsRes.data ?? [])
-    setAssignedLabelIds(new Set((assignRes.data ?? []).map((a: AssignedLabel) => a.label_id)))
-    setConversations((convRes.data ?? []) as unknown as Conversation[])
-    setTransactions((txRes.data ?? []) as Transaction[])
-    setLoading(false)
-  }
+    setAssigned(new Set((assignRes.data ?? []).map((a: { label_id: string }) => a.label_id)))
+    setNote(noteRes.admin_note ?? '')
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id])
+
+  useEffect(() => { loadAll() }, [loadAll])
 
   const saveNote = async () => {
-    setNoteLoading(true)
+    setNoteState('saving')
     const res = await fetch('/api/admin/profile-note', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: id, note: adminNote }),
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: id, note }),
     })
-    setNoteLoading(false)
-    if (!res.ok) {
-      const { error } = await res.json()
-      alert('保存に失敗しました: ' + error)
-      return
-    }
-    setNoteSaved(true)
-    setTimeout(() => setNoteSaved(false), 2000)
+    if (!res.ok) { alert('保存に失敗しました'); setNoteState('idle'); return }
+    setNoteState('saved'); setTimeout(() => setNoteState('idle'), 1500)
   }
 
   const toggleLabel = async (labelId: string) => {
-    const isAssigned = assignedLabelIds.has(labelId)
-    if (isAssigned) {
+    if (assigned.has(labelId)) {
       await supabase.from('user_label_assignments').delete().eq('user_id', id).eq('label_id', labelId)
-      setAssignedLabelIds(prev => { const s = new Set(prev); s.delete(labelId); return s })
+      setAssigned(prev => { const s = new Set(prev); s.delete(labelId); return s })
     } else {
       await supabase.from('user_label_assignments').insert({ user_id: id, label_id: labelId })
-      setAssignedLabelIds(prev => { const s = new Set(prev); s.add(labelId); return s })
+      setAssigned(prev => new Set(prev).add(labelId))
     }
+  }
+
+  const createLabel = async () => {
+    if (!newLabel.trim()) return
+    const { data } = await supabase.from('admin_labels').insert({ name: newLabel.trim(), color: '#6366f1' }).select().single()
+    if (data) setLabels(prev => [...prev, data as Label].sort((a, b) => a.name.localeCompare(b.name)))
+    setNewLabel('')
   }
 
   const adjustPoints = async (sign: 1 | -1) => {
     const amt = parseInt(adjustAmount, 10)
-    if (!amt || amt <= 0) { setAdjustError('金額を入力してください'); return }
+    if (!amt || amt <= 0) return
     setAdjusting(true)
-    setAdjustError('')
     const res = await fetch('/api/admin/adjust-points', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId: id, amount: amt * sign, description: adjustDesc.trim() || undefined }),
     })
     const data = await res.json()
-    if (!res.ok) { setAdjustError(data.error ?? 'エラー'); setAdjusting(false); return }
-    setUser(prev => prev ? { ...prev, points: data.newPoints } : prev)
-    setAdjustAmount('')
-    setAdjustDesc('')
     setAdjusting(false)
-    // トランザクション履歴を更新
+    if (!res.ok) { alert(data.error ?? 'エラー'); return }
+    setAdjustAmount(''); setAdjustDesc('')
     loadAll()
   }
 
-  const createLabel = async () => {
-    if (!newLabelName.trim()) return
-    setCreatingLabel(true)
-    const { data } = await supabase.from('admin_labels').insert({ name: newLabelName.trim(), color: '#6366f1' }).select().single()
-    if (data) {
-      setLabels(prev => [...prev, data as Label].sort((a, b) => a.name.localeCompare(b.name)))
-    }
-    setNewLabelName('')
-    setCreatingLabel(false)
+  const isBanned = !!stats?.banned_until && new Date(stats.banned_until) > new Date()
+  const toggleBan = async () => {
+    setBanBusy(true)
+    const res = await fetch('/api/admin/ban-user', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: id, ban: !isBanned }),
+    })
+    const data = await res.json()
+    setBanBusy(false); setBanConfirm(false)
+    if (!res.ok) { alert(data.error ?? 'エラー'); return }
+    loadAll()
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="animate-spin" style={{ color: 'var(--color-primary)' }} size={22} />
-      </div>
-    )
+  if (loadError) return <p className="text-sm text-red-500 py-10 text-center">エラー: {loadError}</p>
+  if (!profile || !stats) {
+    return <div className="flex items-center justify-center h-64"><Loader2 className="animate-spin" style={{ color: 'var(--color-primary)' }} size={22} /></div>
   }
 
-  if (loadError) {
-    return (
-      <div className="flex flex-col items-center justify-center h-64 gap-3">
-        <p className="text-red-400 text-sm">エラー: {loadError}</p>
-        <button onClick={() => { setLoading(true); setLoadError(null); loadAll() }} className="btn-primary px-4 py-2 text-sm">再試行</button>
-      </div>
-    )
-  }
-
-  if (!user) return null
-
-  const payments = transactions.filter(t => t.type === 'purchase' && t.price_yen != null)
-  const totalCharged = payments.reduce((sum, t) => sum + (t.price_yen ?? 0), 0)
+  const bonusValid = profile.bonus_points_expires_at && new Date(profile.bonus_points_expires_at) > new Date()
+  const plan = profile.subscription_plan ? PLANS[profile.subscription_plan as PlanId] : null
+  const isMember = (profile.subscription_status === 'active' || profile.subscription_status === 'trialing') && !!plan
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <Link href="/admin/users" className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors">
-          <ChevronLeft size={20} />
-        </Link>
-        <div>
-          <h1 className="text-xl font-bold">{user.display_name ?? '匿名ユーザー'}</h1>
-          <p className="text-[var(--color-text-muted)] text-xs font-mono">{user.user_code} · {user.email}</p>
+    <div className="max-w-4xl space-y-4">
+      {/* ── ヘッダー ── */}
+      <div className="flex items-start gap-3">
+        <Link href="/admin/users" className="mt-1" style={{ color: 'var(--color-text-muted)' }}><ChevronLeft size={20} /></Link>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-xl font-bold">{profile.display_name ?? '未設定'}</h1>
+            {isBanned && <Badge color="#ef4444">BAN中</Badge>}
+            {isMember && <Badge color="#d4386f">{plan!.name}会員</Badge>}
+            {stats.purchase_count > 0 && <Badge color="#16a34a">課金ユーザー</Badge>}
+            {profile.role !== 'user' && <Badge color="#6b7280">{profile.role}</Badge>}
+          </div>
+          <p className="text-xs font-mono mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{profile.user_code} · {profile.email}</p>
         </div>
       </div>
 
-      {/* User info */}
-      <div className="glass rounded-2xl p-5">
-        <h2 className="text-sm font-semibold mb-4 text-[var(--color-text-muted)]">基本情報</h2>
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <div><span className="text-[var(--color-text-muted)] text-xs">年齢</span><p>{user.age != null ? `${user.age}歳` : '—'}</p></div>
-          <div><span className="text-[var(--color-text-muted)] text-xs">性別</span><p>{{ male: '男性', female: '女性', other: 'その他' }[user.gender ?? ''] ?? '—'}</p></div>
-          <div>
-            <span className="text-[var(--color-text-muted)] text-xs">残高</span>
-            <p className="font-semibold">{user.points}T</p>
-          </div>
-          <div>
-            <span className="text-[var(--color-text-muted)] text-xs">累計課金</span>
-            <p className="font-semibold">{totalCharged > 0 ? `¥${totalCharged.toLocaleString()}` : '—'}</p>
-          </div>
-          {(user.bonus_points ?? 0) > 0 && (
-            <div className="col-span-2">
-              <span className="text-[var(--color-text-muted)] text-xs">ボーナスPT</span>
-              <p className="font-semibold text-amber-500">
-                {user.bonus_points}T
-                {user.bonus_points_expires_at && (
-                  <span className="text-xs font-normal text-[var(--color-text-muted)] ml-1">
-                    （期限: {new Date(user.bonus_points_expires_at).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo' })}）
-                  </span>
-                )}
+      {/* ── サマリー ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+        <Stat label="累計課金" value={`¥${stats.total_charged.toLocaleString()}`} sub={`${stats.purchase_count}回`} />
+        <Stat label="ポイント残高" value={`${(profile.points + (bonusValid ? profile.bonus_points ?? 0 : 0)).toLocaleString()}pt`} sub={bonusValid && profile.bonus_points ? `うちボーナス${profile.bonus_points}` : undefined} />
+        <Stat label="送信メッセージ" value={`${stats.messages_sent.toLocaleString()}通`} sub={`消費 ${stats.points_spent.toLocaleString()}pt`} />
+        <Stat label="最終送信" value={ago(stats.last_message_at)} />
+        <Stat label="最終ログイン" value={ago(profile.last_login_at)} sub={`登録 ${ago(profile.created_at)}`} />
+      </div>
+
+      {/* ── タブ ── */}
+      <div className="flex gap-1 p-1 rounded-lg" style={{ background: 'var(--color-surface-2)' }}>
+        {([['info', '基本情報'], ['logs', 'アクションログ'], ['conversations', `会話 (${stats.conversations.length})`], ['payments', '決済・ポイント']] as const).map(([t, label]) => (
+          <button key={t} onClick={() => setTab(t)} className="flex-1 py-2 text-sm font-semibold rounded-md transition-colors"
+            style={tab === t ? { background: 'var(--color-surface)', color: 'var(--color-text)', boxShadow: '0 1px 2px rgba(0,0,0,0.08)' } : { color: 'var(--color-text-muted)' }}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'info' && (
+        <div className="grid md:grid-cols-2 gap-4">
+          <Card title="プロフィール">
+            <Rows rows={[
+              ['年齢', profile.age != null ? `${profile.age}歳` : '—'],
+              ['性別', { male: '男性', female: '女性', other: 'その他' }[profile.gender ?? ''] ?? '—'],
+              ['登録日時', fmt(profile.created_at)],
+              ['最終ログイン', fmt(profile.last_login_at)],
+              ['最終課金', fmt(stats.last_purchase_at)],
+            ]} />
+          </Card>
+
+          <Card title="会員プラン">
+            {isMember ? (
+              <Rows rows={[
+                ['プラン', `${plan!.name}（¥${plan!.price_yen.toLocaleString()}/月）`],
+                ['今月の利用', `${profile.monthly_messages_used ?? 0} / ${profile.monthly_messages_limit ?? 0}通`],
+                ['有効期限', fmt(profile.subscription_period_end)],
+              ]} />
+            ) : (
+              <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
+                {profile.subscription_status ? `非会員（${profile.subscription_status}）` : '非会員'}
               </p>
-            </div>
-          )}
-          <div><span className="text-[var(--color-text-muted)] text-xs">登録日</span><p>{new Date(user.created_at).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo' })}</p></div>
-          <div><span className="text-[var(--color-text-muted)] text-xs">最終ログイン</span><p>{user.last_login_at ? formatDistanceToNow(new Date(user.last_login_at), { addSuffix: true, locale: ja }) : '—'}</p></div>
-          <div className="col-span-2"><span className="text-[var(--color-text-muted)] text-xs">流入元</span><p>{user.referral_source ?? '—'}</p></div>
-          {user.referral_article && (
-            <div className="col-span-2"><span className="text-[var(--color-text-muted)] text-xs">記事</span><p className="text-xs">{user.referral_article}</p></div>
-          )}
-          {(user.utm_source || user.utm_medium || user.utm_campaign || user.utm_content || user.utm_term || user.fbclid || user.gclid) && (
-            <div className="col-span-2 space-y-1">
-              <span className="text-[var(--color-text-muted)] text-xs font-medium block">UTM / 広告</span>
-              <div className="flex flex-wrap gap-2">
-                {user.utm_source   && <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'var(--color-bg-secondary)' }}>source: {user.utm_source}</span>}
-                {user.utm_medium   && <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'var(--color-bg-secondary)' }}>medium: {user.utm_medium}</span>}
-                {user.utm_campaign && <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'var(--color-bg-secondary)' }}>campaign: {user.utm_campaign}</span>}
-                {user.utm_content  && <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'var(--color-bg-secondary)' }}>content: {user.utm_content}</span>}
-                {user.utm_term     && <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'var(--color-bg-secondary)' }}>term: {user.utm_term}</span>}
-                {user.fbclid       && <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'var(--color-bg-secondary)' }}>fbclid: {user.fbclid.slice(0, 16)}…</span>}
-                {user.gclid        && <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'var(--color-bg-secondary)' }}>gclid: {user.gclid.slice(0, 16)}…</span>}
-              </div>
-            </div>
-          )}
-          <div className="col-span-2"><span className="text-[var(--color-text-muted)] text-xs">登録IP</span><p className="font-mono text-xs">{user.registration_ip ?? '—'}</p></div>
-          <div className="col-span-2"><span className="text-[var(--color-text-muted)] text-xs">登録UA</span><p className="text-xs break-all text-[var(--color-text-muted)]">{user.registration_ua ?? '—'}</p></div>
-        </div>
-      </div>
+            )}
+          </Card>
 
-      {/* Point adjustment */}
-      <div className="glass rounded-2xl p-5">
-        <h2 className="text-sm font-semibold mb-4 text-[var(--color-text-muted)]">
-          ポイント手動調整 <span className="font-normal">（現在: <strong className="text-[var(--color-text)]">{user.points}T</strong>）</span>
-        </h2>
-        <div className="flex gap-2 mb-2">
-          <input
-            type="number"
-            min="1"
-            value={adjustAmount}
-            onChange={e => setAdjustAmount(e.target.value)}
-            placeholder="ポイント数"
-            className="input-warm px-3 py-2 text-sm w-36"
-          />
-          <input
-            type="text"
-            value={adjustDesc}
-            onChange={e => setAdjustDesc(e.target.value)}
-            placeholder="理由（省略可）"
-            className="input-warm px-3 py-2 text-sm flex-1"
-          />
-        </div>
-        {adjustError && <p className="text-red-400 text-xs mb-2">{adjustError}</p>}
-        <div className="flex gap-2">
-          <button
-            onClick={() => adjustPoints(1)}
-            disabled={adjusting}
-            className="btn-primary px-4 py-2 text-sm disabled:opacity-40"
-          >
-            + 付与
-          </button>
-          <button
-            onClick={() => adjustPoints(-1)}
-            disabled={adjusting}
-            className="px-4 py-2 text-sm rounded-lg bg-red-50 text-red-500 border border-red-200 hover:bg-red-100 transition-colors disabled:opacity-40"
-          >
-            − 減算
-          </button>
-        </div>
-      </div>
+          <Card title="流入元">
+            <Rows rows={[
+              ['utm_source', profile.utm_source], ['utm_medium', profile.utm_medium], ['utm_campaign', profile.utm_campaign],
+              ['utm_content', profile.utm_content], ['紹介元', profile.referral_source], ['記事', profile.referral_article],
+              ['gclid / fbclid', profile.gclid || profile.fbclid ? '有' : null], ['登録IP', profile.registration_ip],
+            ]} />
+          </Card>
 
-      {/* Labels */}
-      <div className="glass rounded-2xl p-5">
-        <h2 className="text-sm font-semibold mb-4 text-[var(--color-text-muted)] flex items-center gap-2">
-          <Tag size={14} />ラベル
-        </h2>
-        <div className="flex flex-wrap gap-2 mb-4">
-          {labels.map(label => {
-            const assigned = assignedLabelIds.has(label.id)
-            return (
-              <button
-                key={label.id}
-                onClick={() => toggleLabel(label.id)}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium transition-all border"
-                style={{
-                  backgroundColor: assigned ? label.color + '33' : 'var(--color-surface-2)',
-                  borderColor: assigned ? label.color : 'var(--color-border)',
-                  color: assigned ? label.color : 'var(--color-text-muted)',
-                }}
-              >
-                {assigned && <span className="w-1.5 h-1.5 rounded-full" style={{ background: label.color }} />}
-                {label.name}
+          <Card title="管理メモ">
+            <textarea value={note} onChange={e => setNote(e.target.value)} rows={5}
+              className="input-warm w-full px-3 py-2 text-sm" placeholder="対応履歴や注意点など" />
+            <button onClick={saveNote} disabled={noteState === 'saving'} className="btn-primary mt-2 px-3 py-1.5 text-xs flex items-center gap-1.5">
+              {noteState === 'saving' ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
+              {noteState === 'saved' ? '保存しました' : '保存'}
+            </button>
+          </Card>
+
+          <Card title="ラベル">
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {labels.map(l => (
+                <button key={l.id} onClick={() => toggleLabel(l.id)} className="text-xs px-2 py-1 rounded-md flex items-center gap-1"
+                  style={assigned.has(l.id) ? { background: l.color, color: '#fff' } : { background: 'var(--color-surface-2)', color: 'var(--color-text-muted)' }}>
+                  <Tag size={10} />{l.name}{assigned.has(l.id) && <X size={10} />}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <input value={newLabel} onChange={e => setNewLabel(e.target.value)} placeholder="新しいラベル" className="input-warm flex-1 px-2 py-1 text-xs" />
+              <button onClick={createLabel} className="btn-primary px-3 text-xs">追加</button>
+            </div>
+          </Card>
+
+          <Card title="アカウント操作">
+            {!banConfirm ? (
+              <button onClick={() => setBanConfirm(true)} disabled={profile.role === 'admin'}
+                className="flex items-center gap-1.5 text-sm font-semibold px-3 py-2 rounded-md disabled:opacity-40"
+                style={isBanned ? { background: 'var(--color-surface-2)', color: 'var(--color-text)' } : { background: '#fef2f2', color: '#ef4444' }}>
+                {isBanned ? <ShieldCheck size={14} /> : <Ban size={14} />}
+                {isBanned ? 'BANを解除する' : 'このユーザーをBANする'}
               </button>
-            )
-          })}
-        </div>
-        {/* New label */}
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={newLabelName}
-            onChange={e => setNewLabelName(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') createLabel() }}
-            placeholder="新しいラベルを作成…"
-            className="flex-1 input-warm px-3 py-2 text-sm"
-          />
-          <button
-            onClick={createLabel}
-            disabled={!newLabelName.trim() || creatingLabel}
-            className="btn-primary px-4 py-2 text-sm disabled:opacity-40"
-          >
-            追加
-          </button>
-        </div>
-      </div>
-
-      {/* Admin note */}
-      <div className="glass rounded-2xl p-5">
-        <h2 className="text-sm font-semibold mb-4 text-[var(--color-text-muted)]">管理メモ（ユーザーには見えません）</h2>
-        <textarea
-          value={adminNote}
-          onChange={e => setAdminNote(e.target.value)}
-          rows={4}
-          placeholder="このユーザーに関するメモを入力…"
-          className="w-full input-warm px-4 py-3 text-sm resize-none mb-3"
-        />
-        <div className="flex items-center gap-3">
-          <button
-            onClick={saveNote}
-            disabled={noteLoading}
-            className="btn-primary px-5 py-2 text-sm flex items-center gap-2 disabled:opacity-40"
-          >
-            {noteLoading ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-            保存
-          </button>
-          {noteSaved && <span className="text-green-400 text-sm">保存しました</span>}
-        </div>
-      </div>
-
-      {/* Conversations */}
-      {conversations.length > 0 && (
-        <div className="glass rounded-2xl p-5">
-          <h2 className="text-sm font-semibold mb-4 text-[var(--color-text-muted)]">会話履歴（直近10件）</h2>
-          <div className="space-y-2">
-            {conversations.map(conv => (
-              <Link
-                key={conv.id}
-                href={`/admin/conversations/${conv.id}`}
-                className="flex items-center justify-between px-4 py-3 rounded-xl hover:bg-[var(--color-surface-2)] transition-colors"
-                style={{ border: '1px solid var(--color-border)' }}
-              >
-                <div className="flex items-center gap-3">
-                  {conv.characters?.avatar_url && (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img src={conv.characters.avatar_url} alt={conv.characters.name} className="w-8 h-8 rounded-full object-cover" />
-                  )}
-                  <span className="text-sm">{conv.characters?.name ?? '—'}</span>
-                  {conv.is_unread_staff && <span className="text-xs text-red-400 font-medium">● 未返信</span>}
-                </div>
-                <span className="text-xs text-[var(--color-text-muted)]">
-                  {formatDistanceToNow(new Date(conv.last_message_at), { addSuffix: true, locale: ja })}
-                </span>
-              </Link>
-            ))}
-          </div>
+            ) : (
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-sm">{isBanned ? 'BANを解除しますか？' : 'BANするとログインできなくなります。よろしいですか？'}</span>
+                <button onClick={toggleBan} disabled={banBusy} className="text-sm font-bold px-3 py-1.5 rounded-md" style={{ background: isBanned ? 'var(--color-text)' : '#ef4444', color: '#fff' }}>
+                  {banBusy ? '処理中…' : isBanned ? '解除する' : 'BANする'}
+                </button>
+                <button onClick={() => setBanConfirm(false)} className="text-sm px-2" style={{ color: 'var(--color-text-muted)' }}>キャンセル</button>
+              </div>
+            )}
+            {isBanned && <p className="text-xs mt-2" style={{ color: 'var(--color-text-muted)' }}>BAN期限: {fmt(stats.banned_until)}</p>}
+          </Card>
         </div>
       )}
 
-      {/* Payment history */}
-      <div className="glass rounded-2xl p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-semibold text-[var(--color-text-muted)]">入金履歴</h2>
-          {totalCharged > 0 && (
-            <span className="text-sm font-semibold text-green-500">累計 ¥{totalCharged.toLocaleString()}</span>
-          )}
-        </div>
-        {payments.length === 0 ? (
-          <p className="text-sm text-[var(--color-text-muted)]">入金履歴はありません</p>
-        ) : (
-          <div className="space-y-1">
-            {payments.map(tx => (
-              <div key={tx.id} className="flex items-center justify-between px-3 py-2.5 rounded-lg text-sm" style={{ border: '1px solid var(--color-border)' }}>
-                <div>
-                  <span className="text-[var(--color-text-muted)] text-xs mr-2">
-                    {new Date(tx.created_at).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo' })}
-                  </span>
-                  <span>{tx.description}</span>
-                </div>
-                <div className="flex items-center gap-4 flex-shrink-0">
-                  <span className="text-green-500 font-semibold">¥{(tx.price_yen ?? 0).toLocaleString()}</span>
-                  <span className="text-[var(--color-text-muted)] text-xs">+{tx.amount}T</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      {tab === 'logs' && (
+        <Card title="アクションログ"><ActionLogTimeline userId={id} /></Card>
+      )}
 
-      {/* Transactions */}
-      {transactions.length > 0 && (
-        <div className="glass rounded-2xl p-5">
-          <h2 className="text-sm font-semibold mb-4 text-[var(--color-text-muted)]">ポイント履歴（直近50件）</h2>
-          <div className="space-y-1">
-            {transactions.map(tx => (
-              <div key={tx.id} className="flex items-center justify-between px-3 py-2 rounded-lg text-sm">
-                <div>
-                  <span className="text-[var(--color-text-muted)] text-xs mr-2">
-                    {new Date(tx.created_at).toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo' })}
-                  </span>
-                  {tx.description}
-                </div>
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  {tx.price_yen != null && (
-                    <span className="text-xs text-green-400">¥{tx.price_yen.toLocaleString()}</span>
-                  )}
-                  <span className={`font-medium ${
-                    tx.type === 'purchase' || tx.type === 'login_bonus' || (tx.type === 'admin_adjust' && tx.amount > 0) ? 'text-green-400' :
-                    tx.type === 'admin_adjust' && tx.amount < 0 ? 'text-red-400' : 'text-[var(--color-text-muted)]'
-                  }`}>
-                    {tx.type === 'purchase' || tx.type === 'login_bonus' ? '+' :
-                     tx.type === 'admin_adjust' ? (tx.amount > 0 ? '+' : '-') : '-'}{Math.abs(tx.amount)}T
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
+      {tab === 'conversations' && (
+        <Card title="会話">
+          {stats.conversations.length === 0 ? (
+            <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>会話はまだありません</p>
+          ) : (
+            <div className="-mx-2">
+              {stats.conversations.map(c => (
+                <Link key={c.id} href={`/admin/conversations/${c.id}`} className="flex items-center gap-3 px-2 py-2.5 rounded-md hover:bg-[var(--color-surface-2)]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={c.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" style={{ objectPosition: 'top center' }} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold">{c.character_name}
+                      {c.affection_level ? <span className="ml-2 text-xs font-normal" style={{ color: 'var(--color-text-muted)' }}>Lv.{c.affection_level}（{c.affection_points}pt）</span> : null}
+                    </p>
+                    <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>送信 {c.user_messages}通 / 全 {c.total_messages}通 · {ago(c.last_message_at)}</p>
+                  </div>
+                  <ChevronRight size={16} style={{ color: 'var(--color-text-muted)' }} />
+                </Link>
+              ))}
+            </div>
+          )}
+        </Card>
+      )}
+
+      {tab === 'payments' && (
+        <div className="space-y-4">
+          <Card title="ポイント調整">
+            <div className="flex gap-2 flex-wrap">
+              <input type="number" min={1} value={adjustAmount} onChange={e => setAdjustAmount(e.target.value)} placeholder="ポイント" className="input-warm w-28 px-2 py-1.5 text-sm" />
+              <input value={adjustDesc} onChange={e => setAdjustDesc(e.target.value)} placeholder="理由（任意）" className="input-warm flex-1 min-w-[140px] px-2 py-1.5 text-sm" />
+              <button onClick={() => adjustPoints(1)} disabled={adjusting} className="px-3 py-1.5 text-sm font-semibold rounded-md" style={{ background: '#f0fdf4', color: '#16a34a' }}>付与</button>
+              <button onClick={() => adjustPoints(-1)} disabled={adjusting} className="px-3 py-1.5 text-sm font-semibold rounded-md" style={{ background: '#fef2f2', color: '#ef4444' }}>減算</button>
+            </div>
+          </Card>
+          <Card title="ポイント履歴（直近200件）">
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead><tr style={{ color: 'var(--color-text-muted)' }}><th className="text-left py-1.5 font-semibold">日時</th><th className="text-left font-semibold">種別</th><th className="text-left font-semibold">内容</th><th className="text-right font-semibold">pt</th><th className="text-right font-semibold">金額</th></tr></thead>
+                <tbody>
+                  {transactions.map(t => (
+                    <tr key={t.id} style={{ borderTop: '1px solid var(--color-border)' }}>
+                      <td className="py-1.5 whitespace-nowrap tabular-nums">{fmt(t.created_at)}</td>
+                      <td className="whitespace-nowrap">{TX_TYPE[t.type] ?? t.type}</td>
+                      <td>{t.description}</td>
+                      <td className="text-right tabular-nums font-semibold" style={{ color: t.amount < 0 ? '#ef4444' : '#16a34a' }}>{t.amount > 0 ? `+${t.amount}` : t.amount}</td>
+                      <td className="text-right tabular-nums">{t.price_yen != null ? `¥${t.price_yen.toLocaleString()}` : ''}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
         </div>
       )}
     </div>
+  )
+}
+
+function Badge({ color, children }: { color: string; children: React.ReactNode }) {
+  return <span className="text-[11px] font-bold px-1.5 py-0.5 rounded" style={{ background: `${color}1a`, color }}>{children}</span>
+}
+
+function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
+  return (
+    <div className="card px-3 py-2.5">
+      <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>{label}</p>
+      <p className="text-base font-bold tabular-nums">{value}</p>
+      {sub && <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>{sub}</p>}
+    </div>
+  )
+}
+
+function Card({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="card p-4">
+      <h2 className="text-xs font-bold mb-3" style={{ color: 'var(--color-text-muted)' }}>{title}</h2>
+      {children}
+    </div>
+  )
+}
+
+function Rows({ rows }: { rows: [string, string | null | undefined][] }) {
+  return (
+    <dl className="text-sm">
+      {rows.map(([k, v]) => (
+        <div key={k} className="flex justify-between gap-4 py-1">
+          <dt style={{ color: 'var(--color-text-muted)' }}>{k}</dt>
+          <dd className="text-right break-all">{v || '—'}</dd>
+        </div>
+      ))}
+    </dl>
   )
 }

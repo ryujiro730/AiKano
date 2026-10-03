@@ -4,6 +4,7 @@ import Stripe from 'stripe'
 import { createAdminClient } from '@/lib/supabase/server'
 import { PLANS, type PlanId } from '@/lib/plans'
 import { grantSubscriptionBonus } from '@/lib/subscription-bonus'
+import { logUserAction } from '@/lib/user-action-log'
 
 export async function POST(request: Request) {
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2026-09-30.endive' as any })
@@ -62,6 +63,7 @@ export async function POST(request: Request) {
                 price_yen: session.amount_total ?? plan.price_yen,
                 stripe_session_id: session.id,
               })
+              await logUserAction(admin, userId, 'subscription_start', { plan: plan.name, method: 'コンビニ・PayPay', price_yen: session.amount_total ?? plan.price_yen })
               await grantSubscriptionBonus(admin, userId, planId, `pass:${session.id}`)
             }
           }
@@ -85,6 +87,7 @@ export async function POST(request: Request) {
               price_yen: priceYen ? parseInt(priceYen) : (session.amount_total ?? null),
               stripe_session_id: session.id,
             })
+            await logUserAction(admin, userId, 'point_purchase_complete', { tokens: tokenCount, price_yen: priceYen ? parseInt(priceYen) : session.amount_total })
           }
         }
       }
@@ -117,6 +120,7 @@ export async function POST(request: Request) {
       monthly_reset_at: periodEnd,
     }).eq('id', userId)
 
+    await logUserAction(admin, userId, 'subscription_start', { plan: plan.name, method: 'クレジットカード', price_yen: plan.price_yen })
     await grantSubscriptionBonus(admin, userId, planId, `stripe:${subscriptionId}:${subscription.current_period_start}`)
   }
 
@@ -152,11 +156,13 @@ export async function POST(request: Request) {
     const subscription = event.data.object as any
     const customerId = subscription.customer as string
 
+    const { data: canceled } = await admin.from('profiles').select('id, subscription_plan').eq('stripe_customer_id', customerId).single()
     await admin.from('profiles').update({
       subscription_status: 'canceled',
       subscription_plan: null,
       monthly_messages_limit: 0,
     }).eq('stripe_customer_id', customerId)
+    if (canceled) await logUserAction(admin, canceled.id, 'subscription_cancel', { plan: canceled.subscription_plan })
   }
 
   // ── 請求成功（毎月の自動更新）──────────────────────────────────
@@ -179,6 +185,7 @@ export async function POST(request: Request) {
     const { data: renewed } = await admin
       .from('profiles').select('id, subscription_plan').eq('stripe_customer_id', customerId).single()
     if (renewed) {
+      await logUserAction(admin, renewed.id, 'subscription_renew', { plan: renewed.subscription_plan })
       await grantSubscriptionBonus(admin, renewed.id, renewed.subscription_plan, `stripe:${subscriptionId}:${subscription.current_period_start}`)
     }
   }
@@ -187,7 +194,8 @@ export async function POST(request: Request) {
   if (event.type === 'invoice.payment_failed') {
     const invoice = event.data.object as Stripe.Invoice
     const customerId = invoice.customer as string
-    await admin.from('profiles').update({ subscription_status: 'past_due' }).eq('stripe_customer_id', customerId)
+    const { data: failed } = await admin.from('profiles').update({ subscription_status: 'past_due' }).eq('stripe_customer_id', customerId).select('id').maybeSingle()
+    if (failed) await logUserAction(admin, failed.id, 'subscription_payment_failed')
   }
 
   return NextResponse.json({ received: true })

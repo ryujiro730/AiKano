@@ -16,6 +16,7 @@ export type ActionType =
   | 'videos_view'
   | 'points_view'
   | 'crosspromo_view'
+  | 'purchase_dialog_open'
   | 'crosspromo_click'
 
 export async function logAction(

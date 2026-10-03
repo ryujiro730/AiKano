@@ -104,6 +104,14 @@ Supabase RPC → 集計・計算・複雑なフィルタ（SQL/PostgreSQL）
 
 ---
 
+## 管理画面（AI返信前提で簡素化）
+
+- メニュー: 概要 / ユーザー / 会話 / キャラ管理 / 集計 / 銀行振込 / お問い合わせ / 動画販売 / アイテム / キャンペーン / 自動同報 / プロモ申請（人手返信用の受信トレイ・モニター・オペグラ・個別送信・通報はメニューから外した。ページ自体は残っている）
+- 管理APIの認可は `requireAdmin()`（`lib/admin-auth.ts`）。集計は DB 関数 `admin_user_stats` / `admin_conversation_list` / `admin_overview`（066〜068、service_role のみ）
+- **注意**: `lib/supabase/server.ts` の `createAdminClient()` はログイン中ユーザーのセッションを送るため service_role として動かない。service_role 限定の RPC を呼ぶ管理画面では `serviceDb()` を使う
+- アクションログ: 課金・送信などの確定イベントはサーバーで `logUserAction()`（`lib/user-action-log.ts`）、画面閲覧はクライアントで `logAction()`。表示は `components/admin/ActionLogTimeline.tsx`（残高の増減付き）
+- キャラ管理の「テスト会話」で、保存前の設定と好感度レベルを指定してAIの返事を試せる（`/api/admin/character-test`）
+
 ## 未読数・バッジ
 
 - 未読数の定義は DB 関数 `get_conversation_unread` / `get_badge_counts`（063）に一本化。メッセージ一覧・フッター・ホームが同じ条件（直近15日・ブロック除外）を使う
@@ -267,7 +275,7 @@ src/
     UtmCapture.tsx          # UTMパラメータ捕捉
     PointsShortageDialog.tsx # ポイント不足ダイアログ
 .github/workflows/deploy.yml  # デプロイ＆cron設定
-supabase/migrations/          # マイグレーション（065まで適用済み）
+supabase/migrations/          # マイグレーション（068まで適用済み）
 ```
 
 ---

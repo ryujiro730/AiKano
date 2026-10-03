@@ -6,6 +6,7 @@ import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { INTERNAL_EMAILS } from '@/lib/internal-accounts'
 import { findEligibleCampaign } from '@/lib/campaigns'
 import { findPackage, pointsForPackage, isCampaignTarget, type PurchaseCampaign } from '@/lib/point-packages'
+import { logUserAction } from '@/lib/user-action-log'
 
 // ポイント購入（一回払い）。価格・付与ポイントはサーバー側で決める（クライアントからはパックIDのみ受け取る）
 export async function POST(request: Request) {
@@ -52,6 +53,8 @@ export async function POST(request: Request) {
       },
       managed_payments: { enabled: false },
     } as any)
+
+    await logUserAction(db, user.id, 'checkout_start', { price_yen: pkg.price_yen, tokens, campaign: appliedCampaignId || undefined })
 
     return NextResponse.json({ url: session.url })
   } catch (error) {

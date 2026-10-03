@@ -1,114 +1,108 @@
-import { createAdminClient } from '@/lib/supabase/server'
-import { unstable_noStore as noStore } from 'next/cache'
 import Link from 'next/link'
-import { Inbox, Users, MessageCircle, TrendingUp } from 'lucide-react'
+import { unstable_noStore as noStore } from 'next/cache'
+import { formatDistanceToNow } from 'date-fns'
+import { ja } from 'date-fns/locale'
+import { serviceDb } from '@/lib/admin-auth'
+import { INTERNAL_EMAILS } from '@/lib/internal-accounts'
+import { RefreshOnMount } from '@/components/RefreshOnMount'
 
-export default async function AdminDashboard() {
+type PeriodStats = { registrations: number; senders: number; messages: number; revenue: number; payers: number; new_members: number }
+type Overview = {
+  periods: Record<'today' | 'yesterday' | 'week', PeriodStats>
+  totals: { users: number; members: number; payers: number }
+  todo: { bank_transfers: number; inquiries: number; promo_submissions: number }
+  recent_purchases: { user_id: string; display_name: string | null; price_yen: number | null; description: string; created_at: string }[]
+  recent_signups: { id: string; display_name: string | null; age: number | null; utm_source: string | null; referral_source: string | null; created_at: string }[]
+}
+
+const METRICS: { key: keyof PeriodStats; label: string; yen?: boolean }[] = [
+  { key: 'registrations', label: '新規登録' },
+  { key: 'senders', label: '送信したユーザー' },
+  { key: 'messages', label: '送信メッセージ' },
+  { key: 'payers', label: '課金者' },
+  { key: 'revenue', label: '売上', yen: true },
+  { key: 'new_members', label: '新規会員' },
+]
+const ago = (d: string) => formatDistanceToNow(new Date(d), { addSuffix: true, locale: ja })
+
+// 管理画面: 概要（AIが返信するので「未読」ではなく、売上と行動の数字を一目で見る）
+export default async function AdminOverviewPage() {
   noStore()
-  const supabase = createAdminClient()
+  const db = serviceDb()
+  const { data: internal } = await db.from('profiles').select('id').in('email', [...INTERNAL_EMAILS])
+  const { data, error } = await db.rpc('admin_overview', { p_exclude_ids: (internal ?? []).map(p => p.id as string) })
+  if (error || !data) return <p className="text-sm text-red-500">集計の取得に失敗しました: {error?.message}</p>
+  const o = data as Overview
 
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-
-  const [
-    { count: unreadCount },
-    { count: totalUsers },
-    { count: todayMessages },
-    { count: totalConversations },
-    { data: recentConvs },
-  ] = await Promise.all([
-    supabase.from('conversations').select('id', { count: 'exact', head: true }).eq('is_unread_staff', true),
-    supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'user'),
-    supabase.from('messages').select('id', { count: 'exact', head: true }).gte('created_at', today.toISOString()),
-    supabase.from('conversations').select('id', { count: 'exact', head: true }),
-    supabase.from('conversations')
-      .select('id, last_message_at, is_unread_staff, characters(name, avatar_url), profiles(display_name)')
-      .order('last_message_at', { ascending: false })
-      .limit(5),
-  ])
-
-  const stats = [
-    { label: '未読メッセージ', value: unreadCount ?? 0, icon: Inbox, color: 'text-red-400', urgent: (unreadCount ?? 0) > 0 },
-    { label: '今日のメッセージ', value: todayMessages ?? 0, icon: MessageCircle, color: 'text-[var(--color-primary-light)]', urgent: false },
-    { label: '総ユーザー数', value: totalUsers ?? 0, icon: Users, color: 'text-[var(--color-accent)]', urgent: false },
-    { label: '総会話数', value: totalConversations ?? 0, icon: TrendingUp, color: 'text-purple-400', urgent: false },
-  ]
+  const todo = [
+    { label: '銀行振込の承認待ち', n: o.todo.bank_transfers, href: '/admin/bank-transfers' },
+    { label: '未対応のお問い合わせ', n: o.todo.inquiries, href: '/admin/inquiries' },
+    { label: 'プロモ申請', n: o.todo.promo_submissions, href: '/admin/promo-submissions' },
+  ].filter(t => t.n > 0)
 
   return (
-    <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold mb-1">ダッシュボード</h1>
-        <p className="text-[var(--color-text-muted)] text-sm">AiKano 管理画面</p>
+    <div className="max-w-5xl space-y-5">
+      <RefreshOnMount />
+      <div className="flex items-baseline justify-between flex-wrap gap-2">
+        <h1 className="text-xl font-bold">概要</h1>
+        <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+          ユーザー {o.totals.users.toLocaleString()}人 · 課金者 {o.totals.payers}人 · 会員 {o.totals.members}人（社内アカウント除く）
+        </p>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        {stats.map((stat) => (
-          <div
-            key={stat.label}
-            className={`glass rounded-2xl p-5 ${stat.urgent ? 'border-red-500/50 ring-1 ring-red-500/20' : ''}`}
-          >
-            <stat.icon size={20} className={`${stat.color} mb-3`} />
-            <div className="text-3xl font-bold mb-1">{stat.value}</div>
-            <div className="text-[var(--color-text-muted)] text-xs">{stat.label}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Quick actions */}
-      {(unreadCount ?? 0) > 0 && (
-        <Link
-          href="/admin/conversations"
-          className="block glass rounded-2xl p-5 mb-8 border-[var(--color-primary)]/50 hover:border-[var(--color-primary)] transition-colors"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="font-semibold mb-1 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse inline-block" />
-                未返信メッセージがあります
-              </div>
-              <div className="text-[var(--color-text-muted)] text-sm">
-                {unreadCount}件の未読メッセージに返信してください
-              </div>
-            </div>
-            <div className="btn-primary px-4 py-2 text-sm">返信する →</div>
-          </div>
-        </Link>
+      {todo.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {todo.map(t => (
+            <Link key={t.href} href={t.href} className="text-sm font-semibold px-3 py-2 rounded-lg" style={{ background: '#fff7ed', color: '#c2410c', border: '1px solid #fed7aa' }}>
+              {t.label} <span className="tabular-nums">{t.n}件</span> →
+            </Link>
+          ))}
+        </div>
       )}
 
-      {/* Recent conversations */}
-      <h2 className="font-semibold text-base mb-4">最近の会話</h2>
-      <div className="space-y-2">
-        {recentConvs?.map((conv: any) => (
-          <Link
-            key={conv.id}
-            href={`/admin/conversations/${conv.id}`}
-            className="block glass rounded-xl px-4 py-3 hover:border-[var(--color-primary-light)]/40 transition-colors"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full overflow-hidden border border-[var(--color-border)]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={conv.characters?.avatar_url} alt="" className="w-full h-full object-cover" />
-                </div>
-                <div>
-                  <div className="text-sm font-medium flex items-center gap-2">
-                    {conv.profiles?.display_name ?? '匿名'}
-                    {conv.is_unread_staff && (
-                      <span className="w-2 h-2 rounded-full bg-red-400 inline-block" />
-                    )}
-                  </div>
-                  <div className="text-xs text-[var(--color-text-muted)]">
-                    {conv.characters?.name}宛
-                  </div>
-                </div>
-              </div>
-              <div className="text-xs text-[var(--color-text-muted)]">
-                {new Date(conv.last_message_at).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-              </div>
-            </div>
-          </Link>
-        ))}
+      <div className="card overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr style={{ color: 'var(--color-text-muted)' }}>
+              <th className="text-left font-semibold px-4 py-2.5" />
+              <th className="text-right font-semibold px-4">今日</th>
+              <th className="text-right font-semibold px-4">昨日</th>
+              <th className="text-right font-semibold px-4">直近7日</th>
+            </tr>
+          </thead>
+          <tbody>
+            {METRICS.map(m => (
+              <tr key={m.key} style={{ borderTop: '1px solid var(--color-border)' }}>
+                <td className="px-4 py-2.5 font-semibold whitespace-nowrap">{m.label}</td>
+                {(['today', 'yesterday', 'week'] as const).map(p => {
+                  const v = Number(o.periods[p][m.key] ?? 0)
+                  return <td key={p} className="text-right px-4 tabular-nums">{m.yen ? `¥${v.toLocaleString()}` : v.toLocaleString()}</td>
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-4">
+        <div className="card p-4">
+          <h2 className="text-xs font-bold mb-2" style={{ color: 'var(--color-text-muted)' }}>最近の課金</h2>
+          {o.recent_purchases.length === 0 ? <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>まだありません</p> : o.recent_purchases.map((r, i) => (
+            <Link key={i} href={`/admin/users/${r.user_id}`} className="flex justify-between gap-3 py-1.5 text-sm hover:underline">
+              <span className="truncate">{r.display_name ?? '未設定'} <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{r.description}</span></span>
+              <span className="flex-shrink-0 tabular-nums">¥{(r.price_yen ?? 0).toLocaleString()} <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{ago(r.created_at)}</span></span>
+            </Link>
+          ))}
+        </div>
+        <div className="card p-4">
+          <h2 className="text-xs font-bold mb-2" style={{ color: 'var(--color-text-muted)' }}>最近の登録</h2>
+          {o.recent_signups.map(r => (
+            <Link key={r.id} href={`/admin/users/${r.id}`} className="flex justify-between gap-3 py-1.5 text-sm hover:underline">
+              <span className="truncate">{r.display_name ?? '未設定'}{r.age ? <span className="text-xs ml-1" style={{ color: 'var(--color-text-muted)' }}>{r.age}歳</span> : null}</span>
+              <span className="flex-shrink-0 text-xs" style={{ color: 'var(--color-text-muted)' }}>{r.utm_source ?? r.referral_source ?? '直接'} · {ago(r.created_at)}</span>
+            </Link>
+          ))}
+        </div>
       </div>
     </div>
   )

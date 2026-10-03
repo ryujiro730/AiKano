@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
+import { logUserAction } from '@/lib/user-action-log'
 
 // POST /api/videos/purchase - 動画購入（ポイント消費）
 export async function POST(req: NextRequest) {
@@ -50,6 +51,7 @@ export async function POST(req: NextRequest) {
       : 0
   const totalPoints = profile.points + bonusAvailable
   if (totalPoints < video.price_points) {
+    await logUserAction(adminDb, user.id, 'points_shortage', { context: 'video', title: video.title, current: totalPoints, required: video.price_points })
     return NextResponse.json(
       { error: 'insufficient_points', current: totalPoints, required: video.price_points },
       { status: 402 }
@@ -88,6 +90,8 @@ export async function POST(req: NextRequest) {
     type: 'spend',
     description: `動画購入: ${video.title}`,
   })
+
+  await logUserAction(adminDb, user.id, 'video_purchase', { title: video.title, cost: video.price_points })
 
   return NextResponse.json({
     ok: true,

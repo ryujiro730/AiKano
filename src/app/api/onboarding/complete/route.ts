@@ -4,6 +4,7 @@ import { createClient as createServerClient } from '@/lib/supabase/server'
 import { createClient } from '@supabase/supabase-js'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { REGISTRATION_BONUS, REFERRAL_BONUS } from '@/lib/pricing'
+import { logUserAction } from '@/lib/user-action-log'
 
 const IP_WINDOW_DAYS = 30
 
@@ -138,6 +139,15 @@ export async function POST(req: NextRequest) {
     if (referralByCode) {
       await applyReferralBonus(adminClient, user.id, referralByCode, ip)
     }
+
+    const { data: partner } = partnerCharacterId
+      ? await adminClient.from('characters').select('name').eq('id', partnerCharacterId).single()
+      : { data: null }
+    await logUserAction(adminClient, user.id, 'signup_complete', {
+      character_name: partner?.name,
+      bonus: REGISTRATION_BONUS,
+      source: utmSource ?? referralSource ?? undefined,
+    })
 
     return NextResponse.json({ ok: true })
   }

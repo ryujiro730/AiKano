@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
+import { logUserAction } from '@/lib/user-action-log'
 
 function getAdmin() {
   return createSupabaseClient(
@@ -49,6 +50,8 @@ export async function POST(request: Request) {
 
   if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 })
   if (txErr) return NextResponse.json({ error: txErr.message }, { status: 500 })
+
+  await logUserAction(admin, userId, 'admin_points_adjust', { amount, reason: description || undefined })
 
   return NextResponse.json({ ok: true, newPoints })
 }

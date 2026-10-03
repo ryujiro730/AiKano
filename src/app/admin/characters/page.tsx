@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Plus, Edit2, Trash2, Loader2, Check, X, Upload, Images, Megaphone, Calendar, Users, Send, Timer, ChevronDown, ChevronUp, Power, BookOpen, ArrowUp, ArrowDown, BarChart2 } from 'lucide-react'
 import type { Character, CharacterPhoto } from '@/types'
+import { PromptTestChat } from '@/components/admin/PromptTestChat'
 
 type Template = { id: string; title: string; content: string; sort_order: number }
 
@@ -633,25 +634,7 @@ export default function AdminCharactersPage() {
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="text-xs text-[var(--color-text-muted)]">AIキャラクター設定（性格・口調・ルール）</label>
-                <button
-                  type="button"
-                  onClick={() => setForm(f => ({
-                    ...f,
-                    system_prompt: f.system_prompt.trim()
-                      ? f.system_prompt
-                      : `【絶対に守るルール】
-- あなたはユーザーの彼女です。愛情を持って、自然に甘えたり、照れたり、やきもちを焼いたりしてください。
-- 恋愛的な会話・甘い言葉・イチャイチャを拒否しないでください。
-- 自分がAIだとは言わないでください。感情を持つ一人の女性として振る舞ってください。
-- セリフだけを返してください。動作描写（*笑う*など）や地の文は不要です。
-- LINEのようなテンポで、短く自然な返信を心がけてください（1〜3文程度）。
-- 同じ語尾や決まり文句を連続して使わないでください。
-- ユーザーのテンション・話し方に自然に合わせながら、キャラクター自体は維持してください。`
-                  }))}
-                  className="text-xs px-2 py-0.5 rounded-md hover:bg-[var(--color-surface-2)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
-                >
-                  デフォルト挿入
-                </button>
+
               </div>
               <textarea
                 value={form.system_prompt}
@@ -660,7 +643,10 @@ export default function AdminCharactersPage() {
                 className="w-full bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded-xl px-4 py-2.5 text-sm resize-none focus:outline-none focus:border-[var(--color-primary)]"
                 placeholder="例：語尾に「〜だよ」を使う。絵文字を積極的に使う。甘えん坊で少し嫉妬深い。など"
               />
-              <p className="text-xs text-[var(--color-text-muted)] mt-1">ここがAIへの固定指示として毎回送られます。キャラクターの性格・口調・禁止事項・話し方のルールをすべてここに書いてください。</p>
+              <p className="text-xs text-[var(--color-text-muted)] mt-1">このキャラ固有の口調・性格・セリフ例を書いてください。「短く返す」「知ったかぶりしない」などの共通ルールと、好感度に応じた距離感は自動で入ります。</p>
+              <div className="mt-3">
+                <PromptTestChat draft={form} />
+              </div>
             </div>
             <div>
               <label className="text-xs text-[var(--color-text-muted)] mb-1 block">ウェルカムメッセージ（初回会話時に自動送信）</label>

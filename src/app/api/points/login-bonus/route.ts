@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { LOGIN_BONUS, LOGIN_BONUS_DAYS } from '@/lib/pricing'
+import { logUserAction } from '@/lib/user-action-log'
 
 const BONUS_AMOUNT = LOGIN_BONUS
 const BONUS_DAYS = LOGIN_BONUS_DAYS
@@ -56,6 +57,8 @@ export async function POST() {
       description: 'ログインボーナス',
     }),
   ])
+
+  await logUserAction(admin, userId, 'login_bonus', { points: BONUS_AMOUNT })
 
   return NextResponse.json({
     awarded: true,
