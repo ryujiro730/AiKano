@@ -113,7 +113,7 @@ export default function LoginPage() {
       <p className="text-[var(--color-text-muted)] text-sm mt-5 text-center">
         まだアカウントがない方は{' '}
         <Link href="/auth/register" className="hover:underline" style={{ color: 'var(--color-primary)' }}>
-          新規登録（5通無料）
+          新規登録（4通無料）
         </Link>
       </p>
     </div>

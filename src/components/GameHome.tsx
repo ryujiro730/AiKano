@@ -27,11 +27,11 @@ export function GameHome({
   unreadByChar: Record<string, number>
   unlockedCharIds: string[]
 }) {
-  const unlockedSet = new Set(unlockedCharIds)
   const defaultChar = partnerChar ?? allChars[0] ?? null
   const [activeChar, setActiveChar] = useState<CharData | null>(defaultChar)
   const [unlockTarget, setUnlockTarget] = useState<CharData | null>(null)
   const [localUnlocked, setLocalUnlocked] = useState<Set<string>>(new Set(unlockedCharIds))
+  const [showPicker, setShowPicker] = useState(false)
 
   useEffect(() => {
     document.body.style.overflow = 'hidden'
@@ -49,12 +49,13 @@ export function GameHome({
   const unread = unreadByChar[activeChar.id] ?? 0
   const isLocked = isCharLocked(activeChar)
 
-  const handleCharClick = (char: CharData) => {
+  const handlePickerSelect = (char: CharData) => {
     if (isCharLocked(char)) {
       setUnlockTarget(char)
     } else {
       setActiveChar(char)
     }
+    setShowPicker(false)
   }
 
   return (
@@ -166,7 +167,7 @@ export function GameHome({
           </p>
 
           {/* アクションボタン */}
-          <div style={{ display: 'flex', gap: 10, marginBottom: 18 }}>
+          <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
             {isLocked ? (
               <button
                 onClick={() => setUnlockTarget(activeChar)}
@@ -210,75 +211,141 @@ export function GameHome({
             )}
           </div>
 
-          {/* キャラ切り替えサークル */}
-          <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 2, scrollbarWidth: 'none' }}>
-            {allChars.map(char => {
-              const isActive = char.id === activeChar.id
-              const charLocked = isCharLocked(char)
-              const charAff = affectionMap[char.id]
-              const charAffLevel = charAff ? getAffectionLevel(charAff.points) : null
-              const charUnread = unreadByChar[char.id] ?? 0
-
-              return (
-                <button
-                  key={char.id}
-                  onClick={() => handleCharClick(char)}
-                  style={{
-                    position: 'relative', flexShrink: 0,
-                    width: 52, height: 52, borderRadius: '50%',
-                    overflow: 'hidden', border: 'none', padding: 0,
-                    outline: isActive ? '2.5px solid #E94C8B' : '2px solid rgba(255,255,255,0.22)',
-                    outlineOffset: '2px',
-                    cursor: 'pointer',
-                    opacity: isActive ? 1 : 0.72,
-                    transition: 'opacity 0.2s ease, outline 0.2s ease',
-                    background: 'transparent',
-                  }}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={char.avatar_url}
-                    alt={char.name}
-                    style={{
-                      width: '100%', height: '100%',
-                      objectFit: 'cover', objectPosition: 'top center',
-                      filter: charLocked ? 'blur(2px) brightness(0.65)' : 'none',
-                    }}
-                  />
-
-                  {charLocked && (
-                    <div style={{
-                      position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
-                    }}>
-                      🔒
-                    </div>
-                  )}
-
-                  {!charLocked && charUnread > 0 && (
-                    <div style={{
-                      position: 'absolute', top: 1, right: 1,
-                      background: '#E94C8B', color: '#fff', borderRadius: '50%',
-                      width: 15, height: 15, fontSize: 8,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontWeight: 700, border: '1.5px solid #0a0005',
-                    }}>
-                      {charUnread > 9 ? '9+' : charUnread}
-                    </div>
-                  )}
-
-                  {!charLocked && charAffLevel && charAff && charAff.level >= 2 && (
-                    <div style={{
-                      position: 'absolute', bottom: 0, left: 0, right: 0, height: 3,
-                      background: `${charAffLevel.color}cc`,
-                    }} />
-                  )}
-                </button>
-              )
-            })}
-          </div>
+          {/* 他のキャラを見るボタン */}
+          {allChars.length > 1 && (
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <button
+                onClick={() => setShowPicker(true)}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  padding: '7px 16px', borderRadius: 99,
+                  background: 'rgba(255,255,255,0.1)',
+                  border: '1px solid rgba(255,255,255,0.18)',
+                  color: 'rgba(255,255,255,0.65)', fontSize: 12, fontWeight: 600,
+                  cursor: 'pointer',
+                  backdropFilter: 'blur(8px)',
+                }}
+              >
+                <span style={{ fontSize: 13 }}>👥</span>
+                他のキャラクターを見る ({allChars.length})
+              </button>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* キャラ選択シート */}
+      {showPicker && (
+        <>
+          {/* オーバーレイ */}
+          <div
+            onClick={() => setShowPicker(false)}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 20,
+              background: 'rgba(0,0,0,0.6)',
+              backdropFilter: 'blur(4px)',
+            }}
+          />
+          {/* シート */}
+          <div style={{
+            position: 'fixed', bottom: '56px', left: '50%',
+            transform: 'translateX(-50%)',
+            width: '100%', maxWidth: '480px',
+            zIndex: 21,
+            background: '#160010',
+            borderRadius: '20px 20px 0 0',
+            padding: '0 0 20px',
+            maxHeight: '70vh',
+            overflow: 'hidden',
+            display: 'flex', flexDirection: 'column',
+          }}>
+            {/* ハンドル */}
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 8px' }}>
+              <div style={{ width: 36, height: 4, borderRadius: 99, background: 'rgba(255,255,255,0.2)' }} />
+            </div>
+            <p style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.5)', textAlign: 'center', marginBottom: 14, letterSpacing: '0.06em' }}>
+              キャラクターを選ぶ
+            </p>
+
+            {/* キャラグリッド */}
+            <div style={{ overflowY: 'auto', padding: '0 16px', scrollbarWidth: 'none' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+                {allChars.map(char => {
+                  const isActive = char.id === activeChar.id
+                  const charLocked = isCharLocked(char)
+                  const charUnread = unreadByChar[char.id] ?? 0
+                  const charAff = affectionMap[char.id]
+
+                  return (
+                    <button
+                      key={char.id}
+                      onClick={() => handlePickerSelect(char)}
+                      style={{
+                        position: 'relative',
+                        borderRadius: 14,
+                        overflow: 'hidden',
+                        aspectRatio: '3/4',
+                        border: 'none', padding: 0,
+                        outline: isActive ? '2.5px solid #E94C8B' : '1.5px solid rgba(255,255,255,0.1)',
+                        outlineOffset: isActive ? '2px' : '0',
+                        cursor: 'pointer',
+                        background: '#0a0005',
+                      }}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={char.avatar_url}
+                        alt={char.name}
+                        style={{
+                          width: '100%', height: '100%',
+                          objectFit: 'cover', objectPosition: 'top center',
+                          filter: charLocked ? 'blur(3px) brightness(0.5)' : 'none',
+                        }}
+                      />
+                      <div style={{
+                        position: 'absolute', inset: 0,
+                        background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 50%)',
+                      }} />
+
+                      {charLocked && (
+                        <div style={{
+                          position: 'absolute', inset: 0,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20,
+                        }}>
+                          🔒
+                        </div>
+                      )}
+
+                      {charUnread > 0 && !charLocked && (
+                        <div style={{
+                          position: 'absolute', top: 6, right: 6,
+                          background: '#E94C8B', color: '#fff', borderRadius: '50%',
+                          width: 16, height: 16, fontSize: 9,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontWeight: 700,
+                        }}>
+                          ♡
+                        </div>
+                      )}
+
+                      <div style={{ position: 'absolute', bottom: 7, left: 0, right: 0, textAlign: 'center' }}>
+                        <p style={{ fontSize: 11, fontWeight: 700, color: '#fff' }}>
+                          {charLocked ? '???' : char.name}
+                        </p>
+                        {charAff && !charLocked && (
+                          <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginTop: 1 }}>
+                            Lv.{charAff.level}
+                          </p>
+                        )}
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* 解放モーダル */}
       {unlockTarget && (
@@ -289,7 +356,6 @@ export function GameHome({
           onSuccess={() => {
             setLocalUnlocked(prev => { const s = new Set(Array.from(prev)); s.add(unlockTarget.id); return s })
             setUnlockTarget(null)
-            // 申請完了トースト的な表示のため一時的にアクティブにしない
             alert(`${unlockTarget.name}の申請が完了しました！\nスタッフが確認後、解放されます。`)
           }}
         />

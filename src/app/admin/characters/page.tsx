@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Plus, Edit2, Trash2, Loader2, Check, X, Upload, Images, Megaphone, Calendar, Users, Send, Timer, ChevronDown, ChevronUp, Power, BookOpen, ArrowUp, ArrowDown } from 'lucide-react'
+import { Plus, Edit2, Trash2, Loader2, Check, X, Upload, Images, Megaphone, Calendar, Users, Send, Timer, ChevronDown, ChevronUp, Power, BookOpen, ArrowUp, ArrowDown, BarChart2 } from 'lucide-react'
 import type { Character, CharacterPhoto } from '@/types'
 
 type Template = { id: string; title: string; content: string; sort_order: number }
@@ -82,6 +82,31 @@ export default function AdminCharactersPage() {
   const [stepForm, setStepForm] = useState<Record<string, { delayMinutes: string; message: string }>>({})
   // ステップ編集中: stepId -> { delayMinutes, message }
   const [editingStep, setEditingStep] = useState<Record<string, { delayMinutes: string; message: string }>>({})
+
+  // ステータス編集
+  type StatsForm = { kindness: number; intelligence: number; passion: number; mysterious: number; cuteness: number }
+  const DEFAULT_STATS: StatsForm = { kindness: 3, intelligence: 3, passion: 3, mysterious: 3, cuteness: 3 }
+  const [statsCharId, setStatsCharId] = useState<string | null>(null)
+  const [statsForm, setStatsForm] = useState<StatsForm>(DEFAULT_STATS)
+  const [statsSaving, setStatsSaving] = useState(false)
+
+  const openStats = (char: Character) => {
+    if (statsCharId === char.id) { setStatsCharId(null); return }
+    const existing = (char as any).stats ?? {}
+    setStatsForm({ ...DEFAULT_STATS, ...existing })
+    setStatsCharId(char.id)
+  }
+
+  const saveStats = async (charId: string) => {
+    setStatsSaving(true)
+    const { error } = await supabase.from('characters').update({ stats: statsForm }).eq('id', charId)
+    if (error) { alert('保存失敗: ' + error.message) }
+    else {
+      setCharacters(prev => prev.map(c => c.id === charId ? { ...c, stats: statsForm } as any : c))
+      setStatsCharId(null)
+    }
+    setStatsSaving(false)
+  }
 
   // 同報送信
   const [broadcastCharId, setBroadcastCharId] = useState<string | null>(null)
@@ -693,6 +718,13 @@ export default function AdminCharactersPage() {
                   <Power size={16} />
                 </button>
                 <button
+                  onClick={() => openStats(char)}
+                  className={`p-2 rounded-lg transition-colors ${statsCharId === char.id ? 'bg-[var(--color-primary)] text-white' : 'hover:bg-[var(--color-surface-2)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]'}`}
+                  title="ステータス編集"
+                >
+                  <BarChart2 size={16} />
+                </button>
+                <button
                   onClick={() => openTemplates(char.id)}
                   className={`p-2 rounded-lg transition-colors ${tmplCharId === char.id ? 'bg-[var(--color-primary)] text-white' : 'hover:bg-[var(--color-surface-2)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]'}`}
                   title="返信テンプレート"
@@ -734,6 +766,58 @@ export default function AdminCharactersPage() {
                 </button>
               </div>
             </div>
+
+            {/* ステータスパネル */}
+            {statsCharId === char.id && (() => {
+              const STATS_LABELS: { key: keyof StatsForm; label: string; color: string }[] = [
+                { key: 'kindness',     label: '優しさ',  color: '#f9a8d4' },
+                { key: 'intelligence', label: '知性',    color: '#93c5fd' },
+                { key: 'passion',      label: '情熱',    color: '#fca5a5' },
+                { key: 'mysterious',   label: '謎めき',  color: '#c4b5fd' },
+                { key: 'cuteness',     label: '可愛さ',  color: '#6ee7b7' },
+              ]
+              return (
+                <div className="mt-1 glass rounded-2xl p-5 space-y-4">
+                  <h3 className="text-sm font-semibold flex items-center gap-1.5">
+                    <BarChart2 size={14} />
+                    {char.name}のステータス（各1〜5）
+                  </h3>
+                  <div className="space-y-3">
+                    {STATS_LABELS.map(({ key, label, color }) => (
+                      <div key={key} className="flex items-center gap-3">
+                        <span className="text-xs w-16 flex-shrink-0" style={{ color }}>{label}</span>
+                        <input
+                          type="range"
+                          min={1} max={5} step={1}
+                          value={statsForm[key]}
+                          onChange={e => setStatsForm(f => ({ ...f, [key]: parseInt(e.target.value) }))}
+                          className="flex-1 accent-[var(--color-primary)]"
+                        />
+                        <div className="flex gap-0.5 flex-shrink-0">
+                          {[1,2,3,4,5].map(v => (
+                            <div key={v} className="w-3 h-3 rounded-sm" style={{ background: v <= statsForm[key] ? color : 'var(--color-surface-2)' }} />
+                          ))}
+                        </div>
+                        <span className="text-xs font-bold w-4 text-right" style={{ color }}>{statsForm[key]}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      onClick={() => saveStats(char.id)}
+                      disabled={statsSaving}
+                      className="btn-primary px-4 py-2 text-sm flex items-center gap-1.5 disabled:opacity-60"
+                    >
+                      {statsSaving ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
+                      保存
+                    </button>
+                    <button onClick={() => setStatsCharId(null)} className="btn-ghost px-4 py-2 text-sm">
+                      キャンセル
+                    </button>
+                  </div>
+                </div>
+              )
+            })()}
 
             {/* フォト管理パネル */}
             {selectedCharId === char.id && (

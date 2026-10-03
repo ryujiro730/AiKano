@@ -62,6 +62,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     { href: '/admin/training', label: 'AI学習データ' },
     { href: '/admin/inquiries', label: 'お問い合わせ' },
     { href: '/admin/promo-submissions', label: 'プロモ申請' },
+    { href: '/admin/bank-transfers', label: '銀行振込' },
   ]
 
   return (

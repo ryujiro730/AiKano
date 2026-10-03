@@ -4,7 +4,7 @@ import { createClient as createServerClient } from '@/lib/supabase/server'
 import { createClient } from '@supabase/supabase-js'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
 
-const REGISTRATION_BONUS = 60
+const REGISTRATION_BONUS = 40
 const IP_WINDOW_DAYS = 30
 const REFERRAL_BONUS = 100
 
@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
   const user = await getAuthUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { name, age, gender, referralSource, referralArticle, referralByCode } = await req.json()
+  const { name, age, gender, partnerCharacterId, referralSource, referralArticle, referralByCode } = await req.json()
   if (!name?.trim() || !age || !gender)
     return NextResponse.json({ error: 'name, age, gender are required' }, { status: 400 })
   if (parseInt(age) < 18)
@@ -96,6 +96,7 @@ export async function POST(req: NextRequest) {
         gender,
         registration_ip: ip,
         registration_ua: ua,
+        ...(partnerCharacterId ? { partner_character_id: partnerCharacterId } : {}),
         ...(referralSource ? { referral_source: referralSource } : {}),
         ...(referralArticle ? { referral_article: referralArticle } : {}),
       })
@@ -109,6 +110,7 @@ export async function POST(req: NextRequest) {
         gender,
         registration_ip: ip,
         registration_ua: ua,
+        ...(partnerCharacterId ? { partner_character_id: partnerCharacterId } : {}),
         ...(referralSource ? { referral_source: referralSource } : {}),
         ...(referralArticle ? { referral_article: referralArticle } : {}),
       }).eq('id', user.id)

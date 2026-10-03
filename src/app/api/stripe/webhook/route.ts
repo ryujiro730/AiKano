@@ -21,37 +21,72 @@ export async function POST(request: Request) {
   const admin = createAdminClient()
 
   // ── 一回払い決済（ポイント購入）────────────────────────────────
+  // NOTE: サブスク checkout の場合は mode==='subscription' なので以下はスキップされ、
+  //       下の「サブスク開始」ブロックに流れる
   if (
     event.type === 'checkout.session.completed' ||
     event.type === 'checkout.session.async_payment_succeeded'
   ) {
     const session = event.data.object as Stripe.Checkout.Session
-    if (session.mode !== 'payment') {
-      return NextResponse.json({ received: true })
+    if (session.mode === 'payment') {
+      if (session.payment_status !== 'unpaid') {
+        const { userId, tokens, priceYen, type: payType, planId } = session.metadata ?? {}
+
+        // ── 月額パス（コンビニ払い等）────────────────────────────────
+        if (payType === 'monthly_pass' && userId && planId) {
+          const { data: existing } = await admin
+            .from('point_transactions')
+            .select('id')
+            .eq('stripe_session_id', session.id)
+            .single()
+          if (!existing) {
+            const plan = PLANS[planId as PlanId]
+            if (plan) {
+              const periodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+              await admin.from('profiles').update({
+                stripe_customer_id: session.customer as string,
+                subscription_plan: planId,
+                subscription_status: 'active',
+                subscription_period_end: periodEnd,
+                monthly_messages_used: 0,
+                monthly_messages_limit: plan.monthly_messages,
+                monthly_reset_at: periodEnd,
+              }).eq('id', userId)
+              // 冪等チェック用に point_transactions へ記録
+              await admin.from('point_transactions').insert({
+                user_id: userId,
+                amount: 0,
+                type: 'purchase',
+                description: `${plan.name}パス購入（1ヶ月）`,
+                price_yen: session.amount_total ?? plan.price_yen,
+                stripe_session_id: session.id,
+              })
+            }
+          }
+        }
+
+        // ── ポイント購入（一回払い）────────────────────────────────
+        if (!payType && userId && tokens) {
+          const { data: existing } = await admin
+            .from('point_transactions')
+            .select('id')
+            .eq('stripe_session_id', session.id)
+            .single()
+          if (!existing) {
+            const tokenCount = parseInt(tokens)
+            await admin.rpc('add_points', { p_user_id: userId, p_amount: tokenCount })
+            await admin.from('point_transactions').insert({
+              user_id: userId,
+              amount: tokenCount,
+              type: 'purchase',
+              description: `${tokenCount}ポイント購入`,
+              price_yen: priceYen ? parseInt(priceYen) : (session.amount_total ?? null),
+              stripe_session_id: session.id,
+            })
+          }
+        }
+      }
     }
-    if (session.payment_status === 'unpaid') return NextResponse.json({ received: true })
-
-    const { userId, tokens, priceYen } = session.metadata ?? {}
-    if (!userId || !tokens) return NextResponse.json({ received: true })
-
-    // 冪等チェック
-    const { data: existing } = await admin
-      .from('point_transactions')
-      .select('id')
-      .eq('stripe_session_id', session.id)
-      .single()
-    if (existing) return NextResponse.json({ received: true })
-
-    const tokenCount = parseInt(tokens)
-    await admin.rpc('add_points', { p_user_id: userId, p_amount: tokenCount })
-    await admin.from('point_transactions').insert({
-      user_id: userId,
-      amount: tokenCount,
-      type: 'purchase',
-      description: `${tokenCount}ポイント購入`,
-      price_yen: priceYen ? parseInt(priceYen) : (session.amount_total ?? null),
-      stripe_session_id: session.id,
-    })
   }
 
   // ── サブスク開始（checkout完了）────────────────────────────────
@@ -71,6 +106,7 @@ export async function POST(request: Request) {
     const periodEnd = new Date(subscription.current_period_end * 1000).toISOString()
 
     await admin.from('profiles').update({
+      stripe_customer_id: session.customer as string,
       subscription_plan: planId,
       subscription_status: 'active',
       subscription_period_end: periodEnd,

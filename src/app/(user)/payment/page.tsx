@@ -3,25 +3,24 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Loader2, Sparkles, History, Gift, Copy, Check, Crown, Zap, CheckCircle2, Settings } from 'lucide-react'
-import { TOKEN_PACKAGES } from '@/types'
+import { Loader2, Crown, CheckCircle2, Settings, Gift, Copy, Check, CreditCard, Store, Building2, RefreshCw } from 'lucide-react'
+import { CardBrands, FamilyMartBadge, LawsonBadge, MinistopBadge, SeicomartBadge, PayPayBadge } from '@/components/icons/payment-brands'
 import { PLANS } from '@/lib/plans'
-import type { Profile, PointTransaction } from '@/types'
+import type { Profile } from '@/types'
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
 
 export default function PaymentPage() {
   const searchParams = useSearchParams()
-  const isSuccess = searchParams.get('success') === 'true'
-  const isCanceled = searchParams.get('canceled') === 'true'
   const justSubscribed = searchParams.get('subscribed') === 'true'
   const subscribedPlan = searchParams.get('plan')
+  const isCanceled = searchParams.get('canceled') === 'true'
+  const isPassPending = searchParams.get('pass') === 'pending'
 
   const [profile, setProfile] = useState<Profile | null>(null)
-  const [transactions, setTransactions] = useState<PointTransaction[]>([])
   const [loading, setLoading] = useState(true)
-  const [purchasing, setPurchasing] = useState<string | null>(null)
   const [subscribing, setSubscribing] = useState<string | null>(null)
+  const [buyingPass, setBuyingPass] = useState<string | null>(null)
   const [openingPortal, setOpeningPortal] = useState(false)
   const [copied, setCopied] = useState(false)
   const supabase = createClient()
@@ -30,13 +29,8 @@ export default function PaymentPage() {
     const load = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      const [profRes, txRes] = await Promise.all([
-        supabase.from('profiles').select('*').eq('id', user.id).single(),
-        supabase.from('point_transactions').select('*').eq('user_id', user.id)
-          .order('created_at', { ascending: false }).limit(20),
-      ])
-      setProfile(profRes.data)
-      setTransactions(txRes.data || [])
+      const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+      setProfile(data)
       setLoading(false)
     }
     load()
@@ -46,30 +40,28 @@ export default function PaymentPage() {
     setSubscribing(planId)
     try {
       const res = await fetch('/api/stripe/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ planId }),
       })
-      if (!res.ok) {
-        const err = await res.json()
-        if (err.error === 'Plan not configured') {
-          alert('このプランはまだ準備中です。しばらくお待ちください。')
-          return
-        }
-        throw new Error()
-      }
-      let data: any
-      try { data = await res.json() } catch { data = {} }
-      if (!res.ok) {
-        alert(`エラー ${res.status}: ${data.error ?? 'unknown'}`)
-        return
-      }
+      const data = await res.json()
+      if (!res.ok) { alert(`エラー: ${data.error ?? 'unknown'}`); return }
       if (data.url) window.location.href = data.url
-    } catch (e) {
-      alert('fetch失敗: ' + String(e))
-    } finally {
-      setSubscribing(null)
-    }
+    } catch (e) { alert('通信エラー: ' + String(e)) }
+    finally { setSubscribing(null) }
+  }
+
+  const handleBuyPass = async (planId: string) => {
+    setBuyingPass(planId)
+    try {
+      const res = await fetch('/api/stripe/buy-pass', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ planId }),
+      })
+      const data = await res.json()
+      if (!res.ok) { alert(`エラー: ${data.error ?? 'unknown'}`); return }
+      if (data.url) window.location.href = data.url
+    } catch (e) { alert('通信エラー: ' + String(e)) }
+    finally { setBuyingPass(null) }
   }
 
   const handleManageSubscription = async () => {
@@ -79,260 +71,250 @@ export default function PaymentPage() {
       if (!res.ok) throw new Error()
       const { url } = await res.json()
       if (url) window.location.href = url
-    } catch {
-      alert('管理ページへのアクセスに失敗しました')
-    } finally {
-      setOpeningPortal(false)
-    }
-  }
-
-  const handlePurchase = async (pkg: typeof TOKEN_PACKAGES[0]) => {
-    setPurchasing(pkg.id)
-    try {
-      const res = await fetch('/api/stripe/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ packageId: pkg.id, tokens: pkg.tokens, priceYen: pkg.price_yen }),
-      })
-      if (!res.ok) throw new Error()
-      const { url } = await res.json()
-      if (url) window.location.href = url
-    } catch {
-      alert('決済の開始に失敗しました')
-    } finally {
-      setPurchasing(null)
-    }
+    } catch { alert('管理ページへのアクセスに失敗しました') }
+    finally { setOpeningPortal(false) }
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="animate-spin text-[var(--color-primary)]" size={24} />
-      </div>
-    )
+    return <div className="flex items-center justify-center h-64">
+      <Loader2 className="animate-spin text-[var(--color-primary)]" size={24} />
+    </div>
   }
 
-  const isSubscribed = profile?.subscription_status === 'active' || profile?.subscription_status === 'trialing'
-  const currentPlan = profile?.subscription_plan ? PLANS[profile.subscription_plan as keyof typeof PLANS] : null
-  const balance = (profile?.points ?? 0) + (profile?.bonus_points ?? 0)
-  const messagesUsed = profile?.monthly_messages_used ?? 0
-  const messagesLimit = profile?.monthly_messages_limit ?? 0
-  const periodEnd = profile?.subscription_period_end ? new Date(profile.subscription_period_end) : null
+  const isSubscribed = (profile as any)?.subscription_status === 'active' || (profile as any)?.subscription_status === 'trialing'
+  const currentPlan = (profile as any)?.subscription_plan ? PLANS[(profile as any).subscription_plan as keyof typeof PLANS] : null
+  const messagesUsed = (profile as any)?.monthly_messages_used ?? 0
+  const messagesLimit = (profile as any)?.monthly_messages_limit ?? 0
+  const periodEnd = (profile as any)?.subscription_period_end ? new Date((profile as any).subscription_period_end) : null
+  const usagePct = messagesLimit > 0 ? Math.min(100, messagesUsed / messagesLimit * 100) : 0
+  const isOverLimit = messagesUsed >= messagesLimit && messagesLimit > 0
 
   return (
     <div className="pt-2 max-w-lg">
-      <h1 className="text-xl font-bold mb-6">料金プラン</h1>
+      <h1 className="text-xl font-bold mb-2">料金プラン</h1>
+      <p className="text-sm mb-6" style={{ color: 'var(--color-text-muted)' }}>
+        プランに加入すると、月間メッセージ上限まで追加費用なしでAIと話せます。
+      </p>
 
-      {/* 決済結果 */}
+      {/* ─── 通知バナー ─── */}
       {justSubscribed && (
-        <div className="rounded-xl p-4 mb-6 text-sm" style={{ background: 'rgba(125,186,132,0.12)', border: '1px solid rgba(125,186,132,0.3)' }}>
-          <p className="font-semibold mb-0.5" style={{ color: '#7ec850' }}>サブスクリプションが有効になりました！</p>
-          <p className="text-[var(--color-text-muted)]">
-            {subscribedPlan === 'standard' ? 'スタンダード' : subscribedPlan === 'premium' ? 'プレミアム' : ''}プランへようこそ。
-          </p>
+        <div className="rounded-xl p-4 mb-5 text-sm" style={{ background: 'rgba(125,186,132,0.12)', border: '1px solid rgba(125,186,132,0.3)' }}>
+          <p className="font-semibold mb-0.5" style={{ color: '#7ec850' }}>プランが有効になりました！</p>
+          <p style={{ color: 'var(--color-text-muted)' }}>{subscribedPlan === 'standard' ? 'スタンダード' : 'プレミアム'}プランへようこそ。</p>
         </div>
       )}
-      {isSuccess && (
-        <div className="rounded-xl p-4 mb-6 text-sm" style={{ background: 'rgba(125,186,132,0.12)', border: '1px solid rgba(125,186,132,0.3)' }}>
-          <p className="font-semibold" style={{ color: '#7ec850' }}>ポイント購入が完了しました！</p>
+      {isPassPending && (
+        <div className="rounded-xl p-4 mb-5 text-sm" style={{ background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.3)' }}>
+          <p className="font-semibold mb-0.5" style={{ color: '#f59e0b' }}>お支払い番号が発行されました</p>
+          <p style={{ color: 'var(--color-text-muted)' }}>コンビニ・PayPayでのお支払い確認後（通常1〜3日以内）、プランが有効になります。</p>
         </div>
       )}
       {isCanceled && (
-        <div className="card p-4 mb-6 text-sm text-[var(--color-text-muted)]">購入をキャンセルしました</div>
+        <div className="card p-4 mb-5 text-sm" style={{ color: 'var(--color-text-muted)' }}>購入をキャンセルしました</div>
       )}
 
-      {/* ── サブスクリプション ── */}
-      <section className="mb-8">
-        <h2 className="text-sm font-semibold text-[var(--color-text-muted)] uppercase tracking-wider mb-3">サブスクリプション</h2>
+      {/* ─── 加入中：使用量表示 ─── */}
+      {isSubscribed && currentPlan && (
+        <div className="card p-5 mb-6" style={{ border: '1px solid var(--color-primary)' }}>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Crown size={18} style={{ color: 'var(--color-primary)' }} />
+              <span className="font-bold text-base">{currentPlan.name}プラン</span>
+            </div>
+            <span className="text-xs font-bold px-2.5 py-1 rounded-full"
+              style={{ background: 'rgba(125,186,132,0.15)', color: '#7ec850' }}>有効</span>
+          </div>
 
-        {isSubscribed && currentPlan ? (
-          /* 加入中の状態表示 */
-          <div className="card p-5" style={{ border: '1px solid var(--color-primary)' }}>
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Crown size={18} style={{ color: 'var(--color-primary)' }} />
-                <span className="font-bold">{currentPlan.name}プラン</span>
-              </div>
-              <span className="text-xs font-bold px-2 py-0.5 rounded-full"
-                style={{ background: 'rgba(125,186,132,0.15)', color: '#7ec850' }}>
-                有効
+          <div className="mb-4">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-xs font-semibold" style={{ color: 'var(--color-text-muted)' }}>今月のメッセージ使用量</span>
+              <span className="text-xs font-bold" style={{ color: isOverLimit ? '#f87171' : 'var(--color-text)' }}>
+                {messagesUsed.toLocaleString()} / {messagesLimit.toLocaleString()}通
               </span>
             </div>
-
-            {/* 月次使用量バー */}
-            <div className="mb-3">
-              <div className="flex justify-between text-xs text-[var(--color-text-muted)] mb-1">
-                <span>今月のメッセージ</span>
-                <span>{messagesUsed} / {messagesLimit}通</span>
-              </div>
-              <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-surface-2)' }}>
-                <div className="h-full rounded-full transition-all"
-                  style={{
-                    width: `${messagesLimit > 0 ? Math.min(100, messagesUsed / messagesLimit * 100) : 0}%`,
-                    background: messagesUsed >= messagesLimit ? '#f87171' : 'var(--color-primary)',
-                  }} />
-              </div>
-              {messagesUsed >= messagesLimit && (
-                <p className="text-xs mt-1" style={{ color: '#f87171' }}>
-                  月間上限に達しました。超過分はポイント（{currentPlan.overage_points}pt/通）で利用できます。
-                </p>
-              )}
+            <div className="h-2.5 rounded-full overflow-hidden" style={{ background: 'var(--color-surface-2)' }}>
+              <div className="h-full rounded-full transition-all" style={{
+                width: `${usagePct}%`,
+                background: isOverLimit
+                  ? 'linear-gradient(to right, #f87171, #ef4444)'
+                  : 'linear-gradient(to right, var(--color-primary), #c73578)',
+              }} />
             </div>
-
-            {periodEnd && (
-              <p className="text-xs text-[var(--color-text-muted)] mb-4">
-                次回更新: {format(periodEnd, 'yyyy年M月d日', { locale: ja })}
+            {isOverLimit && (
+              <p className="text-xs mt-1.5" style={{ color: '#f87171' }}>
+                月間上限を超えました。超過分は{currentPlan.overage_points}pt/通で継続できます。
               </p>
             )}
-
-            <button
-              onClick={handleManageSubscription}
-              disabled={openingPortal}
-              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-opacity"
-              style={{ background: 'var(--color-surface-2)', color: 'var(--color-text)' }}
-            >
-              {openingPortal ? <Loader2 size={15} className="animate-spin" /> : <Settings size={15} />}
-              プランを管理する
-            </button>
           </div>
-        ) : (
-          /* プランカード（未加入） */
-          <div className="flex flex-col gap-3">
-            {(Object.values(PLANS) as typeof PLANS[keyof typeof PLANS][]).map((plan) => (
-              <div
-                key={plan.id}
-                className="card p-5"
-                style={plan.id === 'premium' ? { border: '1px solid var(--color-primary)' } : {}}
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    {plan.id === 'premium' && (
-                      <div className="flex items-center gap-1 mb-1">
-                        <Sparkles size={11} style={{ color: 'var(--color-primary)' }} />
-                        <span className="text-[11px] font-bold" style={{ color: 'var(--color-primary)' }}>おすすめ</span>
-                      </div>
-                    )}
-                    <p className="font-bold">{plan.name}</p>
-                    <div className="flex items-baseline gap-1 mt-0.5">
-                      <span className="text-2xl font-bold">¥{plan.price_yen.toLocaleString()}</span>
-                      <span className="text-xs text-[var(--color-text-muted)]">/月</span>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => handleSubscribe(plan.id)}
-                    disabled={subscribing !== null}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-opacity disabled:opacity-60"
-                    style={{ background: 'var(--color-primary)', color: '#fff' }}
-                  >
-                    {subscribing === plan.id
-                      ? <Loader2 size={14} className="animate-spin" />
-                      : <Zap size={14} />}
-                    加入する
-                  </button>
-                </div>
 
-                <ul className="space-y-1.5">
+          {periodEnd && (
+            <p className="text-xs mb-4" style={{ color: 'var(--color-text-muted)' }}>
+              有効期限: {format(periodEnd, 'yyyy年M月d日', { locale: ja })}
+            </p>
+          )}
+
+          <button onClick={handleManageSubscription} disabled={openingPortal}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold disabled:opacity-60"
+            style={{ background: 'var(--color-surface-2)', color: 'var(--color-text)' }}>
+            {openingPortal ? <Loader2 size={15} className="animate-spin" /> : <Settings size={15} />}
+            プランを管理する・解約（クレカ契約の場合）
+          </button>
+        </div>
+      )}
+
+      {/* ─── プラン選択 ─── */}
+      <div className="space-y-4 mb-6">
+        {(Object.values(PLANS) as typeof PLANS[keyof typeof PLANS][]).map((plan) => (
+          <div key={plan.id} className="card overflow-hidden"
+            style={plan.id === 'premium' ? { border: '2px solid var(--color-primary)' } : {}}>
+
+            {/* プランヘッダー */}
+            <div className="p-5 pb-4">
+              {plan.id === 'premium' && (
+                <p className="text-[11px] font-bold mb-1.5" style={{ color: 'var(--color-primary)' }}>★ おすすめ</p>
+              )}
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="font-bold text-base">{plan.name}</p>
+                  <div className="flex items-baseline gap-1 mt-0.5">
+                    <span className="text-2xl font-bold">¥{plan.price_yen.toLocaleString()}</span>
+                    <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>/月</span>
+                  </div>
+                </div>
+                <ul className="space-y-1 text-right">
                   {plan.features.map((f: string) => (
-                    <li key={f} className="flex items-center gap-2 text-sm text-[var(--color-text-muted)]">
-                      <CheckCircle2 size={13} style={{ color: 'var(--color-primary)', flexShrink: 0 }} />
+                    <li key={f} className="flex items-center gap-1.5 text-xs justify-end" style={{ color: 'var(--color-text-muted)' }}>
+                      <CheckCircle2 size={11} style={{ color: 'var(--color-primary)', flexShrink: 0 }} />
                       {f}
                     </li>
                   ))}
                 </ul>
               </div>
-            ))}
+            </div>
 
-            <p className="text-xs text-center text-[var(--color-text-muted)]">
-              サブスクなしでも10pt/通でチャット可能
-            </p>
-          </div>
-        )}
-      </section>
+            {/* 支払い方法 */}
+            {(profile as any)?.subscription_plan !== plan.id && (
+              <div style={{ borderTop: '1px solid var(--color-border)' }}>
+                <p className="text-[11px] font-bold px-5 pt-3 pb-2" style={{ color: 'var(--color-text-muted)', letterSpacing: '0.05em' }}>
+                  支払い方法を選ぶ
+                </p>
 
-      {/* ── ポイント購入 ── */}
-      <section className="mb-8">
-        <h2 className="text-sm font-semibold text-[var(--color-text-muted)] uppercase tracking-wider mb-3">ポイント購入</h2>
-
-        {/* 現在の残高 */}
-        <div className="card p-5 mb-4" style={{ background: 'linear-gradient(135deg, var(--color-surface-2), var(--color-surface))' }}>
-          <p className="text-xs text-[var(--color-text-muted)] mb-1">現在の残高</p>
-          <div className="flex items-end gap-2">
-            <span className="text-3xl font-bold" style={{ color: 'var(--color-primary)' }}>
-              {balance.toLocaleString()}
-            </span>
-            <span className="text-sm text-[var(--color-text-muted)] mb-0.5">ポイント</span>
-          </div>
-          {isSubscribed && currentPlan && (
-            <p className="text-xs text-[var(--color-text-muted)] mt-1">
-              超過時: {currentPlan.overage_points}pt/通
-            </p>
-          )}
-        </div>
-
-        {/* プレリリース告知 */}
-        <div className="rounded-2xl p-4 mb-4 flex gap-3"
-          style={{ background: 'rgba(255,200,0,0.1)', border: '1px solid rgba(255,200,0,0.35)' }}>
-          <span className="text-lg flex-shrink-0">🚀</span>
-          <div>
-            <p className="text-sm font-bold mb-1" style={{ color: '#b45309' }}>現在プレリリース中です</p>
-            <p className="text-xs leading-relaxed" style={{ color: '#92400e' }}>
-              以下の料金は正式リリース時の予定価格です。プレリリース期間中はすべての機能を<span className="font-bold">無料</span>でお使いいただけます。
-            </p>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-3">
-          {TOKEN_PACKAGES.map((pkg) => {
-            const bonusPct = pkg.bonus_points > 0 ? Math.round(pkg.bonus_points / (pkg.tokens - pkg.bonus_points) * 100) : 0
-            return (
-              <div
-                key={pkg.id}
-                className="card p-4 flex items-center gap-4 opacity-60"
-                style={pkg.is_popular ? { borderColor: 'var(--color-primary)' } : {}}
-              >
-                <div className="flex-1 min-w-0">
-                  {pkg.is_popular && (
-                    <div className="flex items-center gap-1 mb-1">
-                      <Sparkles size={11} style={{ color: 'var(--color-primary)' }} />
-                      <span className="text-[11px] font-bold" style={{ color: 'var(--color-primary)' }}>人気No.1</span>
+                {/* クレカ（自動更新） */}
+                <button onClick={() => handleSubscribe(plan.id)} disabled={subscribing !== null || buyingPass !== null}
+                  className="w-full flex items-start gap-3 px-5 py-3.5 transition-colors disabled:opacity-60"
+                  style={{ borderTop: '1px solid var(--color-border)' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--color-surface-2)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = '')}>
+                  <div className="flex-1 text-left">
+                    <div className="flex items-center gap-2 mb-1">
+                      {subscribing === plan.id
+                        ? <Loader2 size={14} className="animate-spin" style={{ color: '#6366f1' }} />
+                        : <CreditCard size={14} style={{ color: '#6366f1' }} />}
+                      <p className="text-sm font-semibold">クレジットカード</p>
                     </div>
-                  )}
-                  <div className="flex items-baseline gap-1.5 flex-wrap">
-                    <span className="text-xl font-bold">{pkg.tokens.toLocaleString()}</span>
-                    <span className="text-sm text-[var(--color-text-muted)]">pt</span>
-                    {pkg.bonus_points > 0 && (
-                      <span className="text-xs font-bold px-1.5 py-0.5 rounded-full"
-                        style={{ background: 'rgba(232,121,160,0.15)', color: 'var(--color-primary)' }}>
-                        +{bonusPct}% ボーナス
-                      </span>
-                    )}
-                  </div>
-                  {pkg.bonus_points > 0 && (
-                    <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
-                      {(pkg.tokens - pkg.bonus_points).toLocaleString()}pt + ボーナス{pkg.bonus_points.toLocaleString()}pt
+                    <p className="text-xs mb-2" style={{ color: 'var(--color-text-muted)' }}>
+                      <RefreshCw size={9} className="inline mr-1" />毎月自動更新 · いつでも解約可能
                     </p>
-                  )}
-                </div>
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  <div className="text-right">
-                    <p className="text-[10px] text-[var(--color-text-muted)]">予定価格</p>
-                    <span className="text-lg font-bold">¥{pkg.price_yen.toLocaleString()}</span>
+                    <CardBrands />
                   </div>
-                  <button
-                    disabled
-                    className="px-4 py-2 text-sm rounded-[10px] font-semibold"
-                    style={{ background: 'var(--color-surface-2)', color: 'var(--color-text-muted)', minWidth: '68px' }}
-                  >
-                    準備中
-                  </button>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </section>
+                  <span className="text-xs font-bold mt-1 flex-shrink-0" style={{ color: 'var(--color-primary)' }}>→</span>
+                </button>
 
-      {/* 紹介プログラム */}
+                {/* コンビニ/PayPay（1回払い） */}
+                <button onClick={() => handleBuyPass(plan.id)} disabled={subscribing !== null || buyingPass !== null}
+                  className="w-full flex items-start gap-3 px-5 py-3.5 transition-colors disabled:opacity-60"
+                  style={{ borderTop: '1px solid var(--color-border)' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--color-surface-2)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = '')}>
+                  <div className="flex-1 text-left">
+                    <div className="flex items-center gap-2 mb-1">
+                      {buyingPass === plan.id
+                        ? <Loader2 size={14} className="animate-spin" style={{ color: '#22c55e' }} />
+                        : <Store size={14} style={{ color: '#22c55e' }} />}
+                      <p className="text-sm font-semibold">コンビニ払い・PayPay</p>
+                    </div>
+                    <p className="text-xs mb-2" style={{ color: 'var(--color-text-muted)' }}>
+                      1ヶ月分を一回払い · 払込後すぐ有効
+                    </p>
+                    <div className="flex items-center gap-1 flex-wrap">
+                      <FamilyMartBadge />
+                      <LawsonBadge />
+                      <MinistopBadge />
+                      <SeicomartBadge />
+                      <PayPayBadge />
+                    </div>
+                  </div>
+                  <span className="text-xs font-bold mt-1 flex-shrink-0" style={{ color: 'var(--color-primary)' }}>→</span>
+                </button>
+
+                {/* 銀行振込（1回払い） */}
+                <a href={`/payment/bank-transfer?plan=${plan.id}`}
+                  className="w-full flex items-center gap-3 px-5 py-3.5 transition-colors"
+                  style={{ borderTop: '1px solid var(--color-border)', display: 'flex' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--color-surface-2)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = '')}>
+                  <div className="flex-1 text-left">
+                    <div className="flex items-center gap-2">
+                      <Building2 size={14} style={{ color: '#ca8a04' }} />
+                      <p className="text-sm font-semibold">銀行振込</p>
+                    </div>
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
+                      1ヶ月分を一回払い · 確認後すぐ有効
+                    </p>
+                  </div>
+                  <span className="text-xs font-bold flex-shrink-0" style={{ color: 'var(--color-primary)' }}>→</span>
+                </a>
+              </div>
+            )}
+
+            {/* 加入中なら更新ボタン */}
+            {isSubscribed && (profile as any)?.subscription_plan === plan.id && (
+              <div className="px-5 py-3" style={{ borderTop: '1px solid var(--color-border)', background: 'rgba(125,186,132,0.06)' }}>
+                <p className="text-xs font-semibold" style={{ color: '#16a34a' }}>✓ 現在このプランをご利用中</p>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* 支払い方法比較表 */}
+      <div className="card p-4 mb-6">
+        <p className="text-xs font-bold mb-3" style={{ color: 'var(--color-text-muted)' }}>支払い方法の違い</p>
+        <table className="w-full text-xs">
+          <thead>
+            <tr style={{ color: 'var(--color-text-muted)' }}>
+              <th className="text-left pb-2 font-semibold"></th>
+              <th className="text-center pb-2 font-semibold">更新</th>
+              <th className="text-center pb-2 font-semibold">有効化</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y" style={{ borderColor: 'var(--color-border)' }}>
+            <tr>
+              <td className="py-2 flex items-center gap-1.5"><CreditCard size={12} style={{ color: '#6366f1' }} />クレカ</td>
+              <td className="py-2 text-center">自動（毎月）</td>
+              <td className="py-2 text-center">即時</td>
+            </tr>
+            <tr>
+              <td className="py-2 flex items-center gap-1.5"><Store size={12} style={{ color: '#22c55e' }} />コンビニ・PayPay</td>
+              <td className="py-2 text-center">手動（1ヶ月）</td>
+              <td className="py-2 text-center">払込後すぐ</td>
+            </tr>
+            <tr>
+              <td className="py-2 flex items-center gap-1.5"><Building2 size={12} style={{ color: '#ca8a04' }} />銀行振込</td>
+              <td className="py-2 text-center">手動（1ヶ月）</td>
+              <td className="py-2 text-center">確認後すぐ</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      {/* テスト注意書き */}
+      <div className="text-xs mb-8 leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
+        <p>・現在テストモードで動作しています（実際の請求は発生しません）</p>
+        <p>・テストカード: 4242 4242 4242 4242 / 任意の有効期限 / 任意のCVC</p>
+      </div>
+
+      {/* 友達紹介 */}
       {profile?.user_code && (() => {
         const referralUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/register?ref_by=${profile.user_code}`
         const handleCopy = () => {
@@ -341,70 +323,28 @@ export default function PaymentPage() {
           setTimeout(() => setCopied(false), 2000)
         }
         return (
-          <div className="card p-5 mb-8" style={{ border: '1px solid var(--color-border-warm)', background: 'linear-gradient(135deg, rgba(249,168,184,0.08), rgba(232,121,160,0.05))' }}>
+          <div className="card p-5" style={{ border: '1px solid var(--color-border-warm)', background: 'linear-gradient(135deg, rgba(249,168,184,0.08), rgba(232,121,160,0.05))' }}>
             <div className="flex items-center gap-2 mb-2">
               <Gift size={16} style={{ color: 'var(--color-primary)' }} />
               <p className="font-bold text-sm">友達紹介プログラム</p>
             </div>
-            <p className="text-xs text-[var(--color-text-muted)] mb-4 leading-relaxed">
-              あなたの紹介URLから友達が登録すると、<br />
-              <span className="font-semibold" style={{ color: 'var(--color-primary)' }}>あなたも友達も1,000ポイント</span>もらえます！
+            <p className="text-xs mb-3 leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
+              紹介URLから友達が登録すると、<span className="font-semibold" style={{ color: 'var(--color-primary)' }}>あなたも友達も1,000ポイント</span>もらえます！
             </p>
             <div className="flex gap-2">
               <div className="flex-1 px-3 py-2 rounded-xl text-xs font-mono truncate"
                 style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }}>
                 {referralUrl}
               </div>
-              <button
-                onClick={handleCopy}
-                className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-colors"
-                style={{ background: copied ? 'rgba(125,186,132,0.15)' : 'var(--color-primary)', color: copied ? '#7ec850' : '#fff' }}
-              >
-                {copied ? <><Check size={13} />コピー済み</> : <><Copy size={13} />URLをコピー</>}
+              <button onClick={handleCopy}
+                className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold"
+                style={{ background: copied ? 'rgba(125,186,132,0.15)' : 'var(--color-primary)', color: copied ? '#7ec850' : '#fff' }}>
+                {copied ? <><Check size={13} />コピー済み</> : <><Copy size={13} />コピー</>}
               </button>
             </div>
           </div>
         )
       })()}
-
-      {/* 注意書き */}
-      <div className="text-xs text-[var(--color-text-muted)] space-y-1 mb-8 leading-relaxed">
-        <p>・サブスクリプションはいつでもキャンセルできます</p>
-        <p>・ポイントは購入日から有効で、有効期限はありません</p>
-        <p>・購入したポイントの返金はできません</p>
-        <p>・現在テストモードで動作しています（実際の請求は発生しません）</p>
-        <p>・テストカード: 4242 4242 4242 4242 / 任意の有効期限 / 任意のCVC</p>
-      </div>
-
-      {/* 取引履歴 */}
-      {transactions.length > 0 && (
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <History size={15} className="text-[var(--color-text-muted)]" />
-            <p className="text-sm font-semibold">購入・利用履歴</p>
-          </div>
-          <div className="card overflow-hidden">
-            {transactions.map((tx, i) => (
-              <div
-                key={tx.id}
-                className="flex items-center justify-between px-4 py-3"
-                style={{ borderBottom: i < transactions.length - 1 ? '1px solid var(--color-border)' : 'none' }}
-              >
-                <div>
-                  <p className="text-sm">{tx.description}</p>
-                  <p className="text-[var(--color-text-muted)] text-xs">
-                    {format(new Date(tx.created_at), 'yyyy/MM/dd HH:mm', { locale: ja })}
-                  </p>
-                </div>
-                <span className="text-sm font-semibold"
-                  style={{ color: tx.amount > 0 ? '#7ec850' : 'var(--color-text-muted)' }}>
-                  {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString()}pt
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   )
 }
