@@ -50,32 +50,21 @@ export async function POST(req: NextRequest) {
     .eq('id', characterId)
     .single()
 
-  // OpenAI の場合は DB の会話履歴は不要（OpenAI 側が保持）
-  // それ以外は直近30件を取得
-  const msgsPromise = isOpenAI
-    ? Promise.resolve({ data: [] })
-    : admin
-        .from('messages')
-        .select('sender_role, content')
-        .eq('conversation_id', conversationId)
-        .order('created_at', { ascending: true })
-        .limit(30)
+  const msgsPromise = admin
+    .from('messages')
+    .select('sender_role, content')
+    .eq('conversation_id', conversationId)
+    .order('created_at', { ascending: true })
+    .limit(30)
 
-  // OpenAI: 前回の response_id とメモリを取得
-  const openaiContextPromise = isOpenAI
-    ? Promise.all([
-        admin
-          .from('conversations')
-          .select('openai_last_response_id')
-          .eq('id', conversationId)
-          .single(),
-        admin
-          .from('user_character_memories')
-          .select('memory_text')
-          .eq('user_id', user.id)
-          .eq('character_id', characterId)
-          .maybeSingle(),
-      ])
+  // OpenAI: メモリを取得（キャラ設定注入に使う）
+  const memoryPromise = isOpenAI
+    ? admin
+        .from('user_character_memories')
+        .select('memory_text')
+        .eq('user_id', user.id)
+        .eq('character_id', characterId)
+        .maybeSingle()
     : Promise.resolve(null)
 
   const freeCheckPromise = admin.rpc('use_daily_free_message', {
@@ -147,24 +136,17 @@ export async function POST(req: NextRequest) {
   }
 
   // ── 並列発火済みクエリを回収 ────────────────────────────────────────────
-  const [{ data: character, error: charErr }, { data: msgs }, openaiCtx] = await Promise.all([
+  const [{ data: character, error: charErr }, { data: msgs }, memData] = await Promise.all([
     characterPromise,
     msgsPromise,
-    openaiContextPromise,
+    memoryPromise,
   ])
 
   if (charErr || !character) {
     return NextResponse.json({ error: 'Character not found' }, { status: 404 })
   }
 
-  // OpenAI用コンテキスト
-  let previousResponseId: string | null = null
-  let currentMemory = ''
-  if (isOpenAI && openaiCtx) {
-    const [convData, memData] = openaiCtx
-    previousResponseId = (convData.data as any)?.openai_last_response_id ?? null
-    currentMemory = (memData.data as any)?.memory_text ?? ''
-  }
+  const currentMemory: string = (memData as any)?.data?.memory_text ?? ''
 
   const history: LLMMessage[] = ((msgs as any[]) ?? []).map((m: any) => ({
     role: m.sender_role === 'user' ? 'user' : 'assistant',
@@ -173,16 +155,12 @@ export async function POST(req: NextRequest) {
 
   // ── LLM 生成 ──────────────────────────────────────────────────────────
   let replyText: string
-  let newResponseId: string | undefined
-
   try {
     const result = await generateReply(character, history, userMessage.trim(), {
       modelOverride,
-      previousResponseId: isOpenAI ? previousResponseId : undefined,
       memoryText: isOpenAI ? currentMemory : undefined,
     })
     replyText = result.text
-    newResponseId = result.newResponseId
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     console.error('[ai-reply] LLM error:', msg)
@@ -216,10 +194,7 @@ export async function POST(req: NextRequest) {
 
   // ── 非同期後処理（fire-and-forget）─────────────────────────────────────
 
-  // conversations 更新: last_message_at + OpenAI response ID
-  const convUpdate: Record<string, unknown> = { last_message_at: now, is_unread_staff: false }
-  if (newResponseId) convUpdate.openai_last_response_id = newResponseId
-  admin.from('conversations').update(convUpdate).eq('id', conversationId)
+  admin.from('conversations').update({ last_message_at: now, is_unread_staff: false }).eq('id', conversationId)
 
   // メモリ更新（OpenAIプロバイダーのみ）
   if (isOpenAI) {

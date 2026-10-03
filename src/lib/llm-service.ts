@@ -205,60 +205,50 @@ function cleanJaRpOutput(text: string): string {
 }
 
 // -----------------------------------------------------------------------
-// OpenAI Responses API（会話継続対応）
+// OpenAI Chat Completions API（メモリ・キャラ設定注入対応）
 // -----------------------------------------------------------------------
 
 /**
- * OpenAI Responses API を使って返信を生成する
- *
- * - `previousResponseId` がある場合: 既存の会話を継続（前の会話履歴をOpenAI側が保持）
- * - `previousResponseId` がない場合: 新規会話を開始
- * - `store: true` でOpenAI側に会話を保存（previous_response_id 利用に必須）
- * - `instructions` はキャラ設定+メモリを毎回渡す（数ターン後もキャラが薄れない）
+ * OpenAI Chat Completions API を使って返信を生成する
+ * - `instructions` (system prompt) にキャラ設定 + メモリを毎回差し込む
+ * - DB の会話履歴も渡す（ステートレス方式）
  */
-async function generateWithOpenAIResponses(
+async function generateWithOpenAIChatCompletions(
   character: LLMCharacter,
+  history: LLMMessage[],
   userMessage: string,
-  previousResponseId: string | null,
   memoryText: string | null,
+  modelOverride?: string,
 ): Promise<ReplyResult> {
   const apiKey = process.env.OPENAI_API_KEY
   if (!apiKey) throw new Error('OPENAI_API_KEY is not set')
 
-  const model = process.env.OPENAI_MODEL ?? 'gpt-4o-mini'
-  const instructions = buildCharacterInstructions(character, memoryText)
+  const model = modelOverride ?? process.env.OPENAI_MODEL ?? 'gpt-4o-mini'
+  const systemPrompt = buildCharacterInstructions(character, memoryText)
 
-  const body: Record<string, unknown> = {
-    model,
-    instructions,
-    input: userMessage,
-    store: true,
-  }
-  if (previousResponseId) {
-    body.previous_response_id = previousResponseId
-  }
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    ...history.map((m) => ({ role: m.role, content: m.content })),
+    { role: 'user', content: userMessage },
+  ]
 
-  const res = await fetch('https://api.openai.com/v1/responses', {
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ model, messages, max_tokens: 256 }),
   })
 
   if (!res.ok) {
     const err = await res.text()
-    throw new Error(`OpenAI Responses API error ${res.status}: ${err}`)
+    throw new Error(`OpenAI API error ${res.status}: ${err}`)
   }
 
   const data = await res.json()
-  const rawText: string = data.output?.[0]?.content?.[0]?.text ?? ''
-
-  return {
-    text: cleanJaRpOutput(rawText),
-    newResponseId: data.id as string | undefined,
-  }
+  const raw: string = data.choices?.[0]?.message?.content ?? ''
+  return { text: cleanJaRpOutput(raw) }
 }
 
 // -----------------------------------------------------------------------
@@ -528,11 +518,12 @@ export async function generateReply(
   const recentHistory = history.slice(-30)
 
   if (provider === 'openai') {
-    return generateWithOpenAIResponses(
+    return generateWithOpenAIChatCompletions(
       character,
+      recentHistory,
       userMessage,
-      options?.previousResponseId ?? null,
       options?.memoryText ?? null,
+      options?.modelOverride,
     )
   }
 
