@@ -177,7 +177,10 @@ Supabase RPC → 集計・計算・複雑なフィルタ（SQL/PostgreSQL）
 
 ## LLMサービス
 
-- 環境変数 `LLM_PROVIDER` で切り替え（`'claude'`（デフォルト）| `'openai'`）
+- 環境変数 `LLM_PROVIDER` で切り替え（`'claude'`（デフォルト）| `'openai'`）。本番は `openai`
+- モデル: `OPENAI_MODEL`（GitHub Secret、現在 `gpt-6-luna`）、記憶抽出は `OPENAI_MEMORY_MODEL`（未設定時 `gpt-6-luna`）。サブスクは `plans.ts` の model（standard=gpt-6-luna / premium=gpt-6-sol）
+- 共通会話ルール `BASE_CONVERSATION_RULES`（llm-service.ts）はキャラ個別 system_prompt の有無に関わらず常に入る
+- ユーザーメッセージは `/api/chat/send-message`（ポイント消費＋保存）経由のみ。ブラウザからの直接INSERTは 062 のトリガーで禁止
 - OpenAI の場合のみ `user_character_memories` でメモリを管理
 - キャラクターごとに `system_prompt` を設定（管理画面 → キャラ管理 → 鉛筆アイコン）
 
@@ -240,7 +243,7 @@ src/
     UtmCapture.tsx          # UTMパラメータ捕捉
     PointsShortageDialog.tsx # ポイント不足ダイアログ
 .github/workflows/deploy.yml  # デプロイ＆cron設定
-supabase/migrations/          # マイグレーション（061まで適用済み）
+supabase/migrations/          # マイグレーション（062まで適用済み）
 ```
 
 ---
