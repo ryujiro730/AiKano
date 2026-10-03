@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { Loader2, Check, LogOut, KeyRound, Trash2, MessageSquare, Twitter, Ban } from 'lucide-react'
+import { Loader2, Check, LogOut, KeyRound, Trash2, MessageSquare, Twitter } from 'lucide-react'
 import type { Profile } from '@/types'
 import Link from 'next/link'
 
@@ -318,15 +318,6 @@ export default function SettingsPage() {
             URLを送信して枠を解放
           </button>
         </div>
-      </div>
-
-      {/* お断りリスト */}
-      <div className="card p-5 mb-4">
-        <p className="text-xs text-[var(--color-text-muted)] font-medium uppercase tracking-wider mb-4">キャラクター</p>
-        <Link href="/settings/blocks" className="flex items-center gap-2 text-sm text-[var(--color-text)] hover:text-[var(--color-primary)] transition-colors">
-          <Ban size={15} />
-          お断りリスト
-        </Link>
       </div>
 
       {/* お問い合わせ */}

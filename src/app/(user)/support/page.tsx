@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { ChevronLeft, Send } from 'lucide-react'
-import Image from 'next/image'
+import { ChevronLeft, Send, Headphones } from 'lucide-react'
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
 
@@ -134,14 +133,9 @@ export default function SupportPage() {
         >
           <ChevronLeft size={22} />
         </button>
-        <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 relative"
-          style={{ background: 'linear-gradient(135deg, rgba(232,121,160,0.2), rgba(196,80,128,0.1))' }}>
-          <Image
-            src="/support-character.png"
-            alt="サポート"
-            fill
-            style={{ objectFit: 'cover', objectPosition: 'top center' }}
-          />
+        <div className="w-9 h-9 rounded-full flex-shrink-0 flex items-center justify-center"
+          style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border-warm)' }}>
+          <Headphones size={18} style={{ color: 'var(--color-primary)' }} />
         </div>
         <div>
           <p className="font-semibold text-sm leading-tight">サポートチーム</p>
@@ -151,16 +145,11 @@ export default function SupportPage() {
 
       {/* チャットエリア */}
       <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3 relative">
-        {/* 背景キャラクター */}
-        <div className="pointer-events-none select-none" style={{ position: 'absolute', inset: 0, opacity: 0.18, zIndex: 0 }}>
-          <Image src="/support-character.png" alt="" fill style={{ objectFit: 'contain', objectPosition: 'center center' }} />
-        </div>
-
         {/* ウェルカムメッセージ */}
-        <div className="flex items-end gap-2 max-w-[80%]" style={{ position: 'relative', zIndex: 1 }}>
-          <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 relative border"
-            style={{ borderColor: 'var(--color-border)', background: '#fff' }}>
-            <Image src="/support-character.png" alt="サポート" fill style={{ objectFit: 'cover', objectPosition: 'top center' }} />
+        <div className="flex items-end gap-2 max-w-[80%]">
+          <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center flex-shrink-0"
+            style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)' }}>
+            <Headphones size={15} style={{ color: 'var(--color-primary)' }} />
           </div>
           <div>
             <div
@@ -186,7 +175,7 @@ export default function SupportPage() {
               new Date(msg.created_at).toDateString() !== new Date(messages[i - 1].created_at).toDateString()
             )
             return (
-              <div key={msg.id} style={{ position: 'relative', zIndex: 1 }}>
+              <div key={msg.id}>
                 {showDate && (
                   <div className="text-center my-2">
                     <span className="text-[10px] px-2 py-0.5 rounded-full"
@@ -197,9 +186,9 @@ export default function SupportPage() {
                 )}
                 <div className={`flex items-end gap-2 ${isUser ? 'justify-end' : 'justify-start'}`}>
                   {!isUser && (
-                    <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 relative border"
-                      style={{ borderColor: 'var(--color-border)', background: '#fff' }}>
-                      <Image src="/support-character.png" alt="サポート" fill style={{ objectFit: 'cover', objectPosition: 'top center' }} />
+                    <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center"
+                      style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)' }}>
+                      <Headphones size={15} style={{ color: 'var(--color-primary)' }} />
                     </div>
                   )}
                   <div className={`flex flex-col gap-1 max-w-[72%] ${isUser ? 'items-end' : 'items-start'}`}>

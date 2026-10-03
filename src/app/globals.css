@@ -29,36 +29,36 @@
   --color-online: #5ab34d;
 }
 
-/* ユーザー画面：乙女ゲームウォームテーマ */
+/* ユーザー画面：爽やかブルーテーマ */
 .user-layout {
-  --color-bg: #fdf6f9;
+  --color-bg: #f0f5ff;
   --color-surface: #ffffff;
-  --color-surface-2: #fef0f6;
-  --color-surface-3: #fce4ef;
-  --color-border: rgba(232, 67, 143, 0.12);
-  --color-border-warm: rgba(232, 67, 143, 0.28);
-  --color-text: #2d1420;
-  --color-text-muted: rgba(45, 20, 32, 0.45);
-  --color-text-warm: #c0306e;
-  --color-primary: #E94C8B;
-  --color-primary-hover: #d43b7a;
-  --color-primary-light: #f06aaa;
-  --color-primary-glow: rgba(233, 76, 139, 0.18);
-  --color-primary-border: rgba(233, 76, 139, 0.3);
+  --color-surface-2: #e8f0fe;
+  --color-surface-3: #d1e4fd;
+  --color-border: rgba(59, 130, 246, 0.14);
+  --color-border-warm: rgba(59, 130, 246, 0.28);
+  --color-text: #0f1629;
+  --color-text-muted: rgba(15, 22, 41, 0.48);
+  --color-text-warm: #1d4ed8;
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-primary-light: #3b82f6;
+  --color-primary-glow: rgba(37, 99, 235, 0.18);
+  --color-primary-border: rgba(37, 99, 235, 0.3);
 }
 
 .user-layout .glass {
-  background: rgba(253, 246, 249, 0.95);
+  background: rgba(240, 245, 255, 0.95);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(232, 67, 143, 0.1);
-  box-shadow: 0 1px 0 rgba(232, 67, 143, 0.06);
+  border-bottom: 1px solid rgba(59, 130, 246, 0.1);
+  box-shadow: 0 1px 0 rgba(59, 130, 246, 0.06);
 }
 
 .user-layout .card,
 .user-layout .card-warm {
-  border-color: rgba(232, 67, 143, 0.1);
-  box-shadow: 0 2px 10px rgba(232, 67, 143, 0.06);
+  border-color: rgba(59, 130, 246, 0.1);
+  box-shadow: 0 2px 10px rgba(59, 130, 246, 0.06);
 }
 
 .user-layout .warm-bg,
@@ -73,7 +73,7 @@
   overflow: hidden;
   cursor: pointer;
   aspect-ratio: 3 / 4;
-  box-shadow: 0 4px 20px rgba(232, 67, 143, 0.12);
+  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.12);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 .char-portrait-card:active {
@@ -120,7 +120,7 @@
   font-size: 11px;
   font-weight: 700;
   color: #fff;
-  box-shadow: 0 2px 10px rgba(232,67,143,0.5);
+  box-shadow: 0 2px 10px rgba(37,99,235,0.5);
   animation: pulse-border 1.8s ease-in-out infinite;
   padding: 0 5px;
 }
@@ -137,9 +137,9 @@
   letter-spacing: 0.03em;
 }
 .sub-badge-standard {
-  background: rgba(233, 76, 139, 0.12);
-  color: #c0306e;
-  border: 1px solid rgba(233, 76, 139, 0.25);
+  background: rgba(37, 99, 235, 0.12);
+  color: #1d4ed8;
+  border: 1px solid rgba(37, 99, 235, 0.25);
 }
 .sub-badge-premium {
   background: linear-gradient(135deg, rgba(180,134,14,0.15), rgba(212,162,55,0.1));
@@ -186,26 +186,26 @@ body {
 /* Scrollbar */
 ::-webkit-scrollbar { width: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(232, 67, 143, 0.3); border-radius: 2px; }
+::-webkit-scrollbar-thumb { background: rgba(59, 130, 246, 0.3); border-radius: 2px; }
 
 /* Card */
 .card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 14px;
-  box-shadow: 0 2px 12px rgba(232, 67, 143, 0.06);
+  box-shadow: 0 2px 12px rgba(59, 130, 246, 0.06);
 }
 
 .card-warm {
   background: var(--color-surface);
   border: 1px solid var(--color-border-warm);
   border-radius: 14px;
-  box-shadow: 0 2px 16px rgba(232, 67, 143, 0.08);
+  box-shadow: 0 2px 16px rgba(59, 130, 246, 0.08);
 }
 
 /* Frosted glass for headers */
 .glass {
-  background: rgba(255, 245, 248, 0.88);
+  background: rgba(240, 245, 255, 0.88);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--color-border);
@@ -263,10 +263,15 @@ body {
 
 /* Chat bubbles */
 .bubble-user {
-  background: linear-gradient(135deg, #e8438f, #c0306e);
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
   border-radius: 16px 16px 4px 16px;
   color: #ffffff;
-  box-shadow: 0 3px 12px rgba(232, 67, 143, 0.35);
+  box-shadow: 0 3px 12px rgba(37, 99, 235, 0.35);
+}
+
+.user-layout .bubble-user {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  box-shadow: 0 3px 12px rgba(37, 99, 235, 0.35);
 }
 
 .bubble-operator {
@@ -274,7 +279,7 @@ body {
   border: 1px solid var(--color-border-warm);
   border-radius: 16px 16px 16px 4px;
   color: var(--color-text);
-  box-shadow: 0 2px 8px rgba(232, 67, 143, 0.08);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.08);
 }
 
 /* Buttons */
@@ -560,11 +565,11 @@ body {
   margin-bottom: 0.4em;
 }
 
-/* Soft pink glow background */
+/* Soft blue glow background */
 .warm-bg {
   background:
-    radial-gradient(ellipse 55% 45% at 10% 70%, rgba(232, 67, 143, 0.08) 0%, transparent 65%),
-    radial-gradient(ellipse 50% 40% at 90% 20%, rgba(240, 106, 170, 0.06) 0%, transparent 65%),
+    radial-gradient(ellipse 55% 45% at 10% 70%, rgba(59, 130, 246, 0.08) 0%, transparent 65%),
+    radial-gradient(ellipse 50% 40% at 90% 20%, rgba(96, 165, 250, 0.06) 0%, transparent 65%),
     var(--color-bg);
 }
 
@@ -583,6 +588,6 @@ body {
   100% { background-position: 0% 50%; }
 }
 @keyframes campaign-banner-glow {
-  0%, 100% { box-shadow: 0 2px 16px rgba(232,67,143,0.55); }
-  50%       { box-shadow: 0 2px 32px rgba(232,67,143,0.85), 0 0 48px rgba(255,107,53,0.4); }
+  0%, 100% { box-shadow: 0 2px 16px rgba(37,99,235,0.55); }
+  50%       { box-shadow: 0 2px 32px rgba(37,99,235,0.85), 0 0 48px rgba(96,165,250,0.4); }
 }
