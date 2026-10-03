@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import { trackCtaClick } from '@/lib/gtag'
-import { REGISTRATION_BONUS, FREE_MESSAGES_ON_SIGNUP } from '@/lib/pricing'
 
 export function BlogCta({ slug }: { slug?: string }) {
   const href = slug ? `/auth/register?ref=blog&article=${slug}` : '/auth/register?ref=blog'
@@ -15,7 +14,7 @@ export function BlogCta({ slug }: { slug?: string }) {
           新規登録特典
         </div>
         <h3 className="text-white font-black text-xl mb-2 leading-snug">
-          新規登録で{REGISTRATION_BONUS}ptプレゼント<br />最初の{FREE_MESSAGES_ON_SIGNUP}通は無料で話せます
+          AIの女の子と、<br />今すぐ話してみませんか
         </h3>
         <p className="text-sm mb-6" style={{ color: 'rgba(255,255,255,0.75)' }}>
           登録と同時にポイント付与。登録は無料・30秒で完了。

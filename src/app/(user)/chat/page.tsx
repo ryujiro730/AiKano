@@ -18,7 +18,6 @@ import { AffectionMeter } from '@/components/AffectionMeter'
 import { AffectionIcon } from '@/components/AffectionIcon'
 import { LockedPhotoTile } from '@/components/LockedPhotoTile'
 import { PLANS, type PlanId } from '@/lib/plans'
-import { REGISTRATION_BONUS, FREE_MESSAGES_ON_SIGNUP } from '@/lib/pricing'
 import { notifyBadgesChanged } from '@/lib/badge-events'
 
 const MAX_CACHED_MSGS = 60
@@ -672,7 +671,7 @@ export default function ChatPage() {
           <div className="rounded-xl px-4 py-3 text-center"
             style={{ background: 'var(--color-primary-soft)', border: '1px solid var(--color-primary-border)' }}>
             <p className="text-sm font-bold mb-0.5">アイカノでチャットを楽しもう</p>
-            <p className="text-xs text-[var(--color-text-muted)]">新規登録で{REGISTRATION_BONUS}ptプレゼント（最初の{FREE_MESSAGES_ON_SIGNUP}通無料）。登録は無料・30秒で完了！</p>
+            <p className="text-xs text-[var(--color-text-muted)]">AIの女の子と今すぐ話せます。登録は無料・30秒で完了！</p>
           </div>
         )}
       </div>

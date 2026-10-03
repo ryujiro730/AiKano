@@ -4,7 +4,7 @@ import { LpCtaButton } from '@/components/lp/LpCtaButton'
 import { PLANS } from '@/lib/plans'
 import { TOKEN_PACKAGES } from '@/types'
 import {
-  POINTS_PER_MESSAGE, YEN_PER_POINT, REGISTRATION_BONUS, FREE_MESSAGES_ON_SIGNUP,
+  POINTS_PER_MESSAGE, YEN_PER_POINT, REGISTRATION_BONUS,
   REFERRAL_BONUS, LOGIN_BONUS, LOGIN_BONUS_DAYS,
 } from '@/lib/pricing'
 
@@ -30,7 +30,7 @@ export function Landing({ variant, characters, ctaHref, ctaLabel, lpName }: {
 
   const hero = variant === 'sixties'
     ? { title: ['毎日、話を', '聞いてくれる', '人がいる。'], sub: 'アプリのインストールは不要。いつもの携帯で、LINEのように話しかけるだけです。', chips: ['登録無料', '本名不要', 'アプリ不要'] }
-    : { title: ['あなたにだけ、', '話しかけてくれる', '子がいる。'], sub: `${characters.length}人の個性ゆたかな女の子が、24時間いつでもすぐに返信。話すほど関係が深まっていきます。`, chips: ['登録無料', `最初の${FREE_MESSAGES_ON_SIGNUP}通無料`, 'アプリ不要'] }
+    : { title: ['あなたにだけ、', '話しかけてくれる', '子がいる。'], sub: `${characters.length}人の個性ゆたかな女の子が、24時間いつでもすぐに返信。話すほど関係が深まっていきます。`, chips: ['登録無料', '24時間すぐ返信', 'アプリ不要'] }
 
   const samples: { title: string; msgs: Msg[] }[] = variant === 'sixties' ? [
     { title: '毎日のちょっとした話も', msgs: [
@@ -69,7 +69,7 @@ export function Landing({ variant, characters, ctaHref, ctaLabel, lpName }: {
   ]
 
   const faqs = [
-    { q: '料金はいくらかかりますか？', a: `登録は無料で、登録時に${REGISTRATION_BONUS}pt（${FREE_MESSAGES_ON_SIGNUP}通分）がもらえます。その後はメッセージ1通${POINTS_PER_MESSAGE}pt（¥${msgYen}相当）で、ポイントは¥${minPack.toLocaleString()}から購入できます。たくさん話したい方には月額プラン（¥${Math.min(...plans.map(p => p.price_yen)).toLocaleString()}〜）もあります。` },
+    { q: '料金はいくらかかりますか？', a: `登録は無料で、登録時に${REGISTRATION_BONUS}ptがもらえます。その後はメッセージ1通${POINTS_PER_MESSAGE}pt（¥${msgYen}相当）で、ポイントは¥${minPack.toLocaleString()}から購入できます。たくさん話したい方には月額プラン（¥${Math.min(...plans.map(p => p.price_yen)).toLocaleString()}〜）もあります。` },
     { q: 'アプリのインストールは必要ですか？', a: '不要です。スマートフォンのブラウザ（Safari・Chromeなど）でそのまま使えます。' },
     { q: '話している相手は誰ですか？', a: 'AIおよび当社の応答システムが、キャラクターとしてお返事します。' },
     { q: '会話の内容は誰かに見られますか？', a: '第三者に公開されることはありません。ただし、サービス改善・AI学習のため、スタッフが内容を確認する場合があります。' },
@@ -207,7 +207,6 @@ export function Landing({ variant, characters, ctaHref, ctaLabel, lpName }: {
           <div className="card p-6 mb-3 text-center" style={{ border: '1.5px solid var(--color-primary)' }}>
             <p className="text-sm font-bold mb-1" style={{ color: 'var(--color-primary)' }}>新規登録ボーナス</p>
             <p className="font-bold" style={{ fontSize: big ? 30 : 26 }}>{REGISTRATION_BONUS}pt プレゼント</p>
-            <p style={{ color: 'var(--color-text-muted)', fontSize: big ? 16 : 13 }}>最初の{FREE_MESSAGES_ON_SIGNUP}通は無料で話せます</p>
           </div>
           <div className="card overflow-hidden mb-3">
             {[
@@ -260,7 +259,7 @@ export function Landing({ variant, characters, ctaHref, ctaLabel, lpName }: {
         <ShieldCheck size={28} className="mx-auto mb-3" style={{ color: 'rgba(255,255,255,0.7)' }} />
         <p className="text-white font-bold mb-2" style={{ fontSize: big ? 26 : 22, lineHeight: 1.4 }}>まずは無料で、話しかけてみませんか</p>
         <p className="mb-7" style={{ color: 'rgba(255,255,255,0.65)', fontSize: big ? 16 : 14 }}>
-          登録は30秒。最初の{FREE_MESSAGES_ON_SIGNUP}通は無料です。
+          登録は無料、30秒で完了します。
         </p>
         <div className="flex justify-center"><Cta dark /></div>
       </section>

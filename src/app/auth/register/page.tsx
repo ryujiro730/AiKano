@@ -120,7 +120,7 @@ export default function RegisterPage() {
     <div>
       <h1 className="text-[26px] font-bold leading-tight mb-3">AIの女の子と、<br />今すぐ話そう</h1>
       <div className="flex flex-wrap gap-1.5 mb-7">
-        {['登録無料', '最初の2通無料', '30秒で完了'].map(t => (
+        {['登録無料', '30秒で完了', 'アプリ不要'].map(t => (
           <span key={t} className="text-[11px] font-bold px-2 py-1 rounded-md"
             style={{ background: 'var(--color-primary-soft)', color: 'var(--color-primary)' }}>{t}</span>
         ))}
