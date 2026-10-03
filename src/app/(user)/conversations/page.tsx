@@ -9,6 +9,7 @@ import { AvatarImage } from '@/components/AvatarImage'
 import { formatDistanceToNow } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import { ActionLogger } from '@/components/ActionLogger'
+import { CrossPromoBanner } from '@/components/CrossPromoBanner'
 import { SortToggleButton } from './SortToggleButton'
 import { CampaignBannerImage } from '@/components/CampaignBannerImage'
 import { INTERNAL_EMAILS } from '@/lib/internal-accounts'
@@ -176,6 +177,7 @@ export default async function ConversationsPage({ searchParams }: { searchParams
       <Suspense fallback={<ConversationListSkeleton />}>
         <ConversationList userId={user.id} sort={sort} />
       </Suspense>
+      <CrossPromoBanner placement="conversations" className="mt-8" />
       <ActionLogger actionType="conversations_view" />
       {/* ルーターキャッシュで既読前の未読数が残らないよう毎回最新化 */}
       <RefreshOnMount />

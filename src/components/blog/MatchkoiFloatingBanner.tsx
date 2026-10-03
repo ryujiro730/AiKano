@@ -47,7 +47,7 @@ export function MatchkoiFloatingBanner() {
         >×</button>
         <a href={HREF_SP} target="_blank" rel="noopener noreferrer sponsored" style={{ display: 'block' }}>
           <img
-            src="/banners/matchkoi-wide.png"
+            src="/banners/matchkoi-wide.webp"
             alt="マチコイ — 無料登録で始める"
             style={{ width: '100%', display: 'block', maxHeight: '90px', objectFit: 'cover', objectPosition: 'center 20%' }}
           />
@@ -92,7 +92,7 @@ export function MatchkoiFloatingBanner() {
         <a href={HREF_PC} target="_blank" rel="noopener noreferrer sponsored"
           style={{ display: 'block', borderRadius: 16, overflow: 'hidden' }}>
           <img
-            src="/banners/matchkoi-portrait.png"
+            src="/banners/matchkoi-portrait.webp"
             alt="マチコイ — 無料登録で始める"
             style={{ width: '100%', display: 'block' }}
           />

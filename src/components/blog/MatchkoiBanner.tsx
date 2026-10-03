@@ -11,7 +11,7 @@ export function MatchkoiBanner({ variant = 'inline' }: { variant?: Variant }) {
         style={{ display: 'block', borderRadius: '12px', overflow: 'hidden', textDecoration: 'none' }}>
         <p style={{ fontSize: '9px', color: '#aaa', letterSpacing: '0.12em', fontWeight: 700, textAlign: 'center', marginBottom: '4px' }}>PR・広告</p>
         <img
-          src="/banners/matchkoi-portrait.png"
+          src="/banners/matchkoi-portrait.webp"
           alt="マチコイ — 無料登録で始める"
           style={{ width: '100%', display: 'block', borderRadius: '12px' }}
         />
@@ -25,7 +25,7 @@ export function MatchkoiBanner({ variant = 'inline' }: { variant?: Variant }) {
         style={{ display: 'block', borderRadius: '16px', overflow: 'hidden', textDecoration: 'none' }}>
         <p style={{ fontSize: '9px', color: '#aaa', letterSpacing: '0.12em', fontWeight: 700, marginBottom: '4px' }}>PR・広告</p>
         <img
-          src="/banners/matchkoi-square.png"
+          src="/banners/matchkoi-square.webp"
           alt="マチコイ — 無料登録で始める"
           style={{ width: '100%', display: 'block', borderRadius: '12px' }}
         />
@@ -40,7 +40,7 @@ export function MatchkoiBanner({ variant = 'inline' }: { variant?: Variant }) {
       <a href={utm(variant)} target="_blank" rel="noopener noreferrer sponsored"
         style={{ display: 'block', borderRadius: '12px', overflow: 'hidden', textDecoration: 'none' }}>
         <img
-          src="/banners/matchkoi-wide.png"
+          src="/banners/matchkoi-wide.webp"
           alt="マチコイ — 無料登録で始める"
           style={{ width: '100%', display: 'block' }}
         />

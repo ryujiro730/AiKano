@@ -1,9 +1,10 @@
 export const dynamic = 'force-dynamic'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { LOGIN_BONUS, LOGIN_BONUS_DAYS } from '@/lib/pricing'
 
-const BONUS_AMOUNT = 2
-const BONUS_DAYS = 30
+const BONUS_AMOUNT = LOGIN_BONUS
+const BONUS_DAYS = LOGIN_BONUS_DAYS
 
 export async function POST() {
   const supabase = createClient()

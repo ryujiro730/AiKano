@@ -3,10 +3,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { PLANS, type PlanId } from '@/lib/plans'
+import { POINTS_PER_MESSAGE } from '@/lib/pricing'
 
 // ユーザーメッセージ送信：ポイント消費 → メッセージ保存をサーバー側で一括実行。
 // AI返信は ai-reply 側でポイント残高に関係なく返す。
-const DEFAULT_POINTS_PER_MESSAGE = 10
+const DEFAULT_POINTS_PER_MESSAGE = POINTS_PER_MESSAGE
 const MAX_CONTENT_LENGTH = 300
 const MAX_RETRY = 3
 

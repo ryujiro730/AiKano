@@ -3,10 +3,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { createClient } from '@supabase/supabase-js'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
+import { REGISTRATION_BONUS, REFERRAL_BONUS } from '@/lib/pricing'
 
-const REGISTRATION_BONUS = 20
 const IP_WINDOW_DAYS = 30
-const REFERRAL_BONUS = 100
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function applyReferralBonus(adminClient: any, newUserId: string, refCode: string, newUserIp: string) {

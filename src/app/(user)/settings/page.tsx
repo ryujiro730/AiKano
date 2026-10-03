@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Loader2, Check, LogOut, KeyRound, Trash2, MessageSquare, Twitter, Share2 } from 'lucide-react'
 import type { Profile } from '@/types'
 import Link from 'next/link'
+import { CrossPromoBanner } from '@/components/CrossPromoBanner'
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -374,6 +375,8 @@ export default function SettingsPage() {
         <LogOut size={14} />
         ログアウト
       </button>
+
+      <CrossPromoBanner placement="settings" className="mt-8" />
     </div>
   )
 }

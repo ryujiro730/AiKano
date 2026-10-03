@@ -74,19 +74,19 @@ export default function FeedbackPage() {
       </div>
 
       <div className="max-w-lg mx-auto px-4 pt-6">
-        {/* プレリリースバナー */}
+        {/* ご意見募集バナー */}
         <div className="rounded-2xl overflow-hidden mb-8"
           style={{ background: 'var(--color-primary)' }}>
           <div className="px-5 py-6">
             <div className="inline-block mb-3 px-3 py-1 rounded-full text-xs font-bold"
               style={{ background: 'rgba(255,255,255,0.2)', color: 'white' }}>
-              🚀 プレリリース版
+              ご意見募集中
             </div>
             <h2 className="text-white font-black text-xl leading-snug mb-2">
               あなたの声で<br />アイカノを育ててください
             </h2>
             <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.8)' }}>
-              現在プレリリース中です。バグや使いにくい点、
+              バグや使いにくい点、
               欲しい機能など、なんでも教えてください。
               いただいた声はすべて開発チームが読んでいます。
             </p>

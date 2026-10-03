@@ -52,7 +52,7 @@ export default function LoginPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-1">ログイン</h1>
+      <h1 className="text-[26px] font-bold mb-1">おかえりなさい</h1>
       <p className="text-[var(--color-text-muted)] text-sm mb-8">
         
       </p>
@@ -62,7 +62,7 @@ export default function LoginPage() {
           <label className="text-xs text-[var(--color-text-muted)] mb-1.5 block">メールアドレス</label>
           <input
             type="email" value={email} onChange={e => setEmail(e.target.value)} required
-            className="input-warm w-full px-4 py-3 text-sm"
+            className="input-warm w-full px-4 text-[16px]" style={{ height: 50 }}
             placeholder="your@email.com"
           />
         </div>
@@ -86,7 +86,7 @@ export default function LoginPage() {
         {error && <p className="text-red-400 text-xs">{error}</p>}
 
         <button type="submit" disabled={loading}
-          className="btn-primary w-full py-3 flex items-center justify-center gap-2 disabled:opacity-60">
+          className="btn-primary w-full flex items-center justify-center gap-2 font-bold disabled:opacity-60" style={{ height: 52, fontSize: 15 }}>
           {loading && <Loader2 size={15} className="animate-spin" />}
           ログイン
         </button>

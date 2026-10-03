@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { trackCtaClick } from '@/lib/gtag'
+import { REGISTRATION_BONUS, FREE_MESSAGES_ON_SIGNUP } from '@/lib/pricing'
 
 export function BlogCta({ slug }: { slug?: string }) {
   const href = slug ? `/auth/register?ref=blog&article=${slug}` : '/auth/register?ref=blog'
@@ -11,10 +12,10 @@ export function BlogCta({ slug }: { slug?: string }) {
       <div className="px-6 py-8">
         <div className="inline-block mb-4 px-3 py-1 rounded-full text-xs font-bold"
           style={{ background: 'rgba(255,200,0,0.25)', border: '1px solid rgba(255,200,0,0.5)', color: '#fcd34d' }}>
-          🎁 登録特典キャンペーン実施中
+          新規登録特典
         </div>
         <h3 className="text-white font-black text-xl mb-2 leading-snug">
-          今アイカノに新規登録した方に<br />3,000円分のポイントをプレゼント
+          新規登録で{REGISTRATION_BONUS}ptプレゼント<br />最初の{FREE_MESSAGES_ON_SIGNUP}通は無料で話せます
         </h3>
         <p className="text-sm mb-6" style={{ color: 'rgba(255,255,255,0.75)' }}>
           登録と同時にポイント付与。登録は無料・30秒で完了。

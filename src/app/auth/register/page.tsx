@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { Loader2 } from 'lucide-react'
+import { Loader2, MailCheck } from 'lucide-react'
 import { trackRegisterPageView } from '@/lib/gtag'
 
 export default function RegisterPage() {
@@ -99,7 +99,9 @@ export default function RegisterPage() {
   if (done) {
     return (
       <div>
-        <div style={{ fontSize: '40px', marginBottom: '16px' }}>📩</div>
+        <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4" style={{ background: 'var(--color-primary-soft)', color: 'var(--color-primary)' }}>
+          <MailCheck size={26} />
+        </div>
         <h1 className="text-2xl font-bold mb-3">確認メールを送りました</h1>
         <p className="text-[var(--color-text-muted)] text-sm leading-relaxed mb-4">
           <span style={{ color: 'var(--color-primary)', fontWeight: 600 }}>{email}</span> に確認メールを送りました。
@@ -116,17 +118,20 @@ export default function RegisterPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-1">はじめまして</h1>
-      <p className="text-[var(--color-text-muted)] text-sm mb-8">
-        登録は30秒くらいで終わります。
-      </p>
+      <h1 className="text-[26px] font-bold leading-tight mb-3">AIの女の子と、<br />今すぐ話そう</h1>
+      <div className="flex flex-wrap gap-1.5 mb-7">
+        {['登録無料', '最初の2通無料', '30秒で完了'].map(t => (
+          <span key={t} className="text-[11px] font-bold px-2 py-1 rounded-md"
+            style={{ background: 'var(--color-primary-soft)', color: 'var(--color-primary)' }}>{t}</span>
+        ))}
+      </div>
 
       <form onSubmit={handleRegister} className="space-y-4">
         <div>
           <label className="text-xs text-[var(--color-text-muted)] mb-1.5 block">メールアドレス</label>
           <input
             type="email" value={email} onChange={e => setEmail(e.target.value)} required
-            className="input-warm w-full px-4 py-3 text-sm"
+            className="input-warm w-full px-4 text-[16px]" style={{ height: 50 }}
             placeholder="your@email.com"
           />
         </div>
@@ -136,7 +141,7 @@ export default function RegisterPage() {
           <input
             type="password" value={password} onChange={e => setPassword(e.target.value)}
             required minLength={8}
-            className="input-warm w-full px-4 py-3 text-sm"
+            className="input-warm w-full px-4 text-[16px]" style={{ height: 50 }}
             placeholder="••••••••"
           />
         </div>
@@ -144,8 +149,8 @@ export default function RegisterPage() {
         {error && <p className="text-red-400 text-xs">{error}</p>}
 
         {/* 同意チェックボックス */}
-        <label className="flex items-start gap-3 cursor-pointer select-none rounded-xl p-3"
-          style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)' }}>
+        <label className="flex items-start gap-3 cursor-pointer select-none rounded-[10px] p-3"
+          style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
           <input
             type="checkbox"
             checked={consentChecked}
@@ -162,7 +167,7 @@ export default function RegisterPage() {
         </label>
 
         <button type="submit" disabled={loading || !consentChecked}
-          className="btn-primary w-full py-3 flex items-center justify-center gap-2 disabled:opacity-60">
+          className="btn-primary w-full flex items-center justify-center gap-2 font-bold disabled:opacity-60" style={{ height: 52, fontSize: 15 }}>
           {loading && <Loader2 size={15} className="animate-spin" />}
           登録して話しかける
         </button>
@@ -175,8 +180,8 @@ export default function RegisterPage() {
       </div>
 
       <button type="button" onClick={handleGoogle} disabled={!consentChecked}
-        className="w-full py-3 flex items-center justify-center gap-2.5 rounded-xl text-sm font-medium transition-opacity hover:opacity-80 disabled:opacity-40"
-        style={{ background: '#fff', border: '1px solid var(--color-border)', color: '#333' }}>
+        className="w-full flex items-center justify-center gap-2.5 rounded-[10px] text-sm font-semibold transition-opacity hover:opacity-80 disabled:opacity-40"
+        style={{ height: 50, background: '#fff', border: '1px solid var(--color-border-warm)', color: 'var(--color-text)' }}>
         <svg width="18" height="18" viewBox="0 0 24 24">
           <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
           <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>

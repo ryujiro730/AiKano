@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Loader2, ChevronLeft } from 'lucide-react'
+import { Loader2, ChevronLeft, Check } from 'lucide-react'
 import { trackSignUp, trackOnboardingStart } from '@/lib/gtag'
 import { getStoredUtm, getStoredGclid } from '@/components/UtmCapture'
 
@@ -108,205 +108,196 @@ export default function OnboardingPage() {
     )
   }
 
-  const StepDots = () => (
-    <div className="flex justify-center gap-2 mb-8">
-      {[1, 2, 3].map(s => (
-        <div
-          key={s}
-          className="rounded-full transition-all duration-300"
-          style={{
-            width: s === step ? '24px' : '8px',
-            height: '8px',
-            background: s <= step ? 'var(--color-primary)' : 'var(--color-border)',
-          }}
-        />
-      ))}
+  const selectedChar = characters.find(c => c.id === selectedCharId) ?? null
+  const ageNum = parseInt(age)
+  const ageInvalid = !!age && (isNaN(ageNum) || ageNum < 18)
+
+  // 上部: 戻る＋進捗バー
+  const TopBar = () => (
+    <div className="flex items-center gap-3 mb-7">
+      <button
+        onClick={() => setStep(s => Math.max(1, s - 1))}
+        className="w-9 h-9 -ml-2 flex items-center justify-center rounded-[10px] transition-opacity"
+        style={{ color: 'var(--color-text)', opacity: step === 1 ? 0 : 1, pointerEvents: step === 1 ? 'none' : 'auto' }}
+        aria-label="戻る"
+      >
+        <ChevronLeft size={22} />
+      </button>
+      <div className="flex-1 h-1 rounded-full overflow-hidden" style={{ background: 'var(--color-surface-3)' }}>
+        <div className="h-full rounded-full transition-all duration-300" style={{ width: `${(step / 3) * 100}%`, background: 'var(--color-primary)' }} />
+      </div>
+      <span className="text-xs tabular-nums w-9 text-right" style={{ color: 'var(--color-text-muted)' }}>{step}/3</span>
     </div>
   )
 
-  // ── Step 1: 名前 ──────────────────────────────────
+  // 画面下に固定するメインボタン
+  const BottomCta = ({ label, disabled, onClick }: { label: string; disabled: boolean; onClick: () => void }) => (
+    <div className="fixed left-0 right-0 bottom-0 px-4 pt-3"
+      style={{ background: 'linear-gradient(to top, var(--color-bg) 70%, transparent)', paddingBottom: 'calc(16px + env(safe-area-inset-bottom))' }}>
+      <button
+        onClick={onClick}
+        disabled={disabled}
+        className="btn-primary w-full max-w-md mx-auto flex items-center justify-center gap-2 font-bold disabled:opacity-40"
+        style={{ height: 54, fontSize: 16, borderRadius: 12 }}
+      >
+        {saving && <Loader2 size={16} className="animate-spin" />}
+        {label}
+      </button>
+    </div>
+  )
+
+  // 選んだキャラが話しかけてくる吹き出し
+  const CharacterSays = ({ text }: { text: string }) => selectedChar && (
+    <div className="flex items-end gap-3 mb-8">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={selectedChar.avatar_url} alt={selectedChar.name}
+        className="w-16 h-16 rounded-full object-cover flex-shrink-0" style={{ objectPosition: 'top center' }} />
+      <div className="bubble-operator px-4 py-3 text-[15px] leading-relaxed" style={{ maxWidth: '75%' }}>
+        {text}
+      </div>
+    </div>
+  )
+
+  // ── Step 1: キャラクター選択 ──────────────────────
   if (step === 1) {
     return (
-      <div>
-        <StepDots />
-        <h1 className="text-2xl font-bold mb-2">あなたのお名前は？</h1>
-        <p className="text-[var(--color-text-muted)] text-sm mb-8">
-          キャラクターがこの名前で呼びかけます
+      <div className="pb-28">
+        <TopBar />
+        <h1 className="text-[26px] font-bold leading-tight mb-2">話してみたい子を<br />選んでください</h1>
+        <p className="text-sm mb-6" style={{ color: 'var(--color-text-muted)' }}>
+          選んだ子からメッセージが届きます。あとから他の子とも話せます。
         </p>
+
+        <div className="grid grid-cols-2 gap-3">
+          {characters.map(char => {
+            const isSelected = selectedCharId === char.id
+            return (
+              <button
+                key={char.id}
+                onClick={() => setSelectedCharId(char.id)}
+                className="relative overflow-hidden text-left"
+                style={{
+                  borderRadius: 12,
+                  aspectRatio: '3/4',
+                  background: '#17131a',
+                  outline: isSelected ? '2.5px solid var(--color-primary)' : '1px solid var(--color-border)',
+                  outlineOffset: isSelected ? '2px' : '0',
+                  transition: 'outline 0.15s ease, transform 0.15s ease',
+                  transform: isSelected ? 'scale(0.98)' : 'none',
+                }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={char.avatar_url} alt={char.name}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center' }} />
+                <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(13,10,14,0.85) 0%, rgba(13,10,14,0.1) 45%, transparent 65%)' }} />
+                {isSelected && (
+                  <div className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full flex items-center justify-center"
+                    style={{ background: 'var(--color-primary)', color: '#fff' }}>
+                    <Check size={16} strokeWidth={3} />
+                  </div>
+                )}
+                <div className="absolute bottom-2.5 left-3 right-3">
+                  <p className="text-white font-bold text-[15px] leading-tight">
+                    {char.name}
+                    {char.age && <span className="text-xs font-normal ml-1.5" style={{ opacity: 0.7 }}>{char.age}歳</span>}
+                  </p>
+                  {char.personality && (
+                    <p className="text-[11px] mt-1 leading-snug line-clamp-2" style={{ color: 'rgba(255,255,255,0.65)' }}>
+                      {char.personality.replace(/[/、,]/g, ' · ')}
+                    </p>
+                  )}
+                </div>
+              </button>
+            )
+          })}
+        </div>
+
+        <BottomCta
+          label={selectedChar ? `${selectedChar.name}と話す` : '話したい子を選んでください'}
+          disabled={!selectedCharId}
+          onClick={() => setStep(2)}
+        />
+      </div>
+    )
+  }
+
+  // ── Step 2: 名前 ──────────────────────────────────
+  if (step === 2) {
+    return (
+      <div className="pb-28">
+        <TopBar />
+        <CharacterSays text="はじめまして！なんて呼んだらいいですか？" />
+        <label className="text-sm font-semibold mb-2 block">呼ばれたい名前</label>
         <input
           type="text"
           value={name}
           onChange={e => setName(e.target.value)}
-          placeholder="ニックネーム"
-          className="input-warm w-full px-4 py-4 text-lg mb-8 text-center"
+          placeholder="ニックネームでOK"
+          maxLength={20}
+          className="input-warm w-full px-4 text-[17px]"
+          style={{ height: 54 }}
           autoFocus
-          onKeyDown={e => e.key === 'Enter' && name.trim() && setStep(2)}
+          onKeyDown={e => e.key === 'Enter' && name.trim() && setStep(3)}
         />
-        <button
-          onClick={() => setStep(2)}
-          disabled={!name.trim()}
-          className="btn-primary w-full py-4 text-base font-semibold disabled:opacity-50"
-        >
-          次へ
-        </button>
-      </div>
-    )
-  }
-
-  // ── Step 2: 年齢・性別 ────────────────────────────
-  if (step === 2) {
-    return (
-      <div>
-        <StepDots />
-        <button
-          onClick={() => setStep(1)}
-          className="flex items-center gap-1 text-[var(--color-text-muted)] text-sm mb-6 hover:text-[var(--color-text)] transition-colors"
-        >
-          <ChevronLeft size={16} />
-          戻る
-        </button>
-
-        <h1 className="text-2xl font-bold mb-2">プロフィール設定</h1>
-        <p className="text-[var(--color-text-muted)] text-sm mb-8">
-          キャラクターとの会話に使います
+        <p className="text-xs mt-2" style={{ color: 'var(--color-text-muted)' }}>
+          {selectedChar?.name ?? 'キャラクター'}がこの名前で呼びかけます。あとで設定から変えられます。
         </p>
 
-        <div className="space-y-6">
-          <div>
-            <label className="text-sm font-medium mb-2 block">年齢</label>
-            <input
-              type="number"
-              value={age}
-              onChange={e => setAge(e.target.value)}
-              placeholder="例: 25"
-              min={18} max={99}
-              className="input-warm w-full px-4 py-3 text-base"
-            />
-          </div>
-          <div>
-            <label className="text-sm font-medium mb-3 block">性別</label>
-            <div className="grid grid-cols-3 gap-3">
-              {GENDER_OPTIONS.map(opt => (
-                <button
-                  key={opt.value}
-                  onClick={() => setGender(opt.value)}
-                  className="py-3 rounded-xl border text-sm font-medium transition-all"
-                  style={{
-                    borderColor: gender === opt.value ? 'var(--color-primary)' : 'var(--color-border)',
-                    background: gender === opt.value ? 'var(--color-primary)' : 'var(--color-surface-2)',
-                    color: gender === opt.value ? '#fff' : 'var(--color-text)',
-                  }}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <button
-          onClick={() => setStep(3)}
-          disabled={!age || !gender || parseInt(age) < 18}
-          className="btn-primary w-full py-4 text-base font-semibold mt-10 disabled:opacity-50"
-        >
-          次へ
-        </button>
-        {age && parseInt(age) < 18 && (
-          <p className="text-center text-sm mt-3" style={{ color: 'var(--color-primary)' }}>
-            ご利用は18歳以上の方に限られます
-          </p>
-        )}
+        <BottomCta label="次へ" disabled={!name.trim()} onClick={() => setStep(3)} />
       </div>
     )
   }
 
-  // ── Step 3: キャラクター選択 ──────────────────────
+  // ── Step 3: 年齢・性別 ────────────────────────────
   return (
-    <div>
-      <StepDots />
-      <button
-        onClick={() => setStep(2)}
-        className="flex items-center gap-1 text-[var(--color-text-muted)] text-sm mb-6 hover:text-[var(--color-text)] transition-colors"
-      >
-        <ChevronLeft size={16} />
-        戻る
-      </button>
+    <div className="pb-28">
+      <TopBar />
+      <CharacterSays text={`${name.trim()}さん、よろしくね！最後にもう少しだけ教えてください。`} />
 
-      <h1 className="text-2xl font-bold mb-1">話す相手を選ぼう</h1>
-      <p className="text-[var(--color-text-muted)] text-sm mb-6">
-        あとからいつでも変えられます
-      </p>
-
-      <div className="grid grid-cols-2 gap-3 mb-8">
-        {characters.map(char => {
-          const isSelected = selectedCharId === char.id
-          return (
-            <button
-              key={char.id}
-              onClick={() => setSelectedCharId(char.id)}
-              style={{
-                position: 'relative',
-                borderRadius: 16,
-                overflow: 'hidden',
-                aspectRatio: '3/4',
-                border: 'none',
-                padding: 0,
-                outline: isSelected ? '3px solid var(--color-primary)' : '2px solid transparent',
-                outlineOffset: '2px',
-                cursor: 'pointer',
-                background: '#111',
-                transition: 'outline 0.15s ease',
-              }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={char.avatar_url}
-                alt={char.name}
-                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center' }}
-              />
-              <div style={{
-                position: 'absolute', inset: 0,
-                background: 'linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.2) 45%, transparent 70%)',
-              }} />
-              {isSelected && (
-                <div style={{
-                  position: 'absolute', top: 10, right: 10,
-                  width: 24, height: 24, borderRadius: '50%',
-                  background: 'var(--color-primary)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 13, color: '#fff', fontWeight: 700,
-                }}>
-                  ✓
-                </div>
-              )}
-              <div style={{ position: 'absolute', bottom: 10, left: 10, right: 10, textAlign: 'left' }}>
-                <p style={{ color: '#fff', fontSize: 15, fontWeight: 700, lineHeight: 1.2 }}>
-                  {char.name}
-                  {char.age && (
-                    <span style={{ fontSize: 12, fontWeight: 400, opacity: 0.7, marginLeft: 5 }}>
-                      {char.age}歳
-                    </span>
-                  )}
-                </p>
-                {char.personality && (
-                  <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11, marginTop: 3, lineHeight: 1.3 }}>
-                    {char.personality}
-                  </p>
-                )}
-              </div>
-            </button>
-          )
-        })}
+      <div className="space-y-6">
+        <div>
+          <label className="text-sm font-semibold mb-2 block">年齢</label>
+          <input
+            type="number"
+            inputMode="numeric"
+            value={age}
+            onChange={e => setAge(e.target.value)}
+            placeholder="例: 30"
+            min={18} max={99}
+            className="input-warm w-full px-4 text-[17px]"
+            style={{ height: 54 }}
+          />
+          {ageInvalid && (
+            <p className="text-xs mt-2" style={{ color: 'var(--color-primary)' }}>ご利用は18歳以上の方に限られます</p>
+          )}
+        </div>
+        <div>
+          <label className="text-sm font-semibold mb-2 block">性別</label>
+          <div className="grid grid-cols-3 gap-2">
+            {GENDER_OPTIONS.map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => setGender(opt.value)}
+                className="rounded-[10px] text-[15px] font-semibold transition-colors"
+                style={{
+                  height: 50,
+                  border: `1px solid ${gender === opt.value ? 'var(--color-primary)' : 'var(--color-border-warm)'}`,
+                  background: gender === opt.value ? 'var(--color-primary-soft)' : 'var(--color-surface)',
+                  color: gender === opt.value ? 'var(--color-primary)' : 'var(--color-text)',
+                }}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
-      <button
+      <BottomCta
+        label={saving ? '準備しています…' : `${selectedChar?.name ?? ''}と話しはじめる`}
+        disabled={!age || ageInvalid || !gender || !selectedCharId || saving}
         onClick={complete}
-        disabled={!selectedCharId || saving}
-        className="btn-primary w-full py-4 text-base font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
-      >
-        {saving && <Loader2 size={16} className="animate-spin" />}
-        {selectedCharId ? 'はじめる' : 'キャラクターを選んでください'}
-      </button>
+      />
     </div>
   )
 }
