@@ -44,8 +44,12 @@ export async function GET(request: NextRequest) {
           return NextResponse.redirect(`${base}/onboarding`)
         }
 
-        // 既存ユーザー：最終ログイン日時を更新
-        await admin.from('profiles').update({ last_login_at: new Date().toISOString() }).eq('id', user.id)
+        // 既存ユーザー：最終ログイン日時を更新 + ログインイベント記録
+        const loginNow = new Date().toISOString()
+        await Promise.all([
+          admin.from('profiles').update({ last_login_at: loginNow }).eq('id', user.id),
+          admin.from('login_events').insert({ user_id: user.id, logged_in_at: loginNow }),
+        ])
 
         if (profile.age === null) {
           // プロフィールはあるがonboarding未完了

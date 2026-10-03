@@ -1,145 +1,263 @@
-import { createClient } from '@/lib/supabase/server'
+export const dynamic = 'force-dynamic'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { unstable_cache } from 'next/cache'
 import Link from 'next/link'
+import { INTERNAL_EMAILS } from '@/lib/internal-accounts'
+import { RefreshOnMount } from './RefreshOnMount'
+
+function adminDb() {
+  return createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  )
+}
+
+const getCachedExcludeIds = unstable_cache(
+  async () => {
+    const admin = adminDb()
+    const { data } = await admin.from('profiles').select('id')
+      .or(`role.in.(admin,staff,owner),email.in.(${INTERNAL_EMAILS.join(',')})`)
+    return (data ?? []).map((p: any) => p.id) as string[]
+  },
+  ['analytics-exclude-ids'],
+  { revalidate: 3600 },
+)
+
+const getCachedStats = unstable_cache(
+  async (fromISO: string, toISO: string | null, period: string, excludeIds: string[]) => {
+    const admin = adminDb()
+    const { data, error } = await admin.rpc('get_analytics_stats', {
+      p_from_iso: fromISO,
+      p_to_iso: toISO,
+      p_period: period,
+      p_exclude_ids: excludeIds,
+    })
+    return { data: data as any[] | null, error }
+  },
+  ['analytics-stats'],
+  { revalidate: 300 },
+)
 
 type Period = 'hourly' | 'daily' | 'monthly'
-type SearchParams = { period?: string }
+type SearchParams = { period?: string; month?: string; date?: string }
 
-function getPeriodRange(period: Period): { from: Date; to: Date } {
-  const to = new Date()
-  const from = new Date()
-  if (period === 'hourly') {
-    from.setHours(from.getHours() - 23)
-    from.setMinutes(0); from.setSeconds(0); from.setMilliseconds(0)
-  } else if (period === 'daily') {
-    from.setDate(from.getDate() - 29)
-    from.setHours(0, 0, 0, 0)
-  } else {
-    from.setMonth(from.getMonth() - 11)
-    from.setDate(1); from.setHours(0, 0, 0, 0)
-  }
-  return { from, to }
+const JST_OFFSET = 9 * 60 * 60 * 1000
+
+function toJST(date: Date): Date {
+  return new Date(date.getTime() + JST_OFFSET)
 }
 
-function getBucketKey(dateStr: string, period: Period): string {
-  const d = new Date(dateStr)
-  if (period === 'hourly') return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:00`
-  if (period === 'daily') return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-}
-
-function generateBuckets(period: Period): string[] {
+function generateHourlyBuckets(dateStr: string, isToday: boolean): string[] {
   const buckets: string[] = []
-  const now = new Date()
-  if (period === 'hourly') {
-    for (let i = 23; i >= 0; i--) {
-      const d = new Date(now)
-      d.setHours(d.getHours() - i)
-      buckets.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:00`)
-    }
-  } else if (period === 'daily') {
-    for (let i = 29; i >= 0; i--) {
-      const d = new Date(now)
-      d.setDate(d.getDate() - i)
-      buckets.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`)
-    }
-  } else {
-    for (let i = 11; i >= 0; i--) {
-      const d = new Date(now)
-      d.setMonth(d.getMonth() - i)
-      buckets.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`)
-    }
+  const nowJST = toJST(new Date())
+  const maxHour = isToday ? nowJST.getUTCHours() : 23
+  for (let h = 0; h <= maxHour; h++) {
+    buckets.push(`${dateStr} ${String(h).padStart(2, '0')}:00`)
   }
   return buckets
 }
 
-function formatBucketLabel(bucket: string, period: Period): string {
-  if (period === 'hourly') return bucket.slice(5, 16).replace('-', '/').replace('-', '/') // MM/DD HH:00
+function generateDailyBuckets(year: number, month: number): string[] {
+  const daysInMonth = new Date(year, month, 0).getDate()
+  const buckets: string[] = []
+  for (let d = 1; d <= daysInMonth; d++) {
+    buckets.push(`${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`)
+  }
+  return buckets
+}
+
+const LAUNCH_YEAR = 2026
+const LAUNCH_MONTH = 1
+
+function generateMonthlyBuckets(): string[] {
+  const buckets: string[] = []
+  const nowJST = toJST(new Date())
+  let y = LAUNCH_YEAR, m = LAUNCH_MONTH
+  const endY = nowJST.getUTCFullYear()
+  const endM = nowJST.getUTCMonth() + 1
+  while (y < endY || (y === endY && m <= endM)) {
+    buckets.push(`${y}-${String(m).padStart(2, '0')}`)
+    m++; if (m > 12) { m = 1; y++ }
+  }
+  return buckets
+}
+
+function formatLabel(bucket: string, period: Period): string {
+  if (period === 'hourly') return bucket.slice(5).replace('-', '/')
   if (period === 'daily') {
-    const [y, m, d] = bucket.split('-')
-    return `${y}/${parseInt(m)}/${parseInt(d)}`
+    const [, m, d] = bucket.split('-')
+    return `${parseInt(m)}/${parseInt(d)}`
   }
   const [y, m] = bucket.split('-')
   return `${y}/${parseInt(m)}月`
 }
 
+function addMonth(year: number, month: number, delta: number): { year: number; month: number } {
+  let m = month + delta
+  let y = year
+  while (m > 12) { m -= 12; y++ }
+  while (m < 1)  { m += 12; y-- }
+  return { year: y, month: m }
+}
+
+function addDays(dateStr: string, days: number): string {
+  const d = new Date(`${dateStr}T00:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + days)
+  return d.toISOString().slice(0, 10)
+}
+
+type BucketData = {
+  revenue: number
+  allPointsSpent: number
+  payingPointsSpent: number
+  freePointsSpent: number
+  payerUserCount: number
+  purchaseCount: number
+  registrations: number
+  firstTimePayers: number
+  loginCount: number
+}
+
 export default async function AdminAnalyticsPage({ searchParams }: { searchParams: SearchParams }) {
   const period: Period = (searchParams.period as Period) ?? 'daily'
-  const supabase = createClient()
-  const { from } = getPeriodRange(period)
-  const fromISO = from.toISOString()
 
-  // admin/staffのuser_idを除外リストとして取得
-  const { data: staffProfiles } = await supabase
-    .from('profiles')
-    .select('id')
-    .in('role', ['admin', 'staff'])
-  const excludeIds = (staffProfiles ?? []).map(p => p.id)
+  const nowJST = toJST(new Date())
+  const currentYear = nowJST.getUTCFullYear()
+  const currentMonth = nowJST.getUTCMonth() + 1
+  const jstTodayStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(nowJST.getUTCDate()).padStart(2, '0')}`
 
-  const [txRes, profilesRes, loginRes, allPayersRes] = await Promise.all([
-    excludeIds.length > 0
-      ? supabase.from('point_transactions').select('user_id, amount, type, price_yen, created_at').gte('created_at', fromISO).not('user_id', 'in', `(${excludeIds.join(',')})`).order('created_at', { ascending: true })
-      : supabase.from('point_transactions').select('user_id, amount, type, price_yen, created_at').gte('created_at', fromISO).order('created_at', { ascending: true }),
-    supabase.from('profiles').select('id, created_at').gte('created_at', fromISO).not('role', 'in', '(admin,staff)'),
-    supabase.from('profiles').select('last_login_at').gte('last_login_at', fromISO).not('last_login_at', 'is', null).not('role', 'in', '(admin,staff)'),
-    excludeIds.length > 0
-      ? supabase.from('point_transactions').select('user_id').eq('type', 'purchase').not('user_id', 'in', `(${excludeIds.join(',')})`)
-      : supabase.from('point_transactions').select('user_id').eq('type', 'purchase'),
-  ])
-
-  const transactions = txRes.data ?? []
-  const newProfiles = profilesRes.data ?? []
-  const logins = loginRes.data ?? []
-  const payingUserIds = new Set((allPayersRes.data ?? []).map(t => t.user_id))
-
-  const buckets = generateBuckets(period)
-  type BucketData = { revenue: number; allPointsSpent: number; payingPointsSpent: number; freePointsSpent: number; registrations: number; logins: number }
-  const bucketMap = new Map<string, BucketData>()
-  buckets.forEach(b => bucketMap.set(b, { revenue: 0, allPointsSpent: 0, payingPointsSpent: 0, freePointsSpent: 0, registrations: 0, logins: 0 }))
-
-  for (const tx of transactions) {
-    const key = getBucketKey(tx.created_at, period)
-    const bucket = bucketMap.get(key)
-    if (!bucket) continue
-    if (tx.type === 'purchase' && tx.price_yen != null) bucket.revenue += tx.price_yen
-    if (tx.type === 'spend') {
-      bucket.allPointsSpent += Math.abs(tx.amount)
-      if (payingUserIds.has(tx.user_id)) bucket.payingPointsSpent += Math.abs(tx.amount)
-      else bucket.freePointsSpent += Math.abs(tx.amount)
+  let selYear = currentYear
+  let selMonth = currentMonth
+  if (period === 'daily' && searchParams.month) {
+    const parts = searchParams.month.split('-')
+    if (parts.length === 2) {
+      selYear = parseInt(parts[0])
+      selMonth = parseInt(parts[1])
     }
   }
-  for (const p of newProfiles) {
-    const bucket = bucketMap.get(getBucketKey(p.created_at, period))
-    if (bucket) bucket.registrations++
+
+  let selDateStr = jstTodayStr
+  let isToday = true
+  if (period === 'hourly' && searchParams.date && /^\d{4}-\d{2}-\d{2}$/.test(searchParams.date)) {
+    selDateStr = searchParams.date
+    isToday = selDateStr === jstTodayStr
   }
-  for (const p of logins) {
-    if (!p.last_login_at) continue
-    const bucket = bucketMap.get(getBucketKey(p.last_login_at, period))
-    if (bucket) bucket.logins++
+
+  let fromISO: string
+  let toISO: string | null = null
+  if (period === 'hourly') {
+    fromISO = new Date(`${selDateStr}T00:00:00+09:00`).toISOString()
+    if (!isToday) {
+      toISO = new Date(new Date(`${selDateStr}T00:00:00+09:00`).getTime() + 86400000).toISOString()
+    }
+  } else if (period === 'daily') {
+    const f = new Date(`${selYear}-${String(selMonth).padStart(2, '0')}-01T00:00:00+09:00`)
+    const { year: ny, month: nm } = addMonth(selYear, selMonth, 1)
+    const t = new Date(`${ny}-${String(nm).padStart(2, '0')}-01T00:00:00+09:00`)
+    fromISO = f.toISOString()
+    toISO = t.toISOString()
+  } else {
+    fromISO = new Date(`${LAUNCH_YEAR}-${String(LAUNCH_MONTH).padStart(2, '0')}-01T00:00:00+09:00`).toISOString()
+  }
+
+  const excludeIds = await getCachedExcludeIds()
+  const { data: statsRows, error: rpcError } = await getCachedStats(fromISO, toISO, period, excludeIds)
+
+  if (rpcError) {
+    return (
+      <div className="p-6 max-w-5xl mx-auto">
+        <h1 className="text-base font-bold mb-4">集計</h1>
+        <div className="border border-red-300 rounded p-4 bg-red-50">
+          <p className="text-red-700 font-semibold mb-1">RPC エラー</p>
+          <pre className="text-xs text-red-600 whitespace-pre-wrap">{JSON.stringify(rpcError, null, 2)}</pre>
+        </div>
+      </div>
+    )
+  }
+
+  const buckets = period === 'hourly'
+    ? generateHourlyBuckets(selDateStr, isToday)
+    : period === 'daily'
+      ? generateDailyBuckets(selYear, selMonth)
+      : generateMonthlyBuckets()
+
+  const emptyBucket = (): BucketData => ({
+    revenue: 0, allPointsSpent: 0, payingPointsSpent: 0, freePointsSpent: 0,
+    payerUserCount: 0, purchaseCount: 0, registrations: 0, firstTimePayers: 0, loginCount: 0,
+  })
+
+  const bucketMap = new Map<string, BucketData>()
+  buckets.forEach(b => bucketMap.set(b, emptyBucket()))
+
+  let totalLoginUsers = 0
+  let totalPayerUsers = 0
+
+  for (const row of statsRows ?? []) {
+    const d = bucketMap.get(row.bucket)
+    if (!d) continue
+    d.revenue             = Number(row.revenue)
+    d.allPointsSpent      = Number(row.all_points_spent)
+    d.payingPointsSpent   = Number(row.paying_points_spent)
+    d.freePointsSpent     = Number(row.free_points_spent)
+    d.payerUserCount      = Number(row.payer_user_count)
+    d.purchaseCount       = Number(row.purchase_count)
+    d.registrations       = Number(row.registration_count)
+    d.firstTimePayers     = Number(row.first_time_payer_count)
+    d.loginCount          = Number(row.login_user_count)
+    totalLoginUsers = Number(row.total_period_login_users)
+    totalPayerUsers = Number(row.total_period_payer_users)
   }
 
   const totals = buckets.reduce((acc, b) => {
     const d = bucketMap.get(b)!
-    return { revenue: acc.revenue + d.revenue, allPointsSpent: acc.allPointsSpent + d.allPointsSpent, payingPointsSpent: acc.payingPointsSpent + d.payingPointsSpent, freePointsSpent: acc.freePointsSpent + d.freePointsSpent, registrations: acc.registrations + d.registrations, logins: acc.logins + d.logins }
-  }, { revenue: 0, allPointsSpent: 0, payingPointsSpent: 0, freePointsSpent: 0, registrations: 0, logins: 0 })
-
-  const maxRevenue = Math.max(...buckets.map(b => bucketMap.get(b)!.revenue), 1)
-  const reversedBuckets = [...buckets].reverse()
+    return {
+      revenue:           acc.revenue           + d.revenue,
+      allPointsSpent:    acc.allPointsSpent    + d.allPointsSpent,
+      payingPointsSpent: acc.payingPointsSpent + d.payingPointsSpent,
+      freePointsSpent:   acc.freePointsSpent   + d.freePointsSpent,
+      purchaseCount:     acc.purchaseCount     + d.purchaseCount,
+      registrations:     acc.registrations     + d.registrations,
+      firstTimePayers:   acc.firstTimePayers   + d.firstTimePayers,
+    }
+  }, {
+    revenue: 0, allPointsSpent: 0, payingPointsSpent: 0, freePointsSpent: 0,
+    purchaseCount: 0, registrations: 0, firstTimePayers: 0,
+  })
 
   const periodTabs: { value: Period; label: string }[] = [
-    { value: 'hourly', label: '時間別（24h）' },
-    { value: 'daily', label: '日別（30日）' },
-    { value: 'monthly', label: '月別（12ヶ月）' },
+    { value: 'hourly',  label: '時間別' },
+    { value: 'daily',   label: '日別' },
+    { value: 'monthly', label: '月別' },
   ]
 
+  const prevDayStr = addDays(selDateStr, -1)
+  const nextDayStr = addDays(selDateStr, 1)
+  const isFutureDay = selDateStr > jstTodayStr
+
+  const prev = addMonth(selYear, selMonth, -1)
+  const next = addMonth(selYear, selMonth, 1)
+  const isCurrentMonth = selYear === currentYear && selMonth === currentMonth
+  const isFutureMonth  = selYear > currentYear  || (selYear === currentYear && selMonth > currentMonth)
+  const isLaunchMonth  = selYear === LAUNCH_YEAR && selMonth === LAUNCH_MONTH
+
+  const th = 'px-3 py-2 text-right text-xs font-semibold text-gray-500 border-b border-gray-200 whitespace-nowrap'
+  const td = 'px-3 py-1.5 text-right text-sm tabular-nums whitespace-nowrap'
+
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">集計</h1>
-        <div className="flex gap-1.5">
+    <div className="p-6 space-y-4">
+      <RefreshOnMount />
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <h1 className="text-base font-bold">集計</h1>
+        <div className="flex gap-1">
           {periodTabs.map(tab => (
-            <Link key={tab.value} href={`?period=${tab.value}`}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${period === tab.value ? 'text-white' : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'}`}
-              style={{ background: period === tab.value ? 'var(--color-primary)' : 'var(--color-surface-2)' }}
+            <Link key={tab.value}
+              href={tab.value === 'daily' ? `?period=daily&month=${selYear}-${String(selMonth).padStart(2, '0')}` : `?period=${tab.value}`}
+              className="px-3 py-1 rounded text-xs font-medium border"
+              style={{
+                background:  period === tab.value ? '#111' : '#fff',
+                color:       period === tab.value ? '#fff' : '#555',
+                borderColor: period === tab.value ? '#111' : '#ddd',
+              }}
             >
               {tab.label}
             </Link>
@@ -147,119 +265,92 @@ export default async function AdminAnalyticsPage({ searchParams }: { searchParam
         </div>
       </div>
 
-      {/* サマリーカード */}
-      <div className="grid grid-cols-3 gap-3 lg:grid-cols-6">
-        {[
-          { label: '課金額', value: `¥${totals.revenue.toLocaleString()}`, color: '#10b981', bg: 'rgba(16,185,129,0.08)' },
-          { label: 'PT消費（全体）', value: `${totals.allPointsSpent.toLocaleString()}`, unit: 'T', color: '#6366f1', bg: 'rgba(99,102,241,0.08)' },
-          { label: 'PT消費（課金）', value: `${totals.payingPointsSpent.toLocaleString()}`, unit: 'T', color: '#8b5cf6', bg: 'rgba(139,92,246,0.08)' },
-          { label: 'PT消費（無料）', value: `${totals.freePointsSpent.toLocaleString()}`, unit: 'T', color: '#ec4899', bg: 'rgba(236,72,153,0.08)' },
-          { label: '新規登録', value: `${totals.registrations}`, unit: '人', color: '#f59e0b', bg: 'rgba(245,158,11,0.08)' },
-          { label: 'ログイン', value: `${totals.logins}`, unit: '人', color: '#3b82f6', bg: 'rgba(59,130,246,0.08)' },
-        ].map(card => (
-          <div key={card.label} className="rounded-xl px-4 py-3 border" style={{ background: card.bg, borderColor: card.color + '33' }}>
-            <p className="text-[11px] text-[var(--color-text-muted)] mb-1">{card.label}</p>
-            <p className="text-lg font-bold leading-tight" style={{ color: card.color }}>
-              {card.value}<span className="text-sm font-normal ml-0.5">{card.unit}</span>
-            </p>
-          </div>
-        ))}
-      </div>
-
-      {/* 収益ミニチャート */}
-      {totals.revenue > 0 && (
-        <div className="card p-4">
-          <p className="text-xs text-[var(--color-text-muted)] mb-3 font-medium">課金額推移</p>
-          <div className="flex items-end gap-px" style={{ height: 56 }}>
-            {buckets.map(bucket => {
-              const val = bucketMap.get(bucket)!.revenue
-              const pct = (val / maxRevenue) * 100
-              return (
-                <div key={bucket} className="flex-1 flex flex-col justify-end group relative" style={{ minWidth: 0 }}>
-                  <div style={{ height: `${Math.max(pct, val > 0 ? 4 : 0)}%`, background: '#10b981', opacity: 0.75, borderRadius: '2px 2px 0 0', minHeight: val > 0 ? 3 : 0 }} />
-                  <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 hidden group-hover:block z-10 pointer-events-none">
-                    <div className="card px-2 py-1 text-xs whitespace-nowrap">
-                      <div className="text-[var(--color-text-muted)]">{formatBucketLabel(bucket, period)}</div>
-                      <div className="font-bold text-green-400">¥{val.toLocaleString()}</div>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-          <div className="flex justify-between mt-1 text-[10px] text-[var(--color-text-muted)]">
-            <span>{formatBucketLabel(buckets[0], period)}</span>
-            <span>{formatBucketLabel(buckets[Math.floor(buckets.length / 2)], period)}</span>
-            <span>{formatBucketLabel(buckets[buckets.length - 1], period)}</span>
-          </div>
+      {period === 'hourly' && (
+        <div className="flex items-center gap-2">
+          <Link href={`?period=hourly&date=${prevDayStr}`} className="px-2 py-1 text-xs border rounded hover:bg-gray-50">← 前日</Link>
+          <span className="text-sm font-semibold px-2">{selDateStr.slice(5).replace('-', '/')}（JST）</span>
+          <Link href="?period=hourly"
+            className={`px-2 py-1 text-xs border rounded ${isToday ? 'bg-gray-100 font-semibold pointer-events-none' : 'hover:bg-gray-50'}`}>
+            当日
+          </Link>
+          <Link href={isToday ? '#' : `?period=hourly&date=${nextDayStr}`}
+            className={`px-2 py-1 text-xs border rounded ${isToday || isFutureDay ? 'text-gray-300 pointer-events-none' : 'hover:bg-gray-50'}`}>
+            次日 →
+          </Link>
         </div>
       )}
 
-      {/* メインテーブル */}
-      <div className="card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm border-collapse">
-            <thead>
-              <tr style={{ background: 'var(--color-surface-2)', borderBottom: '2px solid var(--color-border)' }}>
-                <th className="text-left text-xs font-semibold text-[var(--color-text-muted)] px-4 py-3 whitespace-nowrap">期間</th>
-                <th className="text-right text-xs font-semibold px-4 py-3 whitespace-nowrap" style={{ color: '#10b981' }}>課金額</th>
-                <th className="text-right text-xs font-semibold px-4 py-3 whitespace-nowrap" style={{ color: '#6366f1' }}>PT消費<span className="text-[10px] font-normal ml-1">全体</span></th>
-                <th className="text-right text-xs font-semibold px-4 py-3 whitespace-nowrap" style={{ color: '#8b5cf6' }}>PT消費<span className="text-[10px] font-normal ml-1">課金</span></th>
-                <th className="text-right text-xs font-semibold px-4 py-3 whitespace-nowrap" style={{ color: '#ec4899' }}>PT消費<span className="text-[10px] font-normal ml-1">無料</span></th>
-                <th className="text-right text-xs font-semibold px-4 py-3 whitespace-nowrap" style={{ color: '#f59e0b' }}>新規登録</th>
-                <th className="text-right text-xs font-semibold px-4 py-3 whitespace-nowrap" style={{ color: '#3b82f6' }}>ログイン</th>
-              </tr>
-            </thead>
-            <tbody>
-              {/* 合計行 */}
-              <tr style={{ background: 'rgba(232,67,143,0.05)', borderBottom: '2px solid var(--color-border)' }}>
-                <td className="px-4 py-2.5 font-bold text-xs">合計</td>
-                <td className="px-4 py-2.5 text-right font-bold" style={{ color: '#10b981' }}>¥{totals.revenue.toLocaleString()}</td>
-                <td className="px-4 py-2.5 text-right font-bold" style={{ color: '#6366f1' }}>{totals.allPointsSpent.toLocaleString()}T</td>
-                <td className="px-4 py-2.5 text-right font-bold" style={{ color: '#8b5cf6' }}>{totals.payingPointsSpent.toLocaleString()}T</td>
-                <td className="px-4 py-2.5 text-right font-bold" style={{ color: '#ec4899' }}>{totals.freePointsSpent.toLocaleString()}T</td>
-                <td className="px-4 py-2.5 text-right font-bold" style={{ color: '#f59e0b' }}>{totals.registrations}人</td>
-                <td className="px-4 py-2.5 text-right font-bold" style={{ color: '#3b82f6' }}>{totals.logins}人</td>
-              </tr>
-              {reversedBuckets.map((bucket, i) => {
-                const d = bucketMap.get(bucket)!
-                const hasData = d.revenue > 0 || d.allPointsSpent > 0 || d.registrations > 0 || d.logins > 0
-                return (
-                  <tr
-                    key={bucket}
-                    style={{
-                      borderBottom: '1px solid var(--color-border)',
-                      background: i % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.01)',
-                      opacity: hasData ? 1 : 0.35,
-                    }}
-                  >
-                    <td className="px-4 py-2.5 font-mono text-xs text-[var(--color-text-muted)] whitespace-nowrap">
-                      {formatBucketLabel(bucket, period)}
-                    </td>
-                    <td className="px-4 py-2.5 text-right font-medium whitespace-nowrap" style={{ color: d.revenue > 0 ? '#10b981' : 'var(--color-text-muted)' }}>
-                      {d.revenue > 0 ? `¥${d.revenue.toLocaleString()}` : '—'}
-                    </td>
-                    <td className="px-4 py-2.5 text-right whitespace-nowrap" style={{ color: d.allPointsSpent > 0 ? '#6366f1' : 'var(--color-text-muted)' }}>
-                      {d.allPointsSpent > 0 ? `${d.allPointsSpent.toLocaleString()}T` : '—'}
-                    </td>
-                    <td className="px-4 py-2.5 text-right whitespace-nowrap" style={{ color: d.payingPointsSpent > 0 ? '#8b5cf6' : 'var(--color-text-muted)' }}>
-                      {d.payingPointsSpent > 0 ? `${d.payingPointsSpent.toLocaleString()}T` : '—'}
-                    </td>
-                    <td className="px-4 py-2.5 text-right whitespace-nowrap" style={{ color: d.freePointsSpent > 0 ? '#ec4899' : 'var(--color-text-muted)' }}>
-                      {d.freePointsSpent > 0 ? `${d.freePointsSpent.toLocaleString()}T` : '—'}
-                    </td>
-                    <td className="px-4 py-2.5 text-right whitespace-nowrap" style={{ color: d.registrations > 0 ? '#f59e0b' : 'var(--color-text-muted)' }}>
-                      {d.registrations > 0 ? `${d.registrations}人` : '—'}
-                    </td>
-                    <td className="px-4 py-2.5 text-right whitespace-nowrap" style={{ color: d.logins > 0 ? '#3b82f6' : 'var(--color-text-muted)' }}>
-                      {d.logins > 0 ? `${d.logins}人` : '—'}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+      {period === 'daily' && (
+        <div className="flex items-center gap-2">
+          <Link
+            href={isLaunchMonth ? '#' : `?period=daily&month=${prev.year}-${String(prev.month).padStart(2, '0')}`}
+            className={`px-2 py-1 text-xs border rounded ${isLaunchMonth ? 'text-gray-300 pointer-events-none' : 'hover:bg-gray-50'}`}>
+            ← 前月
+          </Link>
+          <span className="text-sm font-semibold px-2">{selYear}年{selMonth}月</span>
+          <Link
+            href={isFutureMonth ? '#' : `?period=daily&month=${next.year}-${String(next.month).padStart(2, '0')}`}
+            className={`px-2 py-1 text-xs border rounded ${isFutureMonth || isCurrentMonth ? 'text-gray-300 pointer-events-none' : 'hover:bg-gray-50'}`}>
+            次月 →
+          </Link>
         </div>
+      )}
+
+      <div className="overflow-x-auto border border-gray-200 rounded">
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr className="bg-gray-50">
+              <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 border-b border-gray-200 whitespace-nowrap">
+                期間（JST）
+              </th>
+              <th className={th}>課金額</th>
+              <th className={th}>入金者数</th>
+              <th className={th}>入金件数</th>
+              <th className={th}>新規登録</th>
+              <th className={th}>初回入金率</th>
+              <th className={th}>ログイン</th>
+              <th className={th}>PT消費（全体）</th>
+              <th className={th}>PT消費（課金）</th>
+              <th className={th}>PT消費（無料）</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="bg-gray-50 font-semibold border-b-2 border-gray-300">
+              <td className="px-3 py-1.5 text-sm">合計</td>
+              <td className={td}>¥{totals.revenue.toLocaleString()}</td>
+              <td className={td}>{totalPayerUsers > 0 ? `${totalPayerUsers}人` : '—'}</td>
+              <td className={td}>{totals.purchaseCount > 0 ? `${totals.purchaseCount}件` : '—'}</td>
+              <td className={td}>{totals.registrations > 0 ? `${totals.registrations}人` : '—'}</td>
+              <td className={td}>{totals.registrations > 0 ? `${Math.round(totals.firstTimePayers / totals.registrations * 100)}%` : '—'}</td>
+              <td className={td}>{totalLoginUsers > 0 ? `${totalLoginUsers}人` : '—'}</td>
+              <td className={td}>{totals.allPointsSpent    > 0 ? `${totals.allPointsSpent.toLocaleString()}pt`    : '—'}</td>
+              <td className={td}>{totals.payingPointsSpent > 0 ? `${totals.payingPointsSpent.toLocaleString()}pt` : '—'}</td>
+              <td className={td}>{totals.freePointsSpent   > 0 ? `${totals.freePointsSpent.toLocaleString()}pt`   : '—'}</td>
+            </tr>
+            {buckets.map((bucket, i) => {
+              const d = bucketMap.get(bucket)!
+              const hasData = d.revenue > 0 || d.allPointsSpent > 0 || d.registrations > 0 || d.loginCount > 0
+              return (
+                <tr
+                  key={bucket}
+                  className={`border-b border-gray-100 ${hasData ? '' : 'text-gray-300'}`}
+                  style={{ background: i % 2 === 0 ? '#fff' : '#fafafa' }}
+                >
+                  <td className="px-3 py-1.5 text-sm font-mono">{formatLabel(bucket, period)}</td>
+                  <td className={td}>{d.revenue         > 0 ? `¥${d.revenue.toLocaleString()}`             : '—'}</td>
+                  <td className={td}>{d.payerUserCount  > 0 ? `${d.payerUserCount}人`                      : '—'}</td>
+                  <td className={td}>{d.purchaseCount   > 0 ? `${d.purchaseCount}件`                       : '—'}</td>
+                  <td className={td}>{d.registrations   > 0 ? `${d.registrations}人`                       : '—'}</td>
+                  <td className={td}>{d.registrations   > 0 ? `${Math.round(d.firstTimePayers / d.registrations * 100)}%` : '—'}</td>
+                  <td className={td}>{d.loginCount      > 0 ? `${d.loginCount}人`                          : '—'}</td>
+                  <td className={td}>{d.allPointsSpent    > 0 ? `${d.allPointsSpent.toLocaleString()}pt`    : '—'}</td>
+                  <td className={td}>{d.payingPointsSpent > 0 ? `${d.payingPointsSpent.toLocaleString()}pt` : '—'}</td>
+                  <td className={td}>{d.freePointsSpent   > 0 ? `${d.freePointsSpent.toLocaleString()}pt`   : '—'}</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   )
