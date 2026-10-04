@@ -3,6 +3,7 @@ import Script from 'next/script'
 import './globals.css'
 import ServiceWorkerRegister from '@/components/ServiceWorkerRegister'
 import UtmCapture from '@/components/UtmCapture'
+import { STRIPE_REVIEW_MODE } from '@/lib/review-mode'
 
 const GA_ID = 'G-E01TLB4KY3'
 
@@ -51,7 +52,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               "name": "AiKano",
               "url": "https://aikano.chat",
               "logo": "https://aikano.chat/icons/icon-192.png",
-              "description": "自社チューニングの超高性能AIが、あなたのメッセージにリアルタイムで返信します。アダルトOK・画像送り合いOK。",
+              "description": STRIPE_REVIEW_MODE ? "自社チューニングのAIキャラクターが、あなたのメッセージにリアルタイムで返信する会話サービスです。" : "自社チューニングの超高性能AIが、あなたのメッセージにリアルタイムで返信します。アダルトOK・画像送り合いOK。",
               "sameAs": [
                 "https://www.youtube.com/@AI%E3%82%AB%E3%83%8E%E3%81%A1%E3%82%83%E3%82%93",
                 "https://x.com/home",

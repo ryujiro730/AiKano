@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { STRIPE_REVIEW_MODE } from '@/lib/review-mode'
 
 const BASE = 'https://matchkoi.com/lp/1'
 const HREF_SP = `${BASE}?utm_source=aikano&utm_medium=banner&utm_campaign=blog&utm_content=${encodeURIComponent('普通_floating_sp')}`
@@ -8,7 +9,7 @@ const HREF_PC = `${BASE}?utm_source=aikano&utm_medium=banner&utm_campaign=blog&u
 
 export function MatchkoiFloatingBanner() {
   const [closed, setClosed] = useState(false)
-  if (closed) return null
+  if (closed || STRIPE_REVIEW_MODE) return null
 
   return (
     <>

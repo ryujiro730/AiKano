@@ -2,8 +2,11 @@ import fs from 'fs'
 import path from 'path'
 import matter from 'gray-matter'
 import readingTime from 'reading-time'
+import { STRIPE_REVIEW_MODE } from './review-mode'
 
 const BLOG_DIR = path.join(process.cwd(), 'src/content/blog')
+
+const isHidden = (data: { adult?: unknown }) => STRIPE_REVIEW_MODE && data.adult === true
 
 export type BlogCategory = 'all' | 'news' | 'howto' | 'column' | 'update'
 
@@ -51,10 +54,11 @@ export function getAllPosts(): PostMeta[] {
 
   const files = fs.readdirSync(BLOG_DIR).filter(f => f.endsWith('.mdx'))
 
-  const posts = files.map(file => {
+  const posts = files.map((file): PostMeta | null => {
     const slug = file.replace(/\.mdx$/, '')
     const raw = fs.readFileSync(path.join(BLOG_DIR, file), 'utf-8')
     const { data, content } = matter(raw)
+    if (isHidden(data)) return null
     const rt = readingTime(content)
 
     return {
@@ -71,7 +75,7 @@ export function getAllPosts(): PostMeta[] {
     } satisfies PostMeta
   })
 
-  return posts.sort((a, b) => (a.date < b.date ? 1 : -1))
+  return posts.filter((p): p is PostMeta => p !== null).sort((a, b) => (a.date < b.date ? 1 : -1))
 }
 
 export function getPostBySlug(slug: string): Post | null {
@@ -80,6 +84,7 @@ export function getPostBySlug(slug: string): Post | null {
 
   const raw = fs.readFileSync(filePath, 'utf-8')
   const { data, content } = matter(raw)
+  if (isHidden(data)) return null
   const rt = readingTime(content)
 
   return {

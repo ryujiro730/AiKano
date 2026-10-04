@@ -3,12 +3,16 @@
 import { useEffect } from 'react'
 import { SISTER_SITE, crossPromoHref, type CrossPromoPlacement } from '@/lib/cross-promo'
 import { logAction } from '@/lib/action-log'
+import { STRIPE_REVIEW_MODE } from '@/lib/review-mode'
 
 /** マチコイへの送客バナー */
 export function CrossPromoBanner({ placement, className = '' }: { placement: CrossPromoPlacement; className?: string }) {
   useEffect(() => {
+    if (STRIPE_REVIEW_MODE) return
     logAction('crosspromo_view', { metadata: { placement, site: SISTER_SITE.name } })
   }, [placement])
+
+  if (STRIPE_REVIEW_MODE) return null
 
   return (
     <a

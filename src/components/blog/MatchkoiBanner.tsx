@@ -1,3 +1,5 @@
+import { STRIPE_REVIEW_MODE } from '@/lib/review-mode'
+
 type Variant = 'inline' | 'end' | 'sidebar' | 'list'
 
 const BASE = 'https://matchkoi.com/lp/1'
@@ -5,6 +7,7 @@ const utm = (content: string) =>
   `${BASE}?utm_source=aikano&utm_medium=banner&utm_campaign=blog&utm_content=${encodeURIComponent(`普通_${content}`)}`
 
 export function MatchkoiBanner({ variant = 'inline' }: { variant?: Variant }) {
+  if (STRIPE_REVIEW_MODE) return null
   if (variant === 'sidebar') {
     return (
       <a href={utm(variant)} target="_blank" rel="noopener noreferrer sponsored"
