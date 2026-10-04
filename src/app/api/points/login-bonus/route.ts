@@ -7,6 +7,8 @@ import { logUserAction } from '@/lib/user-action-log'
 const BONUS_AMOUNT = LOGIN_BONUS
 const BONUS_DAYS = LOGIN_BONUS_DAYS
 
+const jstDate = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' })
+
 export async function POST() {
   const supabase = createClient()
   const { data: { session } } = await supabase.auth.getSession()
@@ -22,7 +24,7 @@ export async function POST() {
 
   if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
 
-  const today = new Date().toISOString().split('T')[0]
+  const today = jstDate()
 
   // すでに今日受け取り済み
   if (profile.last_login_bonus_at === today) {
@@ -62,6 +64,7 @@ export async function POST() {
 
   return NextResponse.json({
     awarded: true,
+    amount: BONUS_AMOUNT,
     bonus_points: newBonusPoints,
     expires_at: expiresAt.toISOString(),
     regular_points: profile.points,

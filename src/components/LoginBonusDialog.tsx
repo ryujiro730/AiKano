@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { LOGIN_BONUS } from '@/lib/pricing'
 
 interface BonusResult {
   awarded: boolean
@@ -17,7 +18,7 @@ export function LoginBonusDialog() {
 
   useEffect(() => {
     const run = async () => {
-      const todayKey = `login_bonus_${new Date().toISOString().split('T')[0]}`
+      const todayKey = `login_bonus_${new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' })}`
       if (localStorage.getItem(todayKey)) return
 
       const data: BonusResult = await fetch('/api/points/login-bonus', { method: 'POST' }).then(r => r.json())
@@ -94,7 +95,7 @@ export function LoginBonusDialog() {
           ログインボーナス
         </p>
         <p style={{ fontSize: '40px', fontWeight: 800, color: '#1a1a2e', lineHeight: 1, margin: '8px 0' }}>
-          +{result.amount ?? 2} <span style={{ fontSize: '20px', fontWeight: 600 }}>pt</span>
+          +{result.amount ?? LOGIN_BONUS} <span style={{ fontSize: '20px', fontWeight: 600 }}>pt</span>
         </p>
         <p style={{ fontSize: '12px', color: '#888', marginBottom: '20px' }}>
           ボーナスポイント残高：{(result.bonus_points ?? 0).toLocaleString()} pt
