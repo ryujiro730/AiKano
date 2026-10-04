@@ -150,10 +150,10 @@ Supabase RPC → 集計・計算・複雑なフィルタ（SQL/PostgreSQL）
 
 | 項目 | 値 |
 |------|-----|
-| 登録ボーナス | 20pt（2通分。2通目送信後に購入ダイアログ表示）（`type: 'registration_bonus'`） |
-| 送信コスト | 10pt/通（`DEFAULT_POINTS_PER_MESSAGE = 10`） |
+| 登録ボーナス | 50pt（5通分。残高が次の1通に足りなくなった時点で購入ダイアログ表示）（`type: 'registration_bonus'`） |
+| 送信コスト | 非会員10pt/通。サブスク会員は月間上限まで無料、超過後5pt/通（`plans.ts` の overage_points） |
 | 紹介ボーナス | 100pt（紹介者・被紹介者双方、`type: 'referral_bonus'`） |
-| ログインボーナス | `bonus_points` カラム（有効期限付き） |
+| ログインボーナス | 毎日20pt、課金有無に関係なく全員（`bonus_points` カラム、30日有効） |
 
 **ポイント消費タイミング**: ユーザーが**送信するとき**にチェック・消費。AI返信はポイント残高に関係なく必ず返す。
 

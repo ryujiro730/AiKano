@@ -1,6 +1,7 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
+import { REGISTRATION_BONUS, FREE_MESSAGES_ON_SIGNUP, LOGIN_BONUS, LOGIN_BONUS_DAYS } from '@/lib/pricing'
 
 export const metadata: Metadata = {
   title: '利用規約 | AiKano',
@@ -61,7 +62,7 @@ const sections = [
     items: [
       'テキストチャットは1通10ポイント（¥100相当）を消費します。',
       'ポイントの単価は1ポイント＝10円（税込）です。ポイントはまとめ買いによりボーナスが付与されます。購入プランの詳細は本サービス内のポイント購入ページをご確認ください。',
-      '新規登録時に20ポイントを無料で付与します（最初の2通分）。また、毎日ログインで2ポイント（有効期限30日）のボーナスを付与します。',
+      `新規登録時に${REGISTRATION_BONUS}ポイントを無料で付与します（最初の${FREE_MESSAGES_ON_SIGNUP}通分）。また、毎日ログインで${LOGIN_BONUS}ポイント（有効期限${LOGIN_BONUS_DAYS}日）のボーナスを付与します。`,
       'ポイントの主な消費目安：テキストチャット 10ポイント、プレミアムコンテンツ（動画等）は各コンテンツに表示される価格に従います。消費ポイント数は予告なく変更する場合があります。',
       '月額サブスクリプションとして「スタンダードプラン（¥2,980/月・300通）」および「プレミアムプラン（¥4,980/月・500通）」を提供します。月間通数を超過した場合、いずれのプランも5ポイント/通で継続利用できます。',
       '月額サブスクリプションは毎月契約日に自動更新されます。マイページよりいつでも解約可能です。解約後は当該月の残期間まで利用できます。',
