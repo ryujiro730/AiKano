@@ -6,7 +6,7 @@ export const SISTER_SITE = {
   name: 'マチコイ',
   tagline: '気になる人と、メッセージから始まる出会い',
   url: 'https://matchkoi.com/lp/1',
-  image: '/banners/matchkoi-wide.webp',
+  image: '/banners/matchkoi-conversations.webp',
   imageAlt: 'マチコイ — 無料登録で始める',
 } as const
 

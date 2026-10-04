@@ -5,6 +5,9 @@ import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Loader2, Crown, Settings, Gift, Copy, Check, CreditCard, Store, Building2, RefreshCw } from 'lucide-react'
 import { CardBrands, FamilyMartBadge, LawsonBadge, MinistopBadge, SeicomartBadge, PayPayBadge } from '@/components/icons/payment-brands'
+
+// Stripe本番でコンビニ・PayPayの審査が通るまで非表示
+const KONBINI_PAYPAY_ENABLED = false
 import { PLANS } from '@/lib/plans'
 import { PointPackageList } from '@/components/PointPackageList'
 import type { Profile } from '@/types'
@@ -239,7 +242,7 @@ export default function PaymentPage() {
                 </button>
 
                 {/* コンビニ/PayPay（1回払い） */}
-                <button onClick={() => handleBuyPass(plan.id)} disabled={subscribing !== null || buyingPass !== null}
+                {KONBINI_PAYPAY_ENABLED && <button onClick={() => handleBuyPass(plan.id)} disabled={subscribing !== null || buyingPass !== null}
                   className="w-full flex items-start gap-3 px-5 py-3.5 transition-colors disabled:opacity-60"
                   style={{ borderTop: '1px solid var(--color-border)' }}
                   onMouseEnter={e => (e.currentTarget.style.background = 'var(--color-surface-2)')}
@@ -263,7 +266,7 @@ export default function PaymentPage() {
                     </div>
                   </div>
                   <span className="text-xs font-bold mt-1 flex-shrink-0" style={{ color: 'var(--color-primary)' }}>→</span>
-                </button>
+                </button>}
 
                 {/* 銀行振込（1回払い） */}
                 <a href={`/payment/bank-transfer?plan=${plan.id}`}
@@ -328,11 +331,13 @@ export default function PaymentPage() {
               <td className="py-2 text-center">自動（毎月）</td>
               <td className="py-2 text-center">即時</td>
             </tr>
-            <tr>
-              <td className="py-2 flex items-center gap-1.5"><Store size={12} style={{ color: '#22c55e' }} />コンビニ・PayPay</td>
-              <td className="py-2 text-center">手動（1ヶ月）</td>
-              <td className="py-2 text-center">払込後すぐ</td>
-            </tr>
+            {KONBINI_PAYPAY_ENABLED && (
+              <tr>
+                <td className="py-2 flex items-center gap-1.5"><Store size={12} style={{ color: '#22c55e' }} />コンビニ・PayPay</td>
+                <td className="py-2 text-center">手動（1ヶ月）</td>
+                <td className="py-2 text-center">払込後すぐ</td>
+              </tr>
+            )}
             <tr>
               <td className="py-2 flex items-center gap-1.5"><Building2 size={12} style={{ color: '#ca8a04' }} />銀行振込</td>
               <td className="py-2 text-center">手動（1ヶ月）</td>
