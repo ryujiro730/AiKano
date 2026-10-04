@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { blogCtaHref, blogSlugFromPath } from '@/lib/blog-utm'
+import { STRIPE_REVIEW_MODE } from '@/lib/review-mode'
 
 const SNS = [
   {
@@ -64,7 +65,7 @@ export function BlogFooter() {
               AiKano
             </span>
             <p style={{ fontSize: '12px', color: '#aaa', lineHeight: 1.6, maxWidth: '220px', marginBottom: '16px' }}>
-              日本語ネイティブのAI彼女チャット。<br />アダルトOK・画像送り合いOK。
+              日本語ネイティブのAI彼女チャット。{!STRIPE_REVIEW_MODE && <><br />アダルトOK・画像送り合いOK。</>}
             </p>
             {/* SNS アイコン */}
             <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
