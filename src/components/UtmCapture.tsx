@@ -14,6 +14,7 @@ export type UtmData = {
   utm_content?: string
   utm_term?: string
   fbclid?: string
+  aclid?: string
   captured_at: number
 }
 
@@ -63,11 +64,12 @@ export default function UtmCapture() {
     const utm_content  = params.get('utm_content')  ?? undefined
     const utm_term     = params.get('utm_term')     ?? undefined
     const fbclid       = params.get('fbclid')       ?? undefined
+    const aclid        = params.get('aclid')        ?? undefined
     const gclid        = params.get('gclid')        ?? undefined
 
-    if (utm_source || utm_medium || utm_campaign || utm_content || fbclid) {
+    if (utm_source || utm_medium || utm_campaign || utm_content || fbclid || aclid) {
       const data: UtmData = {
-        utm_source, utm_medium, utm_campaign, utm_content, utm_term, fbclid,
+        utm_source, utm_medium, utm_campaign, utm_content, utm_term, fbclid, aclid,
         captured_at: Date.now(),
       }
       localStorage.setItem(UTM_KEY, JSON.stringify(data))

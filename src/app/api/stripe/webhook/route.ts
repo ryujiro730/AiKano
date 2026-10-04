@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { PLANS, type PlanId } from '@/lib/plans'
 import { grantSubscriptionBonus } from '@/lib/subscription-bonus'
 import { logUserAction } from '@/lib/user-action-log'
+import { sendTJPurchase } from '@/lib/trafficjunky'
 
 // 現行APIでは請求期間はサブスク本体ではなく items に入っている
 function subscriptionPeriod(sub: any) {
@@ -77,6 +78,7 @@ export async function POST(request: Request) {
                 stripe_session_id: session.id,
               })
               await logUserAction(admin, userId, 'subscription_start', { plan: plan.name, method: 'コンビニ・PayPay', price_yen: session.amount_total ?? plan.price_yen })
+              await sendTJPurchase(admin, userId, session.id, session.amount_total ?? plan.price_yen, `pass_${planId}`)
               await grantSubscriptionBonus(admin, userId, planId, `pass:${session.id}`)
             }
           }
@@ -101,6 +103,7 @@ export async function POST(request: Request) {
               stripe_session_id: session.id,
             })
             await logUserAction(admin, userId, 'point_purchase_complete', { tokens: tokenCount, price_yen: priceYen ? parseInt(priceYen) : session.amount_total })
+            await sendTJPurchase(admin, userId, session.id, priceYen ? parseInt(priceYen) : (session.amount_total ?? 0), `points_${tokenCount}`)
           }
         }
       }
@@ -189,7 +192,7 @@ export async function POST(request: Request) {
     if ((invoice.amount_paid ?? 0) > 0) {
       const { data: payer } = await admin.from('profiles').select('id').eq('stripe_customer_id', customerId).maybeSingle()
       if (payer) {
-        await admin.from('point_transactions').insert({
+        const { error: dupErr } = await admin.from('point_transactions').insert({
           user_id: payer.id,
           amount: 0,
           type: 'purchase',
@@ -197,6 +200,7 @@ export async function POST(request: Request) {
           price_yen: invoice.amount_paid,
           stripe_session_id: invoice.id,
         })
+        if (!dupErr) await sendTJPurchase(admin, payer.id, invoice.id!, invoice.amount_paid, 'subscription')
       }
     }
 

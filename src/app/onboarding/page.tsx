@@ -76,6 +76,7 @@ export default function OnboardingPage() {
     const utmTerm     = urlP.get('utm_term')     ?? utmData?.utm_term     ?? sessionStorage.getItem('utm_term')     ?? meta.utm_term     ?? undefined
     const fbclid      = urlP.get('fbclid')       ?? utmData?.fbclid       ?? sessionStorage.getItem('fbclid')       ?? meta.fbclid       ?? undefined
     const gclid       = urlP.get('gclid')        ?? getStoredGclid() ?? sessionStorage.getItem('gclid') ?? undefined
+    const tjAclid     = urlP.get('aclid')        ?? utmData?.aclid        ?? sessionStorage.getItem('aclid')        ?? meta.aclid        ?? undefined
 
     const res = await fetch('/api/onboarding/complete', {
       method: 'POST',
@@ -83,7 +84,7 @@ export default function OnboardingPage() {
       body: JSON.stringify({
         name, age, gender, partnerCharacterId: selectedCharId,
         referralSource, referralArticle, referralByCode,
-        utmSource, utmMedium, utmCampaign, utmContent, utmTerm, fbclid, gclid,
+        utmSource, utmMedium, utmCampaign, utmContent, utmTerm, fbclid, gclid, tjAclid,
       }),
     })
     setSaving(false)
@@ -95,7 +96,7 @@ export default function OnboardingPage() {
     trackSignUp({ referral_source: referralSource ?? utmSource })
     // sessionStorage をクリア
     ;['referral_source', 'referral_article', 'referral_by_code',
-      'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'fbclid', 'gclid',
+      'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'fbclid', 'gclid', 'aclid',
     ].forEach(k => sessionStorage.removeItem(k))
     window.location.href = `/chat?character=${selectedCharId}`
   }

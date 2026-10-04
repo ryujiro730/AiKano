@@ -5,6 +5,7 @@ import { createClient } from '@supabase/supabase-js'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { REGISTRATION_BONUS, REFERRAL_BONUS } from '@/lib/pricing'
 import { logUserAction } from '@/lib/user-action-log'
+import { sendTJPostback } from '@/lib/trafficjunky'
 
 const IP_WINDOW_DAYS = 30
 
@@ -62,7 +63,7 @@ export async function POST(req: NextRequest) {
   const user = await getAuthUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { name, age, gender, partnerCharacterId, referralSource, referralArticle, referralByCode, utmSource, utmMedium, utmCampaign, utmContent, utmTerm, fbclid, gclid } = await req.json()
+  const { name, age, gender, partnerCharacterId, referralSource, referralArticle, referralByCode, utmSource, utmMedium, utmCampaign, utmContent, utmTerm, fbclid, gclid, tjAclid } = await req.json()
   if (!name?.trim() || !age || !gender)
     return NextResponse.json({ error: 'name, age, gender are required' }, { status: 400 })
   if (parseInt(age) < 18)
@@ -106,6 +107,7 @@ export async function POST(req: NextRequest) {
         ...(utmTerm     ? { utm_term:     utmTerm }     : {}),
         ...(fbclid      ? { fbclid:       fbclid }      : {}),
         ...(gclid       ? { gclid:        gclid }       : {}),
+        ...(tjAclid     ? { tj_aclid:     String(tjAclid) } : {}),
       })
       if (insertError) return NextResponse.json({ error: insertError.message }, { status: 500 })
     } else {
@@ -127,6 +129,7 @@ export async function POST(req: NextRequest) {
         ...(utmTerm     ? { utm_term:     utmTerm }     : {}),
         ...(fbclid      ? { fbclid:       fbclid }      : {}),
         ...(gclid       ? { gclid:        gclid }       : {}),
+        ...(tjAclid     ? { tj_aclid:     String(tjAclid) } : {}),
       }).eq('id', user.id)
       if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 })
     }
@@ -148,6 +151,8 @@ export async function POST(req: NextRequest) {
       bonus: REGISTRATION_BONUS,
       source: utmSource ?? referralSource ?? undefined,
     })
+
+    if (tjAclid) await sendTJPostback({ aclid: String(tjAclid), transactionId: `signup_${user.id}`, event: 'signup' })
 
     return NextResponse.json({ ok: true })
   }

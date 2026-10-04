@@ -33,12 +33,14 @@ export default function RegisterPage() {
     const utmContent  = params.get('utm_content')  ?? storedUtm.utm_content
     const utmTerm     = params.get('utm_term')     ?? storedUtm.utm_term
     const fbclid      = params.get('fbclid')       ?? storedUtm.fbclid
+    const aclid       = params.get('aclid')        ?? storedUtm.aclid
     if (utmSource)   sessionStorage.setItem('utm_source',   utmSource)
     if (utmMedium)   sessionStorage.setItem('utm_medium',   utmMedium)
     if (utmCampaign) sessionStorage.setItem('utm_campaign', utmCampaign)
     if (utmContent)  sessionStorage.setItem('utm_content',  utmContent)
     if (utmTerm)     sessionStorage.setItem('utm_term',     utmTerm)
     if (fbclid)      sessionStorage.setItem('fbclid',       fbclid)
+    if (aclid)       sessionStorage.setItem('aclid',        aclid)
     const gclid = params.get('gclid')
     if (gclid) sessionStorage.setItem('gclid', gclid)
   }, [])
@@ -75,7 +77,7 @@ export default function RegisterPage() {
 
     // user_metadata に UTM を入れておく（メール確認を別ブラウザで開いた場合のフォールバック）
     const utmMeta: Record<string, string> = {}
-    ;['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'fbclid', 'gclid'].forEach(k => {
+    ;['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'fbclid', 'gclid', 'aclid'].forEach(k => {
       const v = sessionStorage.getItem(k)
       if (v) utmMeta[k] = v
     })
