@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import { SISTER_SITE, crossPromoHref, type CrossPromoPlacement } from '@/lib/cross-promo'
 import { logAction } from '@/lib/action-log'
 
-/** 姉妹サービスへの送客バナー */
+/** マチコイへの送客バナー */
 export function CrossPromoBanner({ placement, className = '' }: { placement: CrossPromoPlacement; className?: string }) {
   useEffect(() => {
     logAction('crosspromo_view', { metadata: { placement, site: SISTER_SITE.name } })

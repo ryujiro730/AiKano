@@ -1,5 +1,5 @@
 /**
- * 姉妹サービス（自社回し）の送客設定。
+ * マチコイ（自社回し）への送客設定。
  * 送客先・画像・UTM はここだけで管理する。計測は送客先側の utm_source=aikano で行う。
  */
 export const SISTER_SITE = {
@@ -17,7 +17,7 @@ export function crossPromoHref(placement: CrossPromoPlacement) {
     utm_source: 'aikano',
     utm_medium: 'banner',
     utm_campaign: 'crosspromo',
-    utm_content: placement,
+    utm_content: `普通_${placement}`,
   })
   return `${SISTER_SITE.url}?${p.toString()}`
 }

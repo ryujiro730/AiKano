@@ -1,4 +1,8 @@
+'use client'
+
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { blogCtaHref, blogSlugFromPath } from '@/lib/blog-utm'
 
 const SNS = [
   {
@@ -40,6 +44,7 @@ const SNS = [
 ]
 
 export function BlogFooter() {
+  const slug = blogSlugFromPath(usePathname())
   return (
     <footer style={{
       marginTop: '80px',
@@ -80,11 +85,11 @@ export function BlogFooter() {
                 サービス
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <Link href="/" style={{ fontSize: '13px', color: '#666', textDecoration: 'none' }}
+                <Link href={blogCtaHref('/', 'footer_top', slug)} style={{ fontSize: '13px', color: '#666', textDecoration: 'none' }}
                   className="hover:text-[#e8438f] transition-colors">
                   サービストップ
                 </Link>
-                <Link href="/auth/register" style={{ fontSize: '13px', color: '#666', textDecoration: 'none' }}
+                <Link href={blogCtaHref('/auth/register', 'footer_register', slug)} style={{ fontSize: '13px', color: '#666', textDecoration: 'none' }}
                   className="hover:text-[#e8438f] transition-colors">
                   無料登録
                 </Link>

@@ -1,6 +1,8 @@
 'use client'
 
+import { usePathname } from 'next/navigation'
 import { ComparisonTable } from './ComparisonTable'
+import { blogCtaHref, blogSlugFromPath } from '@/lib/blog-utm'
 
 const services = [
   {
@@ -88,11 +90,12 @@ const services = [
 const rowLabels = ['料金形態', '可愛さ', '記憶保持', '会話のリアルさ', 'アダルト対応', '特徴']
 
 export function AiKanoHikakuTable() {
+  const slug = blogSlugFromPath(usePathname())
   return (
     <ComparisonTable
       title="一目で分かるおすすめAI彼女チャット比較表"
       rowLabels={rowLabels}
-      services={services}
+      services={services.map(s => s.ctaHref === 'https://aikano.chat/auth/register' ? { ...s, ctaHref: blogCtaHref(s.ctaHref, 'hikaku_table', slug) } : s)}
     />
   )
 }

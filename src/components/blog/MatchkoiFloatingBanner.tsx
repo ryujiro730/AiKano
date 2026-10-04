@@ -3,8 +3,8 @@
 import { useState } from 'react'
 
 const BASE = 'https://matchkoi.com/lp/1'
-const HREF_SP = `${BASE}?utm_source=aikano&utm_medium=banner&utm_campaign=blog&utm_content=floating_sp`
-const HREF_PC = `${BASE}?utm_source=aikano&utm_medium=banner&utm_campaign=blog&utm_content=floating_pc`
+const HREF_SP = `${BASE}?utm_source=aikano&utm_medium=banner&utm_campaign=blog&utm_content=${encodeURIComponent('普通_floating_sp')}`
+const HREF_PC = `${BASE}?utm_source=aikano&utm_medium=banner&utm_campaign=blog&utm_content=${encodeURIComponent('普通_floating_pc')}`
 
 export function MatchkoiFloatingBanner() {
   const [closed, setClosed] = useState(false)

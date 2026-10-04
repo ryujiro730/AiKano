@@ -2,7 +2,7 @@ type Variant = 'inline' | 'end' | 'sidebar' | 'list'
 
 const BASE = 'https://matchkoi.com/lp/1'
 const utm = (content: string) =>
-  `${BASE}?utm_source=aikano&utm_medium=banner&utm_campaign=blog&utm_content=${content}`
+  `${BASE}?utm_source=aikano&utm_medium=banner&utm_campaign=blog&utm_content=${encodeURIComponent(`普通_${content}`)}`
 
 export function MatchkoiBanner({ variant = 'inline' }: { variant?: Variant }) {
   if (variant === 'sidebar') {

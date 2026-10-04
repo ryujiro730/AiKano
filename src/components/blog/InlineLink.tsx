@@ -1,8 +1,12 @@
 import Link from 'next/link'
 import { ReactNode } from 'react'
+import { blogCtaHref } from '@/lib/blog-utm'
 
-export function InlineLink({ href, children }: { href: string; children: ReactNode }) {
+const CTA_PATHS = ['/', '/auth/register']
+
+export function InlineLink({ href, children, slug }: { href: string; children: ReactNode; slug?: string }) {
   const isExternal = href.startsWith('http')
+  if (CTA_PATHS.includes(href)) href = blogCtaHref(href, 'inline_link', slug)
   return (
     <Link
       href={href}

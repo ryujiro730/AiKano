@@ -2,10 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { blogCtaHref, blogSlugFromPath } from '@/lib/blog-utm'
 import { createClient } from '@/lib/supabase/client'
 
 export function BlogHeader() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const slug = blogSlugFromPath(usePathname())
 
   useEffect(() => {
     const supabase = createClient()
@@ -22,7 +25,7 @@ export function BlogHeader() {
       padding: '0 20px', height: '56px',
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
     }}>
-      <Link href="/" style={{
+      <Link href={blogCtaHref('/', 'header_logo', slug)} style={{
         fontWeight: 800, fontSize: '18px',
         background: 'linear-gradient(90deg, #e8438f, #a060e0)',
         WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
@@ -53,7 +56,7 @@ export function BlogHeader() {
               className="hover:text-[#e8438f] transition-colors hidden sm:block">
               ログイン
             </Link>
-            <Link href="/auth/register" style={{
+            <Link href={blogCtaHref('/auth/register', 'header_register', slug)} style={{
               padding: '8px 18px', fontSize: '14px', borderRadius: '8px',
               background: 'linear-gradient(135deg, #e8438f, #a060e0)',
               color: '#fff', fontWeight: 700, textDecoration: 'none',

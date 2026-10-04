@@ -151,7 +151,7 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
         <article className="prose max-w-none blog-prose" style={{ maxWidth: 'none' }}>
           <MDXRemote
             source={post.content}
-            components={{ BlogCta: () => <BlogCta slug={post.slug} />, InlineLink, NextLink, RelatedPosts: () => <RelatedPosts currentSlug={post.slug} />, TwitterEmbed, ComparisonTable, AiKanoHikakuTable, JpAiHikakuTable, AiKanoCard, ChatGPTCard, GeminiCard, CandyAICard, CloverCard, ReplikaCard, CrushonCard, KindroidCard, MyDreamCompanionCard, DreamGFCard, CotomoCard, OzChatCard, Box, Review, ImageGrid, GridImg, SizedImg, FaqSection, FaqItem, Lead, HowToUseCompare1, HowToUseCompare2, EroMethodCompare, pre: MdxPre }}
+            components={{ BlogCta: () => <BlogCta slug={post.slug} position="cta_inline" />, InlineLink: (p: { href: string; children: React.ReactNode }) => <InlineLink {...p} slug={post.slug} />, NextLink, RelatedPosts: () => <RelatedPosts currentSlug={post.slug} />, TwitterEmbed, ComparisonTable, AiKanoHikakuTable, JpAiHikakuTable, AiKanoCard, ChatGPTCard, GeminiCard, CandyAICard, CloverCard, ReplikaCard, CrushonCard, KindroidCard, MyDreamCompanionCard, DreamGFCard, CotomoCard, OzChatCard, Box, Review, ImageGrid, GridImg, SizedImg, FaqSection, FaqItem, Lead, HowToUseCompare1, HowToUseCompare2, EroMethodCompare, pre: MdxPre }}
             options={{
               mdxOptions: {
                 remarkPlugins: [remarkGfm, remarkBreaks],
@@ -178,7 +178,7 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
         <MatchkoiBanner variant="end" />
 
         {/* CTA */}
-        <BlogCta />
+        <BlogCta slug={post.slug} position="cta_bottom" />
 
         {/* Prev / Next */}
         {(prev || next) && (

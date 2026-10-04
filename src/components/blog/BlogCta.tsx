@@ -2,9 +2,10 @@
 
 import Link from 'next/link'
 import { trackCtaClick } from '@/lib/gtag'
+import { blogCtaHref } from '@/lib/blog-utm'
 
-export function BlogCta({ slug }: { slug?: string }) {
-  const href = slug ? `/auth/register?ref=blog&article=${slug}` : '/auth/register?ref=blog'
+export function BlogCta({ slug, position }: { slug?: string; position: 'cta_inline' | 'cta_bottom' }) {
+  const href = blogCtaHref('/auth/register', position, slug)
   return (
     <div className="mt-10 rounded-2xl overflow-hidden text-center"
       style={{ background: 'linear-gradient(135deg, #e8438f 0%, #a060e0 100%)' }}>
