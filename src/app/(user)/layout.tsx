@@ -6,7 +6,6 @@ export const metadata: Metadata = {
 }
 
 import { createAdminClient } from '@/lib/supabase/server'
-import { INTERNAL_EMAILS } from '@/lib/internal-accounts'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { redirect } from 'next/navigation'
 import { unstable_noStore as noStore } from 'next/cache'
@@ -39,8 +38,7 @@ export default async function UserLayout({ children }: { children: React.ReactNo
       .eq('id', userId),
   ])
 
-  const isInternalAccount = INTERNAL_EMAILS.includes((user.email ?? '') as typeof INTERNAL_EMAILS[number])
-  if (!isInternalAccount && (!profile || profile.age === null)) {
+  if (!profile || profile.age === null) {
     redirect('/onboarding')
   }
 

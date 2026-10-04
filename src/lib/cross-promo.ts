@@ -10,7 +10,7 @@ export const SISTER_SITE = {
   imageAlt: 'マチコイ — 無料登録で始める',
 } as const
 
-export type CrossPromoPlacement = 'conversations' | 'settings'
+export type CrossPromoPlacement = 'conversations'
 
 export function crossPromoHref(placement: CrossPromoPlacement) {
   const p = new URLSearchParams({

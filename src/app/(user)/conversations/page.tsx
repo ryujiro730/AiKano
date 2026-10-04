@@ -174,10 +174,10 @@ export default async function ConversationsPage({ searchParams }: { searchParams
           <CampaignBannerImage className="mb-6" userId={user.id} />
         </Suspense>
       )}
+      <CrossPromoBanner placement="conversations" className="mb-6" />
       <Suspense fallback={<ConversationListSkeleton />}>
         <ConversationList userId={user.id} sort={sort} />
       </Suspense>
-      <CrossPromoBanner placement="conversations" className="mt-8" />
       <ActionLogger actionType="conversations_view" />
       {/* ルーターキャッシュで既読前の未読数が残らないよう毎回最新化 */}
       <RefreshOnMount />
