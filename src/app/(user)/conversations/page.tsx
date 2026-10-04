@@ -7,7 +7,9 @@ import { unstable_cache } from 'next/cache'
 import Link from 'next/link'
 import { AvatarImage } from '@/components/AvatarImage'
 import { formatDistanceToNow } from 'date-fns'
-import { ja } from 'date-fns/locale'
+import { getLocale, getMessages } from '@/i18n/server'
+import { DATE_FNS_LOCALE } from '@/i18n/date-locale'
+import { localizedCharacter } from '@/lib/character-i18n'
 import { ActionLogger } from '@/components/ActionLogger'
 import { CrossPromoBanner } from '@/components/CrossPromoBanner'
 import { SortToggleButton } from './SortToggleButton'
@@ -28,12 +30,14 @@ const getCachedBlockedIds = unstable_cache(
 )
 
 async function ConversationList({ userId, sort }: { userId: string; sort: 'asc' | 'desc' }) {
+  const locale = getLocale()
+  const m = getMessages(locale)
   const admin = createAdminClientStatic()
   const cutoff = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString()
 
   const [{ data: convsRaw }, blockedCharIds] = await Promise.all([
     admin.from('conversations')
-      .select('id, last_message_at, characters(id, name, avatar_url)')
+      .select('id, last_message_at, characters(id, name, avatar_url, i18n)')
       .eq('user_id', userId)
       .not('character_id', 'is', null)
       .not('last_message_at', 'is', null)
@@ -44,14 +48,15 @@ async function ConversationList({ userId, sort }: { userId: string; sort: 'asc' 
 
   const blockedSet = new Set(blockedCharIds)
   const convs = (convsRaw ?? []).filter((c: any) => !blockedSet.has(c.characters?.id))
+    .map((c: any) => ({ ...c, characters: c.characters && localizedCharacter(c.characters, locale) }))
   const convIds = convs.map((c: any) => c.id)
 
   if (convIds.length === 0) {
     return (
       <div className="card p-10 text-center">
-        <p className="text-[var(--color-text-muted)] text-sm mb-4">まだ会話がありません</p>
+        <p className="text-[var(--color-text-muted)] text-sm mb-4">{m.conversations.empty}</p>
         <Link href="/characters" className="btn-primary px-5 py-2.5 text-sm inline-block">
-          話し相手を探す
+          {m.conversations.findPartner}
         </Link>
       </div>
     )
@@ -86,9 +91,9 @@ async function ConversationList({ userId, sort }: { userId: string; sort: 'asc' 
         const preview = lastMsg?.content?.trim()
           ? lastMsg.content
           : lastMsg?.metadata?.video_url
-            ? '動画が送信されました'
+            ? m.conversations.videoSent
             : lastMsg?.metadata?.image_url
-              ? '画像が送信されました'
+              ? m.conversations.imageSent
               : ''
 
         return (
@@ -107,13 +112,13 @@ async function ConversationList({ userId, sort }: { userId: string; sort: 'asc' 
                 <span className={`text-[15px] truncate ${unread > 0 ? 'font-bold' : 'font-semibold'}`}>{conv.characters?.name}</span>
                 <span className="text-[11px] flex-shrink-0"
                   style={{ color: unread > 0 ? 'var(--color-primary)' : 'var(--color-text-muted)', fontWeight: unread > 0 ? 600 : 400 }}>
-                  {formatDistanceToNow(new Date(conv.last_message_at), { addSuffix: true, locale: ja })}
+                  {formatDistanceToNow(new Date(conv.last_message_at), { addSuffix: true, locale: DATE_FNS_LOCALE[locale] })}
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <p className="flex-1 text-[13px] truncate"
                   style={{ color: unread > 0 ? 'var(--color-text)' : 'var(--color-text-muted)', fontWeight: unread > 0 ? 500 : 400 }}>
-                  {lastMsg && lastMsg.sender_role !== 'character' ? 'あなた: ' : ''}{preview}
+                  {lastMsg && lastMsg.sender_role !== 'character' ? m.conversations.you : ''}{preview}
                 </p>
                 {unread > 0 && (
                   <span
@@ -151,6 +156,7 @@ function ConversationListSkeleton() {
 }
 
 export default async function ConversationsPage({ searchParams }: { searchParams: { sort?: string } }) {
+  const m = getMessages()
   const user = await getAuthUser()
   if (!user) return null
 
@@ -159,12 +165,12 @@ export default async function ConversationsPage({ searchParams }: { searchParams
   return (
     <div>
       <div className="flex items-center justify-between mb-6 pt-2">
-        <h1 className="text-[22px] font-bold">メッセージ</h1>
+        <h1 className="text-[22px] font-bold">{m.conversations.title}</h1>
         <div className="flex items-center gap-3">
           <SortToggleButton currentSort={sort} />
           <Link href="/characters" className="flex items-center justify-center w-9 h-9 rounded-[10px]"
             style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', color: 'var(--color-text)' }}
-            aria-label="新しく話す">
+            aria-label={m.conversations.newChat}>
             <UserPlus size={17} strokeWidth={2} />
           </Link>
         </div>

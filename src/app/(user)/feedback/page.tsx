@@ -4,16 +4,19 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ChevronLeft, Send, CheckCircle } from 'lucide-react'
 import Link from 'next/link'
+import { useI18n } from '@/i18n/client'
+import { Lines } from '@/i18n/Lines'
 
 const CATEGORIES = [
-  { id: 'bug',     label: '🐛 バグ報告',         desc: '動かない、おかしい挙動など' },
-  { id: 'feature', label: '✨ 機能要望',           desc: 'こんな機能があったら嬉しい' },
-  { id: 'ai',      label: '🤖 AI返信について',     desc: '返信の質・キャラクターの違和感' },
-  { id: 'ui',      label: '🎨 UIについて',         desc: '使いにくい、見づらいなど' },
-  { id: 'other',   label: '💬 その他',             desc: '何でも気軽に' },
-]
+  { id: 'bug', icon: '🐛' },
+  { id: 'feature', icon: '✨' },
+  { id: 'ai', icon: '🤖' },
+  { id: 'ui', icon: '🎨' },
+  { id: 'other', icon: '💬' },
+] as const
 
 export default function FeedbackPage() {
+  const { m } = useI18n()
   const router = useRouter()
   const [category, setCategory] = useState('')
   const [content, setContent] = useState('')
@@ -45,16 +48,14 @@ export default function FeedbackPage() {
         <div className="animate-fade-in">
           <CheckCircle size={64} className="mx-auto mb-6" style={{ color: 'var(--color-primary)' }} />
           <h1 className="text-2xl font-black mb-3" style={{ color: 'var(--color-text)' }}>
-            ありがとうございます！
+            {m.feedback.thanks}
           </h1>
           <p className="text-sm leading-relaxed mb-8" style={{ color: 'var(--color-text-muted)' }}>
-            フィードバックを受け取りました。<br />
-            いただいた内容は開発チームが確認し、<br />
-            サービス改善に活かします。
+            <Lines text={m.feedback.received} />
           </p>
           <Link href="/characters" className="btn-cta"
             style={{ padding: '14px 36px', fontSize: '15px', borderRadius: '12px', display: 'inline-block', textDecoration: 'none' }}>
-            チャットに戻る
+            {m.feedback.backToChat}
           </Link>
         </div>
       </div>
@@ -70,7 +71,7 @@ export default function FeedbackPage() {
           style={{ color: 'var(--color-text-muted)' }}>
           <ChevronLeft size={22} />
         </button>
-        <span className="font-bold text-base" style={{ color: 'var(--color-text)' }}>フィードバック</span>
+        <span className="font-bold text-base" style={{ color: 'var(--color-text)' }}>{m.feedback.title}</span>
       </div>
 
       <div className="max-w-lg mx-auto px-4 pt-6">
@@ -80,15 +81,13 @@ export default function FeedbackPage() {
           <div className="px-5 py-6">
             <div className="inline-block mb-3 px-3 py-1 rounded-full text-xs font-bold"
               style={{ background: 'rgba(255,255,255,0.2)', color: 'white' }}>
-              ご意見募集中
+              {m.feedback.badge}
             </div>
             <h2 className="text-white font-black text-xl leading-snug mb-2">
-              あなたの声で<br />アイカノを育ててください
+              <Lines text={m.feedback.heading} />
             </h2>
             <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.8)' }}>
-              バグや使いにくい点、
-              欲しい機能など、なんでも教えてください。
-              いただいた声はすべて開発チームが読んでいます。
+              {m.feedback.lead}
             </p>
           </div>
         </div>
@@ -97,7 +96,7 @@ export default function FeedbackPage() {
           {/* カテゴリ選択 */}
           <div>
             <p className="text-sm font-bold mb-3" style={{ color: 'var(--color-text)' }}>
-              カテゴリを選んでください <span style={{ color: 'var(--color-primary)' }}>*</span>
+              {m.feedback.pickCategory} <span style={{ color: 'var(--color-primary)' }}>*</span>
             </p>
             <div className="space-y-2">
               {CATEGORIES.map(cat => (
@@ -115,12 +114,12 @@ export default function FeedbackPage() {
                       : '1.5px solid var(--color-border)',
                   }}
                 >
-                  <span className="text-lg leading-none mt-0.5">{cat.label.split(' ')[0]}</span>
+                  <span className="text-lg leading-none mt-0.5">{cat.icon}</span>
                   <div>
                     <p className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>
-                      {cat.label.split(' ').slice(1).join(' ')}
+                      {m.feedback.categories[cat.id].label}
                     </p>
-                    <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{cat.desc}</p>
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{m.feedback.categories[cat.id].desc}</p>
                   </div>
                 </button>
               ))}
@@ -130,7 +129,7 @@ export default function FeedbackPage() {
           {/* 評価（任意） */}
           <div>
             <p className="text-sm font-bold mb-3" style={{ color: 'var(--color-text)' }}>
-              全体的な満足度（任意）
+              {m.feedback.satisfaction}
             </p>
             <div className="flex gap-2">
               {[1, 2, 3, 4, 5].map(star => (
@@ -150,7 +149,7 @@ export default function FeedbackPage() {
                 <button type="button" onClick={() => setRating(0)}
                   className="text-xs ml-2 self-center"
                   style={{ color: 'var(--color-text-muted)' }}>
-                  クリア
+                  {m.feedback.clear}
                 </button>
               )}
             </div>
@@ -159,12 +158,12 @@ export default function FeedbackPage() {
           {/* 内容 */}
           <div>
             <p className="text-sm font-bold mb-2" style={{ color: 'var(--color-text)' }}>
-              詳しく教えてください <span style={{ color: 'var(--color-primary)' }}>*</span>
+              {m.feedback.details} <span style={{ color: 'var(--color-primary)' }}>*</span>
             </p>
             <textarea
               value={content}
               onChange={e => setContent(e.target.value)}
-              placeholder="気になった点や改善してほしいことを自由に書いてください。どんな些細なことでも大歓迎です！"
+              placeholder={m.feedback.placeholder}
               rows={6}
               maxLength={2000}
               className="w-full input-warm px-4 py-3 resize-none"
@@ -182,11 +181,11 @@ export default function FeedbackPage() {
             style={{ padding: '16px', fontSize: '16px', borderRadius: '14px' }}
           >
             {submitting ? (
-              <span>送信中…</span>
+              <span>{m.feedback.sending}</span>
             ) : (
               <>
                 <Send size={18} />
-                フィードバックを送る
+                {m.feedback.submit}
               </>
             )}
           </button>

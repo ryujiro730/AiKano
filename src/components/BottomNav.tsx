@@ -2,12 +2,13 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Heart, MessageCircle, Crown, Settings, X, Sparkles } from 'lucide-react'
+import { useI18n } from '@/i18n/client'
 
 const tabs = [
-  { href: '/characters',    icon: Heart,          label: 'ホーム' },
-  { href: '/conversations', icon: MessageCircle,  label: 'メッセージ' },
-  { href: '/payment',       icon: Crown,          label: 'プラン' },
-  { href: '/settings',      icon: Settings,       label: '設定' },
+  { href: '/characters',    icon: Heart,          label: 'home' as const },
+  { href: '/conversations', icon: MessageCircle,  label: 'messages' as const },
+  { href: '/payment',       icon: Crown,          label: 'plan' as const },
+  { href: '/settings',      icon: Settings,       label: 'settings' as const },
 ]
 
 interface Props {
@@ -23,6 +24,7 @@ export function BottomNav({
   activeCampaign = null,
   onDismissCampaign,
 }: Props) {
+  const { m } = useI18n()
   const pathname = usePathname()
   if (pathname === '/chat' || pathname === '/profile/edit') return null
 
@@ -68,7 +70,7 @@ export function BottomNav({
                 )}
               </span>
               <span style={{ fontSize: '10px', fontWeight: isActive ? 700 : 500 }}>
-                {label}
+                {m.nav[label]}
               </span>
             </>
           )
@@ -94,7 +96,7 @@ export function BottomNav({
                       }}
                     >
                       <Sparkles size={12} strokeWidth={2.4} />
-                      <span className="truncate">{activeCampaign.catchphrase || 'キャンペーン開催中！'}</span>
+                      <span className="truncate">{activeCampaign.catchphrase || m.nav.campaignActive}</span>
                       <button
                         onClick={e => { e.preventDefault(); e.stopPropagation(); onDismissCampaign?.() }}
                         className="flex-shrink-0 opacity-70 hover:opacity-100 ml-0.5"

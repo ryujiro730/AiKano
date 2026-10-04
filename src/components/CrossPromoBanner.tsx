@@ -4,15 +4,19 @@ import { useEffect } from 'react'
 import { SISTER_SITE, crossPromoHref, type CrossPromoPlacement } from '@/lib/cross-promo'
 import { logAction } from '@/lib/action-log'
 import { STRIPE_REVIEW_MODE } from '@/lib/review-mode'
+import { useI18n } from '@/i18n/client'
 
 /** マチコイへの送客バナー */
 export function CrossPromoBanner({ placement, className = '' }: { placement: CrossPromoPlacement; className?: string }) {
+  // マチコイは日本向けサービスなので日本語ユーザーにだけ出す
+  const { locale } = useI18n()
+  const hidden = STRIPE_REVIEW_MODE || locale !== 'ja'
   useEffect(() => {
-    if (STRIPE_REVIEW_MODE) return
+    if (hidden) return
     logAction('crosspromo_view', { metadata: { placement, site: SISTER_SITE.name } })
-  }, [placement])
+  }, [placement, hidden])
 
-  if (STRIPE_REVIEW_MODE) return null
+  if (hidden) return null
 
   return (
     <a

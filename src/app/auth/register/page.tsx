@@ -5,8 +5,12 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Loader2, MailCheck } from 'lucide-react'
 import { trackRegisterPageView } from '@/lib/gtag'
+import { useI18n } from '@/i18n/client'
+import { Lines } from '@/i18n/Lines'
+import { gap } from '@/i18n/fmt'
 
 export default function RegisterPage() {
+  const { m, locale } = useI18n()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -67,7 +71,7 @@ export default function RegisterPage() {
       })
       const checkData = await checkRes.json()
       if (checkData.exists) {
-        setError('このメールアドレスはすでに登録されています')
+        setError(m.auth.emailTaken)
         setLoading(false)
         return
       }
@@ -83,13 +87,15 @@ export default function RegisterPage() {
     })
     const refSource = sessionStorage.getItem('referral_source')
     if (refSource) utmMeta['referral_source'] = refSource
+    // 確認メールのテンプレートを言語で出し分けるため
+    utmMeta['locale'] = locale
 
     const supabase = createClient()
     const { error } = await supabase.auth.signUp({
       email, password,
       options: {
         emailRedirectTo: `${location.origin}/auth/callback`,
-        data: Object.keys(utmMeta).length > 0 ? utmMeta : undefined,
+        data: utmMeta,
       },
     })
 
@@ -104,15 +110,15 @@ export default function RegisterPage() {
         <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4" style={{ background: 'var(--color-primary-soft)', color: 'var(--color-primary)' }}>
           <MailCheck size={26} />
         </div>
-        <h1 className="text-2xl font-bold mb-3">確認メールを送りました</h1>
+        <h1 className="text-2xl font-bold mb-3">{m.auth.sentTitle}</h1>
         <p className="text-[var(--color-text-muted)] text-sm leading-relaxed mb-4">
-          <span style={{ color: 'var(--color-primary)', fontWeight: 600 }}>{email}</span> に確認メールを送りました。
+          {m.auth.sentBody.split('{email}').map((part, i) => i === 0 ? part : <span key={i}><span style={{ color: 'var(--color-primary)', fontWeight: 600 }}>{email}</span>{part}</span>)}
         </p>
         <p className="text-[var(--color-text-muted)] text-sm leading-relaxed">
-          メール内の<strong style={{ color: 'var(--color-text)' }}>「メールアドレスを確認する」</strong>ボタンをクリックして登録を完了してください。
+          {m.auth.sentAction}
         </p>
         <p className="text-[var(--color-text-muted)] text-xs mt-5 leading-relaxed">
-          メールが届かない場合は迷惑メールフォルダをご確認ください。
+          {m.auth.sentSpam}
         </p>
       </div>
     )
@@ -120,9 +126,9 @@ export default function RegisterPage() {
 
   return (
     <div>
-      <h1 className="text-[26px] font-bold leading-tight mb-3">AIの女の子と、<br />今すぐ話そう</h1>
+      <h1 className="text-[26px] font-bold leading-tight mb-3"><Lines text={m.auth.registerTitle} /></h1>
       <div className="flex flex-wrap gap-1.5 mb-7">
-        {['登録無料', '30秒で完了', 'アプリ不要'].map(t => (
+        {m.auth.perks.map(t => (
           <span key={t} className="text-[11px] font-bold px-2 py-1 rounded-md"
             style={{ background: 'var(--color-primary-soft)', color: 'var(--color-primary)' }}>{t}</span>
         ))}
@@ -130,7 +136,7 @@ export default function RegisterPage() {
 
       <form onSubmit={handleRegister} className="space-y-4">
         <div>
-          <label className="text-xs text-[var(--color-text-muted)] mb-1.5 block">メールアドレス</label>
+          <label className="text-xs text-[var(--color-text-muted)] mb-1.5 block">{m.auth.email}</label>
           <input
             type="email" value={email} onChange={e => setEmail(e.target.value)} required
             className="input-warm w-full px-4 text-[16px]" style={{ height: 50 }}
@@ -139,7 +145,7 @@ export default function RegisterPage() {
         </div>
 
         <div>
-          <label className="text-xs text-[var(--color-text-muted)] mb-1.5 block">パスワード（8文字以上）</label>
+          <label className="text-xs text-[var(--color-text-muted)] mb-1.5 block">{m.auth.passwordMin}</label>
           <input
             type="password" value={password} onChange={e => setPassword(e.target.value)}
             required minLength={8}
@@ -161,23 +167,23 @@ export default function RegisterPage() {
             style={{ width: '16px', height: '16px' }}
           />
           <span className="text-xs text-[var(--color-text-muted)] leading-relaxed">
-            会話内容はサービス改善・AI学習のためスタッフが確認する場合があります。また、
-            <Link href="/legal/terms" className="underline" style={{ color: 'var(--color-primary)' }}>利用規約</Link>・
-            <Link href="/legal/privacy" className="underline" style={{ color: 'var(--color-primary)' }}>プライバシーポリシー</Link>
-            に同意します。
+            {m.auth.consentA.trim()}{gap(locale, 'x')}
+            <Link href="/legal/terms" className="underline" style={{ color: 'var(--color-primary)' }}>{m.auth.consentTerms}</Link>{gap(locale, m.auth.consentAnd.trim())}{m.auth.consentAnd.trim()}{gap(locale, 'x')}
+            <Link href="/legal/privacy" className="underline" style={{ color: 'var(--color-primary)' }}>{m.auth.consentPrivacy}</Link>
+            {gap(locale, m.auth.consentB.trim())}{m.auth.consentB.trim()}
           </span>
         </label>
 
         <button type="submit" disabled={loading || !consentChecked}
           className="btn-primary w-full flex items-center justify-center gap-2 font-bold disabled:opacity-60" style={{ height: 52, fontSize: 15 }}>
           {loading && <Loader2 size={15} className="animate-spin" />}
-          登録して話しかける
+          {m.auth.registerSubmit}
         </button>
       </form>
 
       <div className="flex items-center gap-3 my-5">
         <div className="flex-1 h-px" style={{ background: 'var(--color-border)' }} />
-        <span className="text-xs text-[var(--color-text-muted)]">または</span>
+        <span className="text-xs text-[var(--color-text-muted)]">{m.auth.or}</span>
         <div className="flex-1 h-px" style={{ background: 'var(--color-border)' }} />
       </div>
 
@@ -190,13 +196,13 @@ export default function RegisterPage() {
           <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
           <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
         </svg>
-        Googleで登録
+        {m.auth.registerWithGoogle}
       </button>
 
       <p className="text-[var(--color-text-muted)] text-sm mt-5 text-center">
-        すでに登録済みの方は{' '}
+        {m.auth.haveAccount}{' '}
         <Link href="/auth/login" className="hover:underline" style={{ color: 'var(--color-primary)' }}>
-          ログイン
+          {m.common.login}
         </Link>
       </p>
     </div>

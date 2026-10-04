@@ -3,6 +3,7 @@
 import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer,
 } from 'recharts'
+import { useI18n } from '@/i18n/client'
 
 export interface CharacterStats {
   kindness:     number  // 優しさ  1-5
@@ -25,13 +26,14 @@ export function SpiderChart({
   color?: string
   size?: number
 }) {
+  const { m } = useI18n()
   const s: CharacterStats = { ...DEFAULT_STATS, ...(stats ?? {}) }
   const data = [
-    { subject: '優しさ',   value: Math.round(s.kindness     * 20) },
-    { subject: '知性',     value: Math.round(s.intelligence * 20) },
-    { subject: '情熱',     value: Math.round(s.passion      * 20) },
-    { subject: '謎めき',   value: Math.round(s.mysterious   * 20) },
-    { subject: '可愛さ',   value: Math.round(s.cuteness     * 20) },
+    { subject: m.traits.kindness,   value: Math.round(s.kindness     * 20) },
+    { subject: m.traits.intelligence,     value: Math.round(s.intelligence * 20) },
+    { subject: m.traits.passion,     value: Math.round(s.passion      * 20) },
+    { subject: m.traits.mysterious,   value: Math.round(s.mysterious   * 20) },
+    { subject: m.traits.cuteness,   value: Math.round(s.cuteness     * 20) },
   ]
 
   return (

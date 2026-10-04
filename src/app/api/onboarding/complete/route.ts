@@ -6,6 +6,7 @@ import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { REGISTRATION_BONUS, REFERRAL_BONUS } from '@/lib/pricing'
 import { logUserAction } from '@/lib/user-action-log'
 import { sendTJPostback } from '@/lib/trafficjunky'
+import { getLocale, getMessages } from '@/i18n/server'
 
 const IP_WINDOW_DAYS = 30
 
@@ -67,7 +68,7 @@ export async function POST(req: NextRequest) {
   if (!name?.trim() || !age || !gender)
     return NextResponse.json({ error: 'name, age, gender are required' }, { status: 400 })
   if (parseInt(age) < 18)
-    return NextResponse.json({ error: '18歳未満はご利用いただけません' }, { status: 400 })
+    return NextResponse.json({ error: getMessages().onboarding.ageRestriction }, { status: 400 })
 
   const adminClient = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -108,6 +109,7 @@ export async function POST(req: NextRequest) {
         ...(fbclid      ? { fbclid:       fbclid }      : {}),
         ...(gclid       ? { gclid:        gclid }       : {}),
         ...(tjAclid     ? { tj_aclid:     String(tjAclid) } : {}),
+        locale: getLocale(),
       })
       if (insertError) return NextResponse.json({ error: insertError.message }, { status: 500 })
     } else {
@@ -130,6 +132,7 @@ export async function POST(req: NextRequest) {
         ...(fbclid      ? { fbclid:       fbclid }      : {}),
         ...(gclid       ? { gclid:        gclid }       : {}),
         ...(tjAclid     ? { tj_aclid:     String(tjAclid) } : {}),
+        locale: getLocale(),
       }).eq('id', user.id)
       if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 })
     }

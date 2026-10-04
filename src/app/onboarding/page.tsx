@@ -6,16 +6,17 @@ import { createClient } from '@/lib/supabase/client'
 import { Loader2, ChevronLeft, Check } from 'lucide-react'
 import { trackSignUp, trackOnboardingStart } from '@/lib/gtag'
 import { getStoredUtm, getStoredGclid } from '@/components/UtmCapture'
+import { useI18n } from '@/i18n/client'
+import { fmt } from '@/i18n/fmt'
+import { Lines } from '@/i18n/Lines'
+import { localizedCharacter } from '@/lib/character-i18n'
 
-const GENDER_OPTIONS = [
-  { value: 'male', label: '男性' },
-  { value: 'female', label: '女性' },
-  { value: 'other', label: 'その他' },
-]
+const GENDER_OPTIONS = ['male', 'female', 'other'] as const
 
 type CharOption = { id: string; name: string; age: number | null; avatar_url: string; personality: string | null }
 
 export default function OnboardingPage() {
+  const { m, locale } = useI18n()
   const router = useRouter()
   const supabase = createClient()
 
@@ -36,13 +37,13 @@ export default function OnboardingPage() {
 
       const [{ data: profile }, { data: chars }] = await Promise.all([
         supabase.from('profiles').select('display_name, age, gender').eq('id', user.id).single(),
-        supabase.from('characters').select('id, name, age, avatar_url, personality').eq('is_active', true).order('sort_order', { ascending: true }),
+        supabase.from('characters').select('id, name, age, avatar_url, personality, i18n').eq('is_active', true).order('sort_order', { ascending: true }),
       ])
 
       if (profile?.display_name) setName(profile.display_name)
       if (profile?.age) setAge(String(profile.age))
       if (profile?.gender) setGender(profile.gender)
-      if (chars) setCharacters(chars as CharOption[])
+      if (chars) setCharacters((chars as CharOption[]).map(c => localizedCharacter(c, locale)))
 
       if (profile?.display_name && profile?.age && profile?.gender) {
         window.location.href = '/characters'
@@ -90,7 +91,7 @@ export default function OnboardingPage() {
     setSaving(false)
     if (!res.ok) {
       const data = await res.json()
-      alert('保存に失敗しました: ' + (data.error ?? ''))
+      alert(fmt(m.onboarding.saveFailed, { error: data.error ?? '' }))
       return
     }
     trackSignUp({ referral_source: referralSource ?? utmSource })
@@ -120,7 +121,7 @@ export default function OnboardingPage() {
         onClick={() => setStep(s => Math.max(1, s - 1))}
         className="w-9 h-9 -ml-2 flex items-center justify-center rounded-[10px] transition-opacity"
         style={{ color: 'var(--color-text)', opacity: step === 1 ? 0 : 1, pointerEvents: step === 1 ? 'none' : 'auto' }}
-        aria-label="戻る"
+        aria-label={m.common.back}
       >
         <ChevronLeft size={22} />
       </button>
@@ -164,9 +165,9 @@ export default function OnboardingPage() {
     return (
       <div className="pb-28">
         <TopBar />
-        <h1 className="text-[26px] font-bold leading-tight mb-2">話してみたい子を<br />選んでください</h1>
+        <h1 className="text-[26px] font-bold leading-tight mb-2"><Lines text={m.onboarding.pickTitle} /></h1>
         <p className="text-sm mb-6" style={{ color: 'var(--color-text-muted)' }}>
-          選んだ子からメッセージが届きます。あとから他の子とも話せます。
+          {m.onboarding.pickSub}
         </p>
 
         <div className="grid grid-cols-2 gap-3">
@@ -200,7 +201,7 @@ export default function OnboardingPage() {
                 <div className="absolute bottom-2.5 left-3 right-3">
                   <p className="text-white font-bold text-[15px] leading-tight">
                     {char.name}
-                    {char.age && <span className="text-xs font-normal ml-1.5" style={{ opacity: 0.7 }}>{char.age}歳</span>}
+                    {char.age && <span className="text-xs font-normal ml-1.5" style={{ opacity: 0.7 }}>{fmt(m.common.ageSuffix, { age: char.age })}</span>}
                   </p>
                   {char.personality && (
                     <p className="text-[11px] mt-1 leading-snug line-clamp-2" style={{ color: 'rgba(255,255,255,0.65)' }}>
@@ -214,7 +215,7 @@ export default function OnboardingPage() {
         </div>
 
         <BottomCta
-          label={selectedChar ? `${selectedChar.name}と話す` : '話したい子を選んでください'}
+          label={selectedChar ? fmt(m.onboarding.talkWith, { name: selectedChar.name }) : m.onboarding.pickPrompt}
           disabled={!selectedCharId}
           onClick={() => setStep(2)}
         />
@@ -227,13 +228,13 @@ export default function OnboardingPage() {
     return (
       <div className="pb-28">
         <TopBar />
-        <CharacterSays text="はじめまして！なんて呼んだらいいですか？" />
-        <label className="text-sm font-semibold mb-2 block">呼ばれたい名前</label>
+        <CharacterSays text={m.onboarding.askName} />
+        <label className="text-sm font-semibold mb-2 block">{m.onboarding.nameLabel}</label>
         <input
           type="text"
           value={name}
           onChange={e => setName(e.target.value)}
-          placeholder="ニックネームでOK"
+          placeholder={m.onboarding.namePlaceholder}
           maxLength={20}
           className="input-warm w-full px-4 text-[17px]"
           style={{ height: 54 }}
@@ -241,10 +242,10 @@ export default function OnboardingPage() {
           onKeyDown={e => e.key === 'Enter' && name.trim() && setStep(3)}
         />
         <p className="text-xs mt-2" style={{ color: 'var(--color-text-muted)' }}>
-          {selectedChar?.name ?? 'キャラクター'}がこの名前で呼びかけます。あとで設定から変えられます。
+          {fmt(m.onboarding.nameNote, { name: selectedChar?.name ?? m.onboarding.characterFallback })}
         </p>
 
-        <BottomCta label="次へ" disabled={!name.trim()} onClick={() => setStep(3)} />
+        <BottomCta label={m.onboarding.next} disabled={!name.trim()} onClick={() => setStep(3)} />
       </div>
     )
   }
@@ -253,41 +254,41 @@ export default function OnboardingPage() {
   return (
     <div className="pb-28">
       <TopBar />
-      <CharacterSays text={`${name.trim()}さん、よろしくね！最後にもう少しだけ教えてください。`} />
+      <CharacterSays text={fmt(m.onboarding.greet, { name: name.trim() })} />
 
       <div className="space-y-6">
         <div>
-          <label className="text-sm font-semibold mb-2 block">年齢</label>
+          <label className="text-sm font-semibold mb-2 block">{m.onboarding.ageLabel}</label>
           <input
             type="number"
             inputMode="numeric"
             value={age}
             onChange={e => setAge(e.target.value)}
-            placeholder="例: 30"
+            placeholder={m.onboarding.agePlaceholder}
             min={18} max={99}
             className="input-warm w-full px-4 text-[17px]"
             style={{ height: 54 }}
           />
           {ageInvalid && (
-            <p className="text-xs mt-2" style={{ color: 'var(--color-primary)' }}>ご利用は18歳以上の方に限られます</p>
+            <p className="text-xs mt-2" style={{ color: 'var(--color-primary)' }}>{m.onboarding.ageRestriction}</p>
           )}
         </div>
         <div>
-          <label className="text-sm font-semibold mb-2 block">性別</label>
+          <label className="text-sm font-semibold mb-2 block">{m.onboarding.genderLabel}</label>
           <div className="grid grid-cols-3 gap-2">
-            {GENDER_OPTIONS.map(opt => (
+            {GENDER_OPTIONS.map(g => (
               <button
-                key={opt.value}
-                onClick={() => setGender(opt.value)}
+                key={g}
+                onClick={() => setGender(g)}
                 className="rounded-[10px] text-[15px] font-semibold transition-colors"
                 style={{
                   height: 50,
-                  border: `1px solid ${gender === opt.value ? 'var(--color-primary)' : 'var(--color-border-warm)'}`,
-                  background: gender === opt.value ? 'var(--color-primary-soft)' : 'var(--color-surface)',
-                  color: gender === opt.value ? 'var(--color-primary)' : 'var(--color-text)',
+                  border: `1px solid ${gender === g ? 'var(--color-primary)' : 'var(--color-border-warm)'}`,
+                  background: gender === g ? 'var(--color-primary-soft)' : 'var(--color-surface)',
+                  color: gender === g ? 'var(--color-primary)' : 'var(--color-text)',
                 }}
               >
-                {opt.label}
+                {m.onboarding.genders[g]}
               </button>
             ))}
           </div>
@@ -295,7 +296,7 @@ export default function OnboardingPage() {
       </div>
 
       <BottomCta
-        label={saving ? '準備しています…' : `${selectedChar?.name ?? ''}と話しはじめる`}
+        label={saving ? m.onboarding.preparing : fmt(m.onboarding.start, { name: selectedChar?.name ?? '' })}
         disabled={!age || ageInvalid || !gender || !selectedCharId || saving}
         onClick={complete}
       />

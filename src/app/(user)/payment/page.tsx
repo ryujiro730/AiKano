@@ -12,10 +12,15 @@ import { PLANS } from '@/lib/plans'
 import { PointPackageList } from '@/components/PointPackageList'
 import type { Profile } from '@/types'
 import { format } from 'date-fns'
-import { ja } from 'date-fns/locale'
+import { DATE_FNS_LOCALE } from '@/i18n/date-locale'
 import { logAction } from '@/lib/action-log'
+import { useI18n } from '@/i18n/client'
+import { fmt, gap } from '@/i18n/fmt'
+import { planFeatures } from '@/lib/plan-i18n'
+import { REFERRAL_BONUS } from '@/lib/pricing'
 
 export default function PaymentPage() {
+  const { m, locale } = useI18n()
   const searchParams = useSearchParams()
   const justSubscribed = searchParams.get('subscribed') === 'true'
   const subscribedPlan = searchParams.get('plan')
@@ -59,9 +64,9 @@ export default function PaymentPage() {
         body: JSON.stringify({ planId }),
       })
       const data = await res.json()
-      if (!res.ok) { alert(`エラー: ${data.error ?? 'unknown'}`); return }
+      if (!res.ok) { alert(fmt(m.payment.errorPrefix, { error: data.error ?? 'unknown' })); return }
       if (data.url) window.location.href = data.url
-    } catch (e) { alert('通信エラー: ' + String(e)) }
+    } catch (e) { alert(fmt(m.payment.networkError, { error: String(e) })) }
     finally { setSubscribing(null) }
   }
 
@@ -73,9 +78,9 @@ export default function PaymentPage() {
         body: JSON.stringify({ planId }),
       })
       const data = await res.json()
-      if (!res.ok) { alert(`エラー: ${data.error ?? 'unknown'}`); return }
+      if (!res.ok) { alert(fmt(m.payment.errorPrefix, { error: data.error ?? 'unknown' })); return }
       if (data.url) window.location.href = data.url
-    } catch (e) { alert('通信エラー: ' + String(e)) }
+    } catch (e) { alert(fmt(m.payment.networkError, { error: String(e) })) }
     finally { setBuyingPass(null) }
   }
 
@@ -86,7 +91,7 @@ export default function PaymentPage() {
       if (!res.ok) throw new Error()
       const { url } = await res.json()
       if (url) window.location.href = url
-    } catch { alert('管理ページへのアクセスに失敗しました') }
+    } catch { alert(m.payment.portalFailed) }
     finally { setOpeningPortal(false) }
   }
 
@@ -108,32 +113,32 @@ export default function PaymentPage() {
 
   return (
     <div className="pt-2 max-w-lg">
-      <h1 className="text-xl font-bold mb-2">料金プラン</h1>
+      <h1 className="text-xl font-bold mb-2">{m.payment.title}</h1>
       <p className="text-sm mb-6" style={{ color: 'var(--color-text-muted)' }}>
-        プランに加入すると、月間メッセージ上限まで追加費用なしでAIと話せます。
+        {m.payment.lead}
       </p>
 
       {/* ─── 通知バナー ─── */}
       {justSubscribed && (
         <div className="rounded-xl p-4 mb-5 text-sm" style={{ background: 'rgba(125,186,132,0.12)', border: '1px solid rgba(125,186,132,0.3)' }}>
-          <p className="font-semibold mb-0.5" style={{ color: '#7ec850' }}>プランが有効になりました！</p>
-          <p style={{ color: 'var(--color-text-muted)' }}>{subscribedPlan === 'standard' ? 'スタンダード' : 'プレミアム'}プランへようこそ。</p>
+          <p className="font-semibold mb-0.5" style={{ color: '#7ec850' }}>{m.payment.activated}</p>
+          <p style={{ color: 'var(--color-text-muted)' }}>{fmt(m.payment.welcome, { name: subscribedPlan === 'standard' ? m.plans.standard : m.plans.premium })}</p>
         </div>
       )}
       {isPassPending && (
         <div className="rounded-xl p-4 mb-5 text-sm" style={{ background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.3)' }}>
-          <p className="font-semibold mb-0.5" style={{ color: '#f59e0b' }}>お支払い番号が発行されました</p>
-          <p style={{ color: 'var(--color-text-muted)' }}>コンビニ・PayPayでのお支払い確認後（通常1〜3日以内）、プランが有効になります。</p>
+          <p className="font-semibold mb-0.5" style={{ color: '#f59e0b' }}>{m.payment.passPendingTitle}</p>
+          <p style={{ color: 'var(--color-text-muted)' }}>{m.payment.passPendingBody}</p>
         </div>
       )}
       {pointsPurchased && (
         <div className="rounded-xl p-4 mb-5 text-sm" style={{ background: 'var(--color-primary-soft)', border: '1px solid var(--color-primary-border)' }}>
-          <p className="font-semibold mb-0.5" style={{ color: 'var(--color-primary)' }}>{pointsPurchased.toLocaleString()}ptのご購入ありがとうございます</p>
-          <p style={{ color: 'var(--color-text-muted)' }}>決済の確認後、ポイントが反映されます（カードは通常すぐ、コンビニ払い等は入金確認後）。</p>
+          <p className="font-semibold mb-0.5" style={{ color: 'var(--color-primary)' }}>{fmt(m.payment.pointsThanks, { pt: pointsPurchased.toLocaleString() })}</p>
+          <p style={{ color: 'var(--color-text-muted)' }}>{m.payment.pointsNote}</p>
         </div>
       )}
       {isCanceled && (
-        <div className="card p-4 mb-5 text-sm" style={{ color: 'var(--color-text-muted)' }}>購入をキャンセルしました</div>
+        <div className="card p-4 mb-5 text-sm" style={{ color: 'var(--color-text-muted)' }}>{m.payment.canceled}</div>
       )}
 
       {/* ─── 加入中：使用量表示 ─── */}
@@ -142,17 +147,17 @@ export default function PaymentPage() {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Crown size={18} style={{ color: 'var(--color-primary)' }} />
-              <span className="font-bold text-base">{currentPlan.name}プラン</span>
+              <span className="font-bold text-base">{fmt(m.plans.planSuffix, { name: m.plans[currentPlan.id] })}</span>
             </div>
             <span className="text-xs font-bold px-2.5 py-1 rounded-full"
-              style={{ background: 'rgba(125,186,132,0.15)', color: '#7ec850' }}>有効</span>
+              style={{ background: 'rgba(125,186,132,0.15)', color: '#7ec850' }}>{m.payment.active}</span>
           </div>
 
           <div className="mb-4">
             <div className="flex justify-between items-center mb-2">
-              <span className="text-xs font-semibold" style={{ color: 'var(--color-text-muted)' }}>今月のメッセージ使用量</span>
+              <span className="text-xs font-semibold" style={{ color: 'var(--color-text-muted)' }}>{m.payment.usageThisMonth}</span>
               <span className="text-xs font-bold" style={{ color: isOverLimit ? '#f87171' : 'var(--color-text)' }}>
-                {messagesUsed.toLocaleString()} / {messagesLimit.toLocaleString()}通
+                {fmt(m.payment.usage, { used: messagesUsed.toLocaleString(), limit: messagesLimit.toLocaleString() })}
               </span>
             </div>
             <div className="h-2.5 rounded-full overflow-hidden" style={{ background: 'var(--color-surface-2)' }}>
@@ -165,14 +170,14 @@ export default function PaymentPage() {
             </div>
             {isOverLimit && (
               <p className="text-xs mt-1.5" style={{ color: '#f87171' }}>
-                月間上限を超えました。超過分は{currentPlan.overage_points}pt/通で継続できます。
+                {fmt(m.payment.overLimit, { pt: currentPlan.overage_points })}
               </p>
             )}
           </div>
 
           {periodEnd && (
             <p className="text-xs mb-4" style={{ color: 'var(--color-text-muted)' }}>
-              有効期限: {format(periodEnd, 'yyyy年M月d日', { locale: ja })}
+              {fmt(m.payment.validUntil, { date: format(periodEnd, m.payment.datePattern, { locale: DATE_FNS_LOCALE[locale] }) })}
             </p>
           )}
 
@@ -180,7 +185,7 @@ export default function PaymentPage() {
             className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold disabled:opacity-60"
             style={{ background: 'var(--color-surface-2)', color: 'var(--color-text)' }}>
             {openingPortal ? <Loader2 size={15} className="animate-spin" /> : <Settings size={15} />}
-            プランを管理する・解約（クレカ契約の場合）
+            {m.payment.manage}
           </button>
         </div>
       )}
@@ -194,17 +199,17 @@ export default function PaymentPage() {
             {/* プランヘッダー */}
             <div className="p-5 pb-4">
               {plan.id === 'premium' && (
-                <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-md mb-2" style={{ background: 'var(--color-primary)', color: '#fff', letterSpacing: '0.04em' }}>おすすめ</span>
+                <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-md mb-2" style={{ background: 'var(--color-primary)', color: '#fff', letterSpacing: '0.04em' }}>{m.payment.recommended}</span>
               )}
               <div className="flex items-baseline justify-between gap-3">
-                <p className="font-bold text-base">{plan.name}</p>
+                <p className="font-bold text-base">{m.plans[plan.id]}</p>
                 <p className="flex items-baseline gap-1">
                   <span className="text-2xl font-bold tabular-nums">¥{plan.price_yen.toLocaleString()}</span>
-                  <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>/月</span>
+                  <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{m.payment.perMonth}</span>
                 </p>
               </div>
               <ul className="space-y-1.5 mt-3">
-                {plan.features.map((f: string) => (
+                {planFeatures(plan.id, m).map((f: string) => (
                   <li key={f} className="flex items-center gap-2 text-[13px]" style={{ color: 'var(--color-text)' }}>
                     <Check size={14} strokeWidth={2.5} style={{ color: 'var(--color-primary)', flexShrink: 0 }} />
                     {f}
@@ -217,7 +222,7 @@ export default function PaymentPage() {
             {(profile as any)?.subscription_plan !== plan.id && (
               <div style={{ borderTop: '1px solid var(--color-border)' }}>
                 <p className="text-[11px] font-bold px-5 pt-3 pb-2" style={{ color: 'var(--color-text-muted)', letterSpacing: '0.05em' }}>
-                  支払い方法を選ぶ
+                  {m.payment.choosePayment}
                 </p>
 
                 {/* クレカ（自動更新） */}
@@ -231,10 +236,10 @@ export default function PaymentPage() {
                       {subscribing === plan.id
                         ? <Loader2 size={14} className="animate-spin" style={{ color: '#6366f1' }} />
                         : <CreditCard size={14} style={{ color: '#6366f1' }} />}
-                      <p className="text-sm font-semibold">クレジットカード</p>
+                      <p className="text-sm font-semibold">{m.payment.card}</p>
                     </div>
                     <p className="text-xs mb-2" style={{ color: 'var(--color-text-muted)' }}>
-                      <RefreshCw size={9} className="inline mr-1" />毎月自動更新 · いつでも解約可能
+                      <RefreshCw size={9} className="inline mr-1" />{m.payment.cardNote}
                     </p>
                     <CardBrands />
                   </div>
@@ -252,10 +257,10 @@ export default function PaymentPage() {
                       {buyingPass === plan.id
                         ? <Loader2 size={14} className="animate-spin" style={{ color: '#22c55e' }} />
                         : <Store size={14} style={{ color: '#22c55e' }} />}
-                      <p className="text-sm font-semibold">コンビニ払い・PayPay</p>
+                      <p className="text-sm font-semibold">{m.payment.konbini}</p>
                     </div>
                     <p className="text-xs mb-2" style={{ color: 'var(--color-text-muted)' }}>
-                      1ヶ月分を一回払い · 払込後すぐ有効
+                      {m.payment.konbiniNote}
                     </p>
                     <div className="flex items-center gap-1 flex-wrap">
                       <FamilyMartBadge />
@@ -268,8 +273,8 @@ export default function PaymentPage() {
                   <span className="text-xs font-bold mt-1 flex-shrink-0" style={{ color: 'var(--color-primary)' }}>→</span>
                 </button>}
 
-                {/* 銀行振込（1回払い） */}
-                <a href={`/payment/bank-transfer?plan=${plan.id}`}
+                {/* 銀行振込（1回払い）。日本の口座への振込なので日本語ユーザーのみ */}
+                {locale === 'ja' && <a href={`/payment/bank-transfer?plan=${plan.id}`}
                   className="w-full flex items-center gap-3 px-5 py-3.5 transition-colors"
                   style={{ borderTop: '1px solid var(--color-border)', display: 'flex' }}
                   onMouseEnter={e => (e.currentTarget.style.background = 'var(--color-surface-2)')}
@@ -277,21 +282,21 @@ export default function PaymentPage() {
                   <div className="flex-1 text-left">
                     <div className="flex items-center gap-2">
                       <Building2 size={14} style={{ color: '#ca8a04' }} />
-                      <p className="text-sm font-semibold">銀行振込</p>
+                      <p className="text-sm font-semibold">{m.payment.bank}</p>
                     </div>
                     <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
-                      1ヶ月分を一回払い · 確認後すぐ有効
+                      {m.payment.bankNote}
                     </p>
                   </div>
                   <span className="text-xs font-bold flex-shrink-0" style={{ color: 'var(--color-primary)' }}>→</span>
-                </a>
+                </a>}
               </div>
             )}
 
             {/* 加入中なら更新ボタン */}
             {isSubscribed && (profile as any)?.subscription_plan === plan.id && (
               <div className="px-5 py-3" style={{ borderTop: '1px solid var(--color-border)', background: 'rgba(125,186,132,0.06)' }}>
-                <p className="text-xs font-semibold" style={{ color: '#16a34a' }}>✓ 現在このプランをご利用中</p>
+                <p className="text-xs font-semibold" style={{ color: '#16a34a' }}>✓ {m.payment.currentPlan}</p>
               </div>
             )}
           </div>
@@ -301,47 +306,47 @@ export default function PaymentPage() {
       {/* ─── ポイント購入（会員・非会員とも）─── */}
       <div id="points" className="mb-6 scroll-mt-20">
         <div className="flex items-baseline justify-between mb-1">
-          <h2 className="text-base font-bold">ポイントを購入</h2>
+          <h2 className="text-base font-bold">{m.payment.buyPoints}</h2>
           <span className="text-xs tabular-nums" style={{ color: 'var(--color-text-muted)' }}>
-            残高 <strong style={{ color: 'var(--color-text)' }}>{pointBalance.toLocaleString()}pt</strong>
+            {m.payment.balance} <strong style={{ color: 'var(--color-text)' }}>{pointBalance.toLocaleString()}pt</strong>
           </span>
         </div>
         <p className="text-xs mb-3" style={{ color: 'var(--color-text-muted)' }}>
           {isSubscribed
-            ? '動画・ショップの購入や、月間上限を超えた後のメッセージ（1通5pt）に使えます。'
-            : 'メッセージ（1通10pt）・動画・ショップに使えます。'}
+            ? fmt(m.payment.pointsUseMember, { pt: 5 })
+            : fmt(m.payment.pointsUse, { pt: 10 })}
         </p>
         <PointPackageList />
       </div>
 
       {/* 支払い方法比較表 */}
       <div className="card p-4 mb-6">
-        <p className="text-xs font-bold mb-3" style={{ color: 'var(--color-text-muted)' }}>支払い方法の違い</p>
+        <p className="text-xs font-bold mb-3" style={{ color: 'var(--color-text-muted)' }}>{m.payment.methodsTitle}</p>
         <table className="w-full text-xs">
           <thead>
             <tr style={{ color: 'var(--color-text-muted)' }}>
               <th className="text-left pb-2 font-semibold"></th>
-              <th className="text-center pb-2 font-semibold">更新</th>
-              <th className="text-center pb-2 font-semibold">有効化</th>
+              <th className="text-center pb-2 font-semibold">{m.payment.renewal}</th>
+              <th className="text-center pb-2 font-semibold">{m.payment.activation}</th>
             </tr>
           </thead>
           <tbody className="divide-y" style={{ borderColor: 'var(--color-border)' }}>
             <tr>
-              <td className="py-2 flex items-center gap-1.5"><CreditCard size={12} style={{ color: '#6366f1' }} />クレカ</td>
-              <td className="py-2 text-center">自動（毎月）</td>
-              <td className="py-2 text-center">即時</td>
+              <td className="py-2 flex items-center gap-1.5"><CreditCard size={12} style={{ color: '#6366f1' }} />{m.payment.cardShort}</td>
+              <td className="py-2 text-center">{m.payment.autoMonthly}</td>
+              <td className="py-2 text-center">{m.payment.instant}</td>
             </tr>
             {KONBINI_PAYPAY_ENABLED && (
               <tr>
-                <td className="py-2 flex items-center gap-1.5"><Store size={12} style={{ color: '#22c55e' }} />コンビニ・PayPay</td>
-                <td className="py-2 text-center">手動（1ヶ月）</td>
-                <td className="py-2 text-center">払込後すぐ</td>
+                <td className="py-2 flex items-center gap-1.5"><Store size={12} style={{ color: '#22c55e' }} />{m.payment.konbini}</td>
+                <td className="py-2 text-center">{m.payment.manualMonth}</td>
+                <td className="py-2 text-center">{m.payment.afterPayment}</td>
               </tr>
             )}
             <tr>
-              <td className="py-2 flex items-center gap-1.5"><Building2 size={12} style={{ color: '#ca8a04' }} />銀行振込</td>
-              <td className="py-2 text-center">手動（1ヶ月）</td>
-              <td className="py-2 text-center">確認後すぐ</td>
+              <td className="py-2 flex items-center gap-1.5"><Building2 size={12} style={{ color: '#ca8a04' }} />{m.payment.bank}</td>
+              <td className="py-2 text-center">{m.payment.manualMonth}</td>
+              <td className="py-2 text-center">{m.payment.afterConfirm}</td>
             </tr>
           </tbody>
         </table>
@@ -361,10 +366,10 @@ export default function PaymentPage() {
           <div className="card p-5" style={{ border: '1px solid var(--color-border)', background: 'var(--color-surface)' }}>
             <div className="flex items-center gap-2 mb-2">
               <Gift size={16} style={{ color: 'var(--color-primary)' }} />
-              <p className="font-bold text-sm">友達紹介プログラム</p>
+              <p className="font-bold text-sm">{m.payment.referralTitle}</p>
             </div>
             <p className="text-xs mb-3 leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
-              紹介URLから友達が登録すると、<span className="font-semibold" style={{ color: 'var(--color-primary)' }}>あなたも友達も100ポイント</span>もらえます！
+              {m.payment.referralA.trim()}{gap(locale, 'x')}<span className="font-semibold" style={{ color: 'var(--color-primary)' }}>{fmt(m.payment.referralB, { pt: REFERRAL_BONUS }).trim()}</span>{gap(locale, m.payment.referralC.trim())}{m.payment.referralC.trim()}
             </p>
             <div className="flex gap-2">
               <div className="flex-1 px-3 py-2 rounded-xl text-xs font-mono truncate"
@@ -374,7 +379,7 @@ export default function PaymentPage() {
               <button onClick={handleCopy}
                 className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold"
                 style={{ background: copied ? 'rgba(125,186,132,0.15)' : 'var(--color-primary)', color: copied ? '#7ec850' : '#fff' }}>
-                {copied ? <><Check size={13} />コピー済み</> : <><Copy size={13} />コピー</>}
+                {copied ? <><Check size={13} />{m.payment.copied}</> : <><Copy size={13} />{m.payment.copy}</>}
               </button>
             </div>
           </div>

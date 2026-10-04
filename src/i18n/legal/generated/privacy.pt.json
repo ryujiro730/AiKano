@@ -1,0 +1,141 @@
+{
+  "title": "Política de Privacidade",
+  "updated": "Última atualização: junho de 2026",
+  "footer": "Equipe responsável pelo AiKano",
+  "sections": [
+    {
+      "title": "Artigo 1º — Política básica",
+      "items": [
+        "A equipe responsável pela operação da AiKano (doravante denominada “Empresa”) reconhece que a proteção dos dados pessoais dos usuários é uma responsabilidade importante e cumpre a Lei de Proteção de Dados Pessoais e demais leis e regulamentos aplicáveis."
+      ]
+    },
+    {
+      "title": "Artigo 2º – Informações coletadas",
+      "preamble": "Para fornecer este serviço, coletamos as seguintes informações:",
+      "groups": [
+        {
+          "heading": "Informações inseridas diretamente pelo usuário",
+          "items": [
+            "Endereço de e-mail (no momento do cadastro)",
+            "Senha (no momento do cadastro; armazenada em formato de hash)",
+            "Informações inseridas espontaneamente pelo usuário durante as conversas (como nome, endereço, número de telefone etc.)"
+          ]
+        },
+        {
+          "heading": "Informações coletadas automaticamente durante o uso do serviço",
+          "items": [
+            "Endereço IP e registros de acesso",
+            "Informações do dispositivo e do navegador",
+            "Histórico de atividades no serviço (data e hora de login, histórico de pagamentos, personagens utilizados etc.)",
+            "Conteúdo das conversas entre o usuário e os personagens de IA"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Artigo 3º — Finalidade do uso das informações",
+      "preamble": "As informações coletadas serão utilizadas exclusivamente para as seguintes finalidades:",
+      "items": [
+        "Prestação, operação e aprimoramento deste serviço",
+        "Autenticação de usuários e gerenciamento de contas",
+        "Cobranças e gerenciamento de pontos",
+        "Melhoria da qualidade das respostas da IA e treinamento e aprimoramento dos nossos modelos de IA",
+        "Detecção e tratamento de uso indevido e violações dos termos",
+        "Atendimento a exigências legais (como solicitações de autoridades de investigação)",
+        "Atendimento a dúvidas e solicitações"
+      ]
+    },
+    {
+      "title": "Artigo 4 — Tratamento do conteúdo do chat (importante)",
+      "preamble": "Devido à natureza deste serviço, o tratamento do conteúdo do chat é definido da seguinte forma:",
+      "items": [
+        {
+          "label": "Análise pela equipe:",
+          "text": "A equipe da nossa empresa poderá analisar as conversas entre usuários e personagens para manter e aprimorar a qualidade das respostas, detectar usos indevidos e melhorar o treinamento dos modelos de IA."
+        },
+        {
+          "label": "Uso no treinamento de IA:",
+          "text": "O conteúdo poderá ser utilizado como dado de treinamento dos modelos de IA da nossa empresa, após ser tratado de forma que não permita identificar pessoas."
+        },
+        {
+          "label": "Proibição de compartilhamento com terceiros:",
+          "text": "Não fornecemos nem vendemos o conteúdo do chat a terceiros, como anunciantes ou outras empresas, exceto quando exigido por lei."
+        },
+        {
+          "label": "Cumprimento da lei:",
+          "text": "Se forem detectadas atividades ilegais, como pedidos de conteúdo de pornografia infantil ou incentivo a crimes, os registros do chat poderão ser preservados como prova e, se necessário, fornecidos às autoridades responsáveis pela investigação."
+        }
+      ],
+      "note": "Ao se cadastrar neste serviço, o usuário concorda com o tratamento do conteúdo do chat descrito acima."
+    },
+    {
+      "title": "Artigo 5º — Compartilhamento com terceiros",
+      "preamble": "Não compartilharemos os dados pessoais coletados com terceiros, exceto nos seguintes casos:",
+      "items": [
+        "Quando houver consentimento prévio do usuário",
+        "Quando exigido por lei (como em solicitações de tribunais ou autoridades de investigação)",
+        "Quando necessário para proteger a vida, a integridade física ou o patrimônio de uma pessoa",
+        "Quando os dados forem compartilhados com prestadores de serviços necessários à operação deste serviço (somente se houver um contrato de confidencialidade firmado)"
+      ]
+    },
+    {
+      "title": "Artigo 6º — Uso de serviços externos",
+      "preamble": "Este serviço utiliza os serviços externos a seguir, aos quais poderão se aplicar as respectivas políticas de privacidade.",
+      "bullet": true,
+      "items": [
+        {
+          "label": "Serviços de pagamento:",
+          "text": "Processamento de pagamentos na compra de pontos (não armazenamos informações de cartão de crédito em nossos servidores)"
+        },
+        {
+          "label": "Ferramentas de análise:",
+          "text": "Análise de acessos para melhorar o serviço (como o Google Analytics)"
+        },
+        {
+          "label": "Modelos de IA:",
+          "text": "Podemos utilizar APIs externas de IA (como OpenAI e Anthropic) para gerar respostas. Nesse caso, o conteúdo das conversas poderá ser enviado às APIs desses serviços."
+        }
+      ]
+    },
+    {
+      "title": "Artigo 7º — Uso de cookies",
+      "items": [
+        "Este serviço utiliza cookies para manter sua sessão iniciada e aprimorar o serviço. Você pode desativar os cookies nas configurações do navegador, mas alguns recursos podem ficar indisponíveis."
+      ]
+    },
+    {
+      "title": "Artigo 8º — Armazenamento e gestão de dados pessoais",
+      "items": [
+        "Adotamos medidas de segurança adequadas para evitar o vazamento, a perda ou a danificação de dados pessoais.",
+        "Os dados pessoais são armazenados pelo período necessário para cumprir as finalidades de uso e, quando deixarem de ser necessários, serão descartados de forma adequada.",
+        "Mesmo após o encerramento da conta, poderemos armazenar por determinado período as informações cuja conservação seja exigida por lei e aquelas necessárias para prevenir o uso indevido."
+      ]
+    },
+    {
+      "title": "Artigo 9º — Dados pessoais de menores de idade",
+      "items": [
+        "Este serviço é destinado a pessoas com 18 anos ou mais (exceto estudantes do ensino médio). Se descobrirmos que um usuário tem menos de 18 anos, excluiremos a conta e os dados desse usuário."
+      ]
+    },
+    {
+      "title": "Artigo 10 — Solicitações de acesso, retificação e exclusão",
+      "items": [
+        "Os usuários podem solicitar acesso, retificação, exclusão ou suspensão do uso de seus dados pessoais mantidos por nossa empresa. Para fazer uma solicitação, entre em contato pelo canal de atendimento (info@aikano.chat). Após confirmar sua identidade, atenderemos à solicitação de acordo com a legislação aplicável."
+      ]
+    },
+    {
+      "title": "Artigo 11 — Alterações à Política de Privacidade",
+      "items": [
+        "Podemos alterar esta Política de Privacidade quando necessário. Em caso de alterações importantes, notificaremos você por meio deste serviço. A política revisada entrará em vigor a partir de sua publicação."
+      ]
+    },
+    {
+      "title": "Artigo 12 – Contato",
+      "preamble": "Para dúvidas sobre o tratamento de dados pessoais, entre em contato pelo endereço abaixo.",
+      "contact": [
+        "Equipe de suporte da AiKano",
+        "E-mail: info@aikano.chat"
+      ]
+    }
+  ]
+}

@@ -4,6 +4,9 @@ import { useEffect, useState } from 'react'
 import { AvatarImage } from '@/components/AvatarImage'
 import { Ban, ChevronLeft } from 'lucide-react'
 import Link from 'next/link'
+import { useI18n } from '@/i18n/client'
+import { fmt } from '@/i18n/fmt'
+import { INTL_LOCALE } from '@/i18n/config'
 
 interface Block {
   character_id: string
@@ -12,6 +15,7 @@ interface Block {
 }
 
 export default function BlocksPage() {
+  const { m, locale } = useI18n()
   const [blocks, setBlocks] = useState<Block[]>([])
   const [loading, setLoading] = useState(true)
   const [unblocking, setUnblocking] = useState<string | null>(null)
@@ -36,7 +40,7 @@ export default function BlocksPage() {
         <Link href="/settings" className="p-1 -ml-1" style={{ color: 'var(--color-text-muted)' }}>
           <ChevronLeft size={22} />
         </Link>
-        <h1 className="text-base font-bold">お断りリスト</h1>
+        <h1 className="text-base font-bold">{m.blocks.title}</h1>
       </div>
 
       <div className="py-4">
@@ -53,12 +57,12 @@ export default function BlocksPage() {
         ) : blocks.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <Ban size={40} style={{ color: 'var(--color-border)' }} />
-            <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>お断りしているキャラクターはいません</p>
+            <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>{m.blocks.empty}</p>
           </div>
         ) : (
           <div className="space-y-2">
             <p className="text-xs mb-3" style={{ color: 'var(--color-text-muted)' }}>
-              お断り中のキャラクターは一覧に表示されません。いつでも解除できます。
+              {m.blocks.note}
             </p>
             {blocks.map(block => (
               <div
@@ -72,7 +76,7 @@ export default function BlocksPage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold truncate">{block.character?.name}</p>
                   <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
-                    {new Date(block.created_at).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' })}にお断り
+                    {fmt(m.blocks.blockedOn, { date: new Date(block.created_at).toLocaleDateString(INTL_LOCALE[locale], { month: 'long', day: 'numeric' }) })}
                   </p>
                 </div>
                 <button
@@ -81,7 +85,7 @@ export default function BlocksPage() {
                   className="text-xs px-3 py-1.5 rounded-xl border font-medium transition-opacity disabled:opacity-40"
                   style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}
                 >
-                  {unblocking === block.character_id ? '解除中…' : '解除する'}
+                  {unblocking === block.character_id ? m.blocks.unblocking : m.blocks.unblock}
                 </button>
               </div>
             ))}

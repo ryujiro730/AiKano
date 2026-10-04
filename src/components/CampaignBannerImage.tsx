@@ -1,7 +1,9 @@
 import { createAdminClientStatic } from '@/lib/supabase/server'
 import Link from 'next/link'
+import { getMessages } from '@/i18n/server'
 
 export async function CampaignBannerImage({ className, userId }: { className?: string; userId?: string | null }) {
+  const m = getMessages()
   const admin = createAdminClientStatic()
 
   const { data: campaigns } = await admin
@@ -92,7 +94,7 @@ export async function CampaignBannerImage({ className, userId }: { className?: s
 
   return (
     <Link href={href} className={`block${className ? ` ${className}` : ''}`}>
-      <img src={campaign.image_url} alt="キャンペーン" style={{ width: '100%', borderRadius: '12px', display: 'block' }} />
+      <img src={campaign.image_url} alt={m.campaign.imageAlt} style={{ width: '100%', borderRadius: '12px', display: 'block' }} />
     </Link>
   )
 }

@@ -4,6 +4,8 @@ import { createAdminClientStatic } from '@/lib/supabase/server'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { ActionLogger } from '@/components/ActionLogger'
 import { GameHome } from '@/components/GameHome'
+import { getLocale } from '@/i18n/server'
+import { localizedCharacter } from '@/lib/character-i18n'
 
 export default async function CharactersPage() {
   const user = await getAuthUser()
@@ -13,7 +15,7 @@ export default async function CharactersPage() {
 
   // 全クエリを1ウォーターフォールで並列実行（未読チェックも含む）
   const [{ data: characters }, convData, blocksData, affectionData, unlockData, unreadData, profileData] = await Promise.all([
-    admin.from('characters').select('id, name, age, avatar_url, requires_unlock').eq('is_active', true).order('sort_order', { ascending: true }),
+    admin.from('characters').select('id, name, age, avatar_url, requires_unlock, i18n').eq('is_active', true).order('sort_order', { ascending: true }),
     userId
       ? admin.from('conversations').select('id, character_id, last_message_at').eq('user_id', userId).order('last_message_at', { ascending: false })
       : Promise.resolve({ data: [] }),
@@ -35,8 +37,10 @@ export default async function CharactersPage() {
   ])
 
   const blockedIds = new Set(((blocksData as any)?.data ?? []).map((b: any) => b.character_id as string))
+  const locale = getLocale()
   const visibleChars = (characters ?? [])
     .filter((c: any) => !blockedIds.has(c.id))
+    .map((c: any) => localizedCharacter(c, locale))
     .map((c: any) => ({
       id: c.id as string,
       name: c.name as string,

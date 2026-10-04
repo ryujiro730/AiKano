@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { MoreVertical, Flag, Ban, X } from 'lucide-react'
+import { useI18n } from '@/i18n/client'
+import { fmt } from '@/i18n/fmt'
 
 interface Props {
   characterId: string
@@ -12,6 +14,7 @@ interface Props {
 interface MenuPos { top: number; right: number }
 
 export function CharacterActionMenu({ characterId, characterName }: Props) {
+  const { m } = useI18n()
   const [open, setOpen] = useState(false)
   const [menuPos, setMenuPos] = useState<MenuPos | null>(null)
   const [showReport, setShowReport] = useState(false)
@@ -63,7 +66,7 @@ export function CharacterActionMenu({ characterId, characterName }: Props) {
 
   const submitReport = async () => {
     console.log('[report] called reason:', JSON.stringify(reason), 'submitting:', submitting)
-    if (!reason.trim()) { setReportError('内容を入力してください'); return }
+    if (!reason.trim()) { setReportError(m.characterMenu.reasonRequired); return }
     if (submitting) return
     setSubmitting(true)
     setReportError(null)
@@ -80,11 +83,11 @@ export function CharacterActionMenu({ characterId, characterName }: Props) {
         setDone('reported')
       } else {
         const body = await res.json().catch(() => ({}))
-        setReportError(body.error ?? `エラー (${res.status})`)
+        setReportError(body.error ?? fmt(m.characterMenu.errorStatus, { status: res.status }))
       }
     } catch (e) {
       console.error('[report] fetch error:', e)
-      setReportError('通信エラーが発生しました')
+      setReportError(m.characterMenu.networkError)
     }
     setSubmitting(false)
   }
@@ -141,7 +144,7 @@ export function CharacterActionMenu({ characterId, characterName }: Props) {
             className="flex items-center gap-2.5 w-full px-4 py-3 text-sm text-left hover:bg-gray-50 transition-colors"
           >
             <Flag size={15} className="text-orange-500" />
-            通報する
+            {m.characterMenu.report}
           </button>
           <button
             onClick={toggleBlock}
@@ -150,7 +153,7 @@ export function CharacterActionMenu({ characterId, characterName }: Props) {
             style={{ color: isBlocked ? 'var(--color-text-muted)' : '#e8437f' }}
           >
             <Ban size={15} />
-            {isBlocked ? 'お断り解除' : 'お断りする'}
+            {isBlocked ? m.characterMenu.unblock : m.characterMenu.block}
           </button>
         </div>,
         document.body
@@ -168,23 +171,23 @@ export function CharacterActionMenu({ characterId, characterName }: Props) {
             style={{ background: '#fff' }}
           >
             <div className="flex items-center justify-between mb-4">
-              <p className="font-bold text-base">通報する</p>
+              <p className="font-bold text-base">{m.characterMenu.report}</p>
               <button onClick={() => { setShowReport(false); setReportError(null) }} className="text-gray-400 hover:text-gray-600">
                 <X size={18} />
               </button>
             </div>
             <p className="text-xs text-[var(--color-text-muted)] mb-3">
-              {characterName}さんへの通報内容を入力してください。
+              {fmt(m.characterMenu.reportPrompt, { name: characterName })}
             </p>
             <textarea
               value={reason}
               onChange={e => setReason(e.target.value)}
-              placeholder="通報内容を入力（必須）"
+              placeholder={m.characterMenu.reportPlaceholder}
               rows={4}
               className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm resize-none outline-none focus:border-[var(--color-primary)] transition-colors"
               style={{ fontFamily: 'inherit' }}
             />
-            <p className="text-xs text-gray-400 mt-1 mb-1">{reason.trim().length} 文字</p>
+            <p className="text-xs text-gray-400 mt-1 mb-1">{fmt(m.characterMenu.chars, { n: reason.trim().length })}</p>
             {reportError && (
               <p className="text-xs text-red-500 mb-3">{reportError}</p>
             )}
@@ -195,7 +198,7 @@ export function CharacterActionMenu({ characterId, characterName }: Props) {
               className="w-full py-3 rounded-xl text-sm font-bold text-white transition-opacity disabled:opacity-40"
               style={{ background: 'linear-gradient(135deg, #f9a8d4, #e8437f)' }}
             >
-              {submitting ? '送信中…' : '通報する'}
+              {submitting ? m.characterMenu.sending : m.characterMenu.report}
             </button>
           </div>
         </div>,
@@ -207,9 +210,9 @@ export function CharacterActionMenu({ characterId, characterName }: Props) {
           className="fixed bottom-24 left-1/2 -translate-x-1/2 px-5 py-2.5 rounded-full text-sm font-medium text-white shadow-lg pointer-events-none"
           style={{ zIndex: 99999, background: 'rgba(30,30,30,0.85)', whiteSpace: 'nowrap' }}
         >
-          {done === 'reported' && '通報しました'}
-          {done === 'blocked' && 'お断りしました'}
-          {done === 'unblocked' && 'お断りを解除しました'}
+          {done === 'reported' && m.characterMenu.reported}
+          {done === 'blocked' && m.characterMenu.blocked}
+          {done === 'unblocked' && m.characterMenu.unblocked}
         </div>,
         document.body
       )}

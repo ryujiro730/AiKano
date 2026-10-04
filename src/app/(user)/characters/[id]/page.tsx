@@ -2,6 +2,8 @@ import { createAdminClientStatic } from '@/lib/supabase/server'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { redirect } from 'next/navigation'
 import { CharacterDetailClient } from './CharacterDetailClient'
+import { getLocale } from '@/i18n/server'
+import { localizedCharacter } from '@/lib/character-i18n'
 import { getCharacterPhotosForUser } from '@/lib/character-photos'
 
 export default async function CharacterDetailPage({ params }: { params: { id: string } }) {
@@ -29,7 +31,7 @@ export default async function CharacterDetailPage({ params }: { params: { id: st
 
   return (
     <CharacterDetailClient
-      character={charRes.data as any}
+      character={localizedCharacter(charRes.data, getLocale()) as any}
       photos={photosRes}
       userChar={(ucRes.data ?? null) as any}
       achievements={(achRes.data ?? []) as any}

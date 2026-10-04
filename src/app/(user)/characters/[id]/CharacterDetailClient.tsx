@@ -10,8 +10,9 @@ import { SpiderChart } from '@/components/SpiderChart'
 import { AffectionMeter } from '@/components/AffectionMeter'
 import { AffectionIcon } from '@/components/AffectionIcon'
 import { LockedPhotoTile } from '@/components/LockedPhotoTile'
-import { ACHIEVEMENTS } from '@/lib/affection'
 import type { Character, CharacterPhoto } from '@/types'
+import { useI18n } from '@/i18n/client'
+import { fmt } from '@/i18n/fmt'
 
 interface UserCharData {
   affection_points: number
@@ -33,6 +34,7 @@ interface Props {
 }
 
 export function CharacterDetailClient({ character, photos, userChar, achievements }: Props) {
+  const { m } = useI18n()
   const router = useRouter()
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
 
@@ -69,7 +71,7 @@ export function CharacterDetailClient({ character, photos, userChar, achievement
             display: 'flex', alignItems: 'center', gap: 4,
           }}>
             <Images size={13} />
-            {photos.length}枚
+            {fmt(m.character.photoCount, { n: photos.length })}
           </div>
         )}
 
@@ -89,7 +91,7 @@ export function CharacterDetailClient({ character, photos, userChar, achievement
           )}
           <p style={{ color: '#fff', fontSize: 26, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.1 }}>
             {character.name}
-            {age && <span style={{ fontSize: 16, fontWeight: 400, opacity: 0.72, marginLeft: 8 }}>{age}歳</span>}
+            {age && <span style={{ fontSize: 16, fontWeight: 400, opacity: 0.72, marginLeft: 8 }}>{fmt(m.common.ageSuffix, { age })}</span>}
           </p>
           {personality && (
             <p style={{ color: 'rgba(255,255,255,0.62)', fontSize: 13, marginTop: 5 }}>{personality}</p>
@@ -99,15 +101,15 @@ export function CharacterDetailClient({ character, photos, userChar, achievement
 
       {/* 好感度 */}
       <div className="card p-4 mb-4" >
-        <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', marginBottom: 12, letterSpacing: '0.04em' }}>好感度</p>
+        <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', marginBottom: 12, letterSpacing: '0.04em' }}>{m.character.affection}</p>
         {userChar ? (
           <AffectionMeter points={userChar.affection_points} messageCount={userChar.message_count} />
         ) : (
           <div style={{ textAlign: 'center', padding: '8px 0' }}>
             <User size={22} style={{ margin: '0 auto 6px', color: 'var(--color-text-muted)' }} />
             <p style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>
-              まだ話したことがない<br />
-              <span style={{ color: 'var(--color-primary)', fontWeight: 600 }}>メッセージを送って好感度を上げよう！</span>
+              {m.character.neverTalked}<br />
+              <span style={{ color: 'var(--color-primary)', fontWeight: 600 }}>{m.character.sendToRaise}</span>
             </p>
           </div>
         )}
@@ -115,23 +117,23 @@ export function CharacterDetailClient({ character, photos, userChar, achievement
 
       {/* ステータス */}
       <div className="card p-4 mb-4" >
-        <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', marginBottom: 4, letterSpacing: '0.04em' }}>ステータス</p>
+        <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', marginBottom: 4, letterSpacing: '0.04em' }}>{m.character.status}</p>
         <SpiderChart stats={stats} />
       </div>
 
       {/* プロフィール */}
       <div className="card p-4 mb-4" >
-        <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', marginBottom: 8, letterSpacing: '0.04em' }}>プロフィール</p>
+        <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', marginBottom: 8, letterSpacing: '0.04em' }}>{m.character.profile}</p>
         <p style={{ fontSize: 14, lineHeight: 1.85 }}>{description}</p>
       </div>
 
       {/* 実績 */}
       {achievements.length > 0 && (
         <div className="card p-4 mb-4" >
-          <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', marginBottom: 12, letterSpacing: '0.04em' }}>実績</p>
+          <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', marginBottom: 12, letterSpacing: '0.04em' }}>{m.character.achievements}</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {achievements.map(ach => {
-              const def = ACHIEVEMENTS[ach.achievement_key]
+              const def = (m.affection.achievements as Record<string, { title: string; desc: string }>)[ach.achievement_key]
               if (!def) return null
               return (
                 <div
@@ -159,10 +161,10 @@ export function CharacterDetailClient({ character, photos, userChar, achievement
       {photos.length > 0 && (
         <div className="mb-5">
           <div className="flex items-baseline justify-between" style={{ marginBottom: 10 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', letterSpacing: '0.04em' }}>フォト</p>
+            <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-muted)', letterSpacing: '0.04em' }}>{m.character.photos}</p>
             {lockedPhotos.length > 0 && (
               <Link href="/payment" style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-primary)' }}>
-                会員限定 {lockedPhotos.length}枚を見る
+                {fmt(m.character.seeMembersPhotos, { n: lockedPhotos.length })}
               </Link>
             )}
           </div>
@@ -183,7 +185,7 @@ export function CharacterDetailClient({ character, photos, userChar, achievement
       <div className="fixed left-0 right-0 px-4 pb-4" style={{ bottom: '56px', background: 'linear-gradient(to top, var(--color-bg) 65%, transparent)', paddingTop: 20 }}>
         <Link href={`/chat?character=${character.id}`} className="btn-primary flex items-center justify-center gap-2 font-bold max-w-2xl mx-auto" style={{ fontSize: 15, height: 52, borderRadius: 12 }}>
           <MessageCircle size={18} strokeWidth={2.2} />
-          {character.name}にメッセージを送る
+          {fmt(m.character.sendMessage, { name: character.name })}
         </Link>
       </div>
 

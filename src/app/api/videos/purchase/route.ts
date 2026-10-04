@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { logUserAction } from '@/lib/user-action-log'
+import { getMessages } from '@/i18n/server'
 
 // POST /api/videos/purchase - 動画購入（ポイント消費）
 export async function POST(req: NextRequest) {
@@ -71,7 +72,7 @@ export async function POST(req: NextRequest) {
     .from('profiles')
     .update(updatePayload)
     .eq('id', user.id)
-  if (pointsError) return NextResponse.json({ error: 'ポイント更新失敗' }, { status: 500 })
+  if (pointsError) return NextResponse.json({ error: getMessages().api.updateFailed }, { status: 500 })
 
   // 購入レコード追加
   const { error: purchaseError } = await adminDb
@@ -80,7 +81,7 @@ export async function POST(req: NextRequest) {
   if (purchaseError) {
     // ロールバック（ポイント戻す）
     await adminDb.from('profiles').update({ points: profile.points, bonus_points: profile.bonus_points ?? 0 }).eq('id', user.id)
-    return NextResponse.json({ error: '購入レコード作成失敗' }, { status: 500 })
+    return NextResponse.json({ error: getMessages().api.purchaseRecordFailed }, { status: 500 })
   }
 
   // ポイント取引履歴

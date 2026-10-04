@@ -5,6 +5,8 @@ import { Sparkles } from 'lucide-react'
 import { TOKEN_PACKAGES } from '@/types'
 import { logAction } from '@/lib/action-log'
 import { pointsForPackage, isCampaignTarget, type PurchaseCampaign } from '@/lib/point-packages'
+import { useI18n } from '@/i18n/client'
+import { fmt } from '@/i18n/fmt'
 
 /**
  * ポイントパック一覧＋購入ボタン。購入ダイアログと料金プランページで共用。
@@ -12,6 +14,7 @@ import { pointsForPackage, isCampaignTarget, type PurchaseCampaign } from '@/lib
  * shortage を渡すと、不足分をカバーできるパックを先頭に並べ、足りないパックを薄く表示する。
  */
 export function PointPackageList({ shortage = 0 }: { shortage?: number }) {
+  const { m } = useI18n()
   const [purchasing, setPurchasing] = useState<string | null>(null)
   const [campaign, setCampaign] = useState<PurchaseCampaign | null>(null)
 
@@ -39,7 +42,7 @@ export function PointPackageList({ shortage = 0 }: { shortage?: number }) {
       const { url } = await res.json()
       if (url) window.location.href = url
     } catch {
-      alert('決済の開始に失敗しました')
+      alert(m.packages.checkoutFailed)
     } finally {
       setPurchasing(null)
     }
@@ -64,7 +67,7 @@ export function PointPackageList({ shortage = 0 }: { shortage?: number }) {
           style={{ background: 'var(--color-primary-soft)', border: '1px solid var(--color-primary-border)' }}>
           <Sparkles size={14} style={{ color: 'var(--color-primary)', flexShrink: 0 }} />
           <p className="text-xs font-bold" style={{ color: 'var(--color-primary)' }}>
-            キャンペーン中！ポイント ×{campaign.bonus_rate}倍
+            {fmt(m.packages.campaign, { rate: campaign.bonus_rate })}
           </p>
         </div>
       )}
@@ -98,7 +101,7 @@ export function PointPackageList({ shortage = 0 }: { shortage?: number }) {
                     <span className="text-xs line-through" style={{ color: 'var(--color-text-muted)' }}>{pkg.tokens.toLocaleString()}pt</span>
                     <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md flex items-center gap-0.5"
                       style={{ background: 'var(--color-primary-soft)', color: 'var(--color-primary)' }}>
-                      <Sparkles size={9} />×{campaign!.bonus_rate}倍
+                      <Sparkles size={9} />{fmt(m.packages.rate, { rate: campaign!.bonus_rate })}
                     </span>
                   </>
                 ) : pkg.bonus_points > 0 && (
@@ -109,19 +112,19 @@ export function PointPackageList({ shortage = 0 }: { shortage?: number }) {
                 )}
                 {highlight && (
                   <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md"
-                    style={{ background: 'var(--color-primary)', color: '#fff' }}>{pkg.is_popular ? '人気' : 'おすすめ'}</span>
+                    style={{ background: 'var(--color-primary)', color: '#fff' }}>{pkg.is_popular ? m.packages.popular : m.packages.recommended}</span>
                 )}
               </div>
               {!inCampaign && pkg.bonus_points > 0 && (
                 <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
-                  {(pkg.tokens - pkg.bonus_points).toLocaleString()}pt + ボーナス{pkg.bonus_points.toLocaleString()}pt
+                  {fmt(m.packages.breakdown, { base: (pkg.tokens - pkg.bonus_points).toLocaleString(), bonus: pkg.bonus_points.toLocaleString() })}
                 </p>
               )}
             </div>
             <div className="text-right">
               <span className="font-bold text-sm tabular-nums">¥{pkg.price_yen.toLocaleString()}</span>
               {purchasing === pkg.id && (
-                <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>処理中...</p>
+                <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>{m.packages.processing}</p>
               )}
             </div>
           </button>

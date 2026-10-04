@@ -1,6 +1,9 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import { resolveVariables } from './message-variables'
 import { sendNotificationEmail } from './send-notification-email'
+import { translateChatText } from './translate'
+import { isLocale, type Locale } from '@/i18n/config'
+import { localizedCharacter } from './character-i18n'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AdminSupabase = SupabaseClient<any, any, any>
@@ -31,7 +34,7 @@ export async function processAutoBroadcast(): Promise<{ scheduled: number; sent:
         .select(`
           id, user_id,
           auto_broadcast_steps!inner(
-            message, image_url, step_number,
+            id, message, i18n, image_url, step_number,
             auto_broadcast_sequences!inner(character_id)
           )
         `)
@@ -103,8 +106,10 @@ export async function processAutoBroadcast(): Promise<{ scheduled: number; sent:
       const msgTime = new Date().toISOString()
 
       const { data: userProfile } = await adminClient
-        .from('profiles').select('display_name, age, gender').eq('id', log.user_id).single()
-      const message = resolveVariables(step.message, userProfile ?? {})
+        .from('profiles').select('display_name, age, gender, locale').eq('id', log.user_id).single()
+      const locale: Locale = isLocale(userProfile?.locale) ? userProfile.locale : 'ja'
+      const template = locale === 'ja' ? step.message : await localizedStepMessage(adminClient, step, locale)
+      const message = resolveVariables(template, userProfile ?? {})
 
       const existingConv = (conversations ?? []).find(
         c => c.user_id === log.user_id && c.character_id === characterId
@@ -150,14 +155,15 @@ export async function processAutoBroadcast(): Promise<{ scheduled: number; sent:
 
       // メール通知（非クリティカル）
       Promise.all([
-        adminClient.from('characters').select('name').eq('id', characterId).single(),
+        adminClient.from('characters').select('name, i18n').eq('id', characterId).single(),
         adminClient.auth.admin.getUserById(log.user_id),
       ]).then(([{ data: charData }, { data: authData }]) => {
         const toEmail = authData?.user?.email
         if (toEmail && charData?.name) {
           sendNotificationEmail({
             toEmail,
-            characterName: charData.name,
+            locale,
+            characterName: localizedCharacter(charData, locale).name,
             messageContent: message,
             conversationId,
           })
@@ -176,4 +182,23 @@ export async function processAutoBroadcast(): Promise<{ scheduled: number; sent:
   }
 
   return { scheduled, sent, skipped, cancelled, failed }
+}
+
+// 同報メッセージの翻訳。auto_broadcast_steps.i18n にキャッシュし、同じステップ・言語は一度だけ訳す
+const stepTranslationCache = new Map<string, Promise<string>>()
+
+function localizedStepMessage(db: AdminSupabase, step: { id: string; message: string; i18n?: Record<string, string> | null }, locale: Locale): Promise<string> {
+  const cached = step.i18n?.[locale]
+  if (cached) return Promise.resolve(cached)
+  const key = `${step.id}:${locale}`
+  if (!stepTranslationCache.has(key)) {
+    stepTranslationCache.set(key, (async () => {
+      const translated = await translateChatText(step.message, locale)
+      if (!translated) { stepTranslationCache.delete(key); return step.message }
+      const { data } = await db.from('auto_broadcast_steps').select('i18n').eq('id', step.id).single()
+      await db.from('auto_broadcast_steps').update({ i18n: { ...(data?.i18n ?? {}), [locale]: translated } }).eq('id', step.id)
+      return translated
+    })())
+  }
+  return stepTranslationCache.get(key)!
 }

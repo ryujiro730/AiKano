@@ -2,8 +2,10 @@
 
 import { useRouter } from 'next/navigation'
 import { ArrowDownUp } from 'lucide-react'
+import { useI18n } from '@/i18n/client'
 
 export function SortToggleButton({ currentSort }: { currentSort: 'asc' | 'desc' }) {
+  const { m } = useI18n()
   const router = useRouter()
 
   const toggle = () => {
@@ -22,7 +24,7 @@ export function SortToggleButton({ currentSort }: { currentSort: 'asc' | 'desc' 
       }}
     >
       <ArrowDownUp size={12} />
-      {currentSort === 'desc' ? '新しい順' : '古い順'}
+      {currentSort === 'desc' ? m.conversations.newest : m.conversations.oldest}
     </button>
   )
 }

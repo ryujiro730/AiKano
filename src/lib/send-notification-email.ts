@@ -1,4 +1,7 @@
 import { Resend } from 'resend'
+import { MESSAGES } from '@/i18n/messages'
+import { fmt } from '@/i18n/fmt'
+import type { Locale } from '@/i18n/config'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://aikano.chat'
 
@@ -11,6 +14,7 @@ export interface NotificationEmailOptions {
   characterName: string
   messageContent: string
   conversationId: string
+  locale?: Locale
 }
 
 export async function sendNotificationEmail(opts: NotificationEmailOptions): Promise<void> {
@@ -18,6 +22,7 @@ export async function sendNotificationEmail(opts: NotificationEmailOptions): Pro
     return
   }
 
+  const m = MESSAGES[opts.locale ?? 'ja']
   const chatUrl = `${APP_URL}/chat`
   const preview = opts.messageContent.slice(0, 60) + (opts.messageContent.length > 60 ? '…' : '')
 
@@ -25,7 +30,7 @@ export async function sendNotificationEmail(opts: NotificationEmailOptions): Pro
     await getResend().emails.send({
       from: 'AiKano <noreply@aikano.chat>',
       to: opts.toEmail,
-      subject: `${opts.characterName}からメッセージが届きました`,
+      subject: fmt(m.email.subject, { name: opts.characterName }),
       html: `
 <!DOCTYPE html>
 <html lang="ja">
@@ -45,9 +50,9 @@ export async function sendNotificationEmail(opts: NotificationEmailOptions): Pro
           </tr>
           <tr>
             <td style="padding:32px;">
-              <p style="margin:0 0 8px;font-size:14px;color:#9b6f7a;">キャラクターからメッセージ</p>
+              <p style="margin:0 0 8px;font-size:14px;color:#9b6f7a;">${escapeHtml(m.email.label)}</p>
               <p style="margin:0 0 24px;font-size:22px;font-weight:700;color:#3d1a26;">
-                ${escapeHtml(opts.characterName)}<span style="font-weight:400;font-size:16px;color:#9b6f7a;">からメッセージが届きました</span>
+                ${escapeHtml(fmt(m.email.subject, { name: opts.characterName }))}
               </p>
               <div style="background:#fdf0f5;border-left:4px solid #e879a0;border-radius:8px;padding:16px 20px;margin-bottom:28px;">
                 <p style="margin:0;font-size:15px;color:#3d1a26;line-height:1.7;white-space:pre-wrap;">${escapeHtml(preview)}</p>
@@ -55,7 +60,7 @@ export async function sendNotificationEmail(opts: NotificationEmailOptions): Pro
               <div style="text-align:center;">
                 <a href="${chatUrl}"
                    style="display:inline-block;background:linear-gradient(135deg,#f9a8b8,#e879a0);color:#fff;text-decoration:none;font-size:15px;font-weight:700;padding:14px 36px;border-radius:100px;letter-spacing:.04em;">
-                  返信する
+                  ${escapeHtml(m.email.reply)}
                 </a>
               </div>
             </td>
@@ -63,8 +68,7 @@ export async function sendNotificationEmail(opts: NotificationEmailOptions): Pro
           <tr>
             <td style="padding:16px 32px 24px;border-top:1px solid #f0dde5;">
               <p style="margin:0;font-size:11px;color:#c8a0a8;text-align:center;line-height:1.6;">
-                このメールはAiKanoから自動送信されています。<br>
-                心当たりのない場合は無視してください。
+                ${escapeHtml(m.email.footer).replace(/\n/g, '<br>')}
               </p>
             </td>
           </tr>

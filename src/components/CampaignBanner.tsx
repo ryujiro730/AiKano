@@ -3,8 +3,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { X } from 'lucide-react'
 import { useCampaign } from './CampaignProvider'
+import { useI18n } from '@/i18n/client'
 
 export function CampaignBanner() {
+  const { m } = useI18n()
   const { campaign: rawCampaign } = useCampaign()
   const [visible, setVisible] = useState(false)
   const dismissedIdRef = useRef<string | null>(null)
@@ -41,10 +43,10 @@ export function CampaignBanner() {
   if (!visible || !campaign) return null
 
   const parts = [
-    '🎉 キャンペーン開催中！',
+    `🎉 ${m.campaign.active}`,
     campaign.catchphrase,
     campaign.description ? `✦ ${campaign.description}` : '',
-    '✨ 今すぐチェック！',
+    `✨ ${m.campaign.checkNow}`,
     '💖',
   ].filter(Boolean).join('  　  ')
 
@@ -101,7 +103,7 @@ export function CampaignBanner() {
         onClick={handleDismiss}
         className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center transition-opacity hover:opacity-80 active:opacity-60"
         style={{ background: 'rgba(0,0,0,0.28)', color: '#fff', flexShrink: 0 }}
-        aria-label="バナーを閉じる"
+        aria-label={m.campaign.closeBanner}
       >
         <X size={12} strokeWidth={2.5} />
       </button>

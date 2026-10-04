@@ -6,6 +6,8 @@ import { UnlockModal } from './UnlockModal'
 import { AffectionIcon } from './AffectionIcon'
 import { Lock, MessageCircle, ChevronRight, CalendarCheck } from 'lucide-react'
 import { LOGIN_BONUS, FREE_MESSAGES_PER_LOGIN } from '@/lib/pricing'
+import { useI18n } from '@/i18n/client'
+import { fmt } from '@/i18n/fmt'
 
 type CharData = {
   id: string
@@ -30,6 +32,7 @@ export function GameHome({
   unreadByChar: Record<string, number>
   unlockedCharIds: string[]
 }) {
+  const { m } = useI18n()
   const defaultChar = partnerChar ?? allChars[0] ?? null
   const [activeChar, setActiveChar] = useState<CharData | null>(defaultChar)
   const [unlockTarget, setUnlockTarget] = useState<CharData | null>(null)
@@ -117,7 +120,7 @@ export function GameHome({
           }}
         >
           <CalendarCheck size={13} strokeWidth={2.4} style={{ color: '#f9a8d4' }} />
-          毎日ログインで{LOGIN_BONUS}pt・{FREE_MESSAGES_PER_LOGIN}通分無料
+          {fmt(m.home.loginBonus, { pt: LOGIN_BONUS, n: FREE_MESSAGES_PER_LOGIN })}
         </div>
 
         {/* 未読バッジ */}
@@ -146,7 +149,7 @@ export function GameHome({
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 7 }}>
                 <AffectionIcon level={affLevel.level} size={13} style={{ color: affLevel.color }} />
                 <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.85)' }}>
-                  {affLevel.title}
+                  {m.affection.levels[affLevel.level - 1]}
                 </span>
                 <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', fontVariantNumeric: 'tabular-nums' }}>
                   Lv.{aff!.level}
@@ -166,7 +169,7 @@ export function GameHome({
             {isLocked ? '???' : activeChar.name}
             {!isLocked && activeChar.age > 0 && (
               <span style={{ fontSize: 15, fontWeight: 400, opacity: 0.6, marginLeft: 10 }}>
-                {activeChar.age}歳
+                {fmt(m.common.ageSuffix, { age: activeChar.age })}
               </span>
             )}
           </p>
@@ -185,7 +188,7 @@ export function GameHome({
                 }}
               >
                 <Lock size={16} strokeWidth={2.2} />
-                SNSで宣伝して解放
+                {m.home.unlockBySns}
               </button>
             ) : (
               <>
@@ -198,7 +201,7 @@ export function GameHome({
                   }}
                 >
                   <MessageCircle size={17} strokeWidth={2.2} />
-                  話しかける
+                  {m.home.talk}
                 </a>
                 <a
                   href={`/characters/${activeChar.id}`}
@@ -210,7 +213,7 @@ export function GameHome({
                     backdropFilter: 'blur(12px)',
                   }}
                 >
-                  プロフィール
+                  {m.home.profile}
                 </a>
               </>
             )}
@@ -244,8 +247,8 @@ export function GameHome({
                 ))}
               </span>
               <span style={{ flex: 1, textAlign: 'left', fontSize: 13, fontWeight: 600 }}>
-                他のキャラクター
-                <span style={{ fontWeight: 400, opacity: 0.55, marginLeft: 6 }}>{otherChars.length}人</span>
+                {m.home.otherCharacters}
+                <span style={{ fontWeight: 400, opacity: 0.55, marginLeft: 6 }}>{fmt(m.home.count, { n: otherChars.length })}</span>
               </span>
               <ChevronRight size={18} style={{ opacity: 0.6 }} />
             </button>
@@ -283,7 +286,7 @@ export function GameHome({
               <div style={{ width: 36, height: 4, borderRadius: 99, background: 'rgba(255,255,255,0.2)' }} />
             </div>
             <p style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.5)', textAlign: 'center', marginBottom: 14, letterSpacing: '0.06em' }}>
-              キャラクターを選ぶ
+              {m.home.pickCharacter}
             </p>
 
             {/* キャラグリッド */}
@@ -375,7 +378,7 @@ export function GameHome({
           onSuccess={() => {
             setLocalUnlocked(prev => { const s = new Set(Array.from(prev)); s.add(unlockTarget.id); return s })
             setUnlockTarget(null)
-            alert(`${unlockTarget.name}の申請が完了しました！\nスタッフが確認後、解放されます。`)
+            alert(fmt(m.home.unlockRequested, { name: unlockTarget.name }))
           }}
         />
       )}

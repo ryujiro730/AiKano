@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { createClient } from '@supabase/supabase-js'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
+import { getMessages } from '@/i18n/server'
+import { fmt } from '@/i18n/fmt'
 
 const UNLOCK_COST = 300
 
@@ -30,7 +32,7 @@ export async function POST() {
   const totalPoints = (profile?.points ?? 0) + bonusAvailable
 
   if (!profile || totalPoints < UNLOCK_COST) {
-    return NextResponse.json({ ok: false, error: 'insufficient_points', message: `ポイントが不足しています（必要: ${UNLOCK_COST}pt）` }, { status: 400 })
+    return NextResponse.json({ ok: false, error: 'insufficient_points', message: fmt(getMessages().api.notEnoughPointsNeed, { pt: UNLOCK_COST }) }, { status: 400 })
   }
 
   // ボーナスptから先に消費
@@ -51,5 +53,5 @@ export async function POST() {
     return NextResponse.json({ error: pointsError?.message ?? logError?.message }, { status: 500 })
   }
 
-  return NextResponse.json({ ok: true, message: 'キャラクター枠が1つ解放されました！', remainingPoints: newPoints + newBonusPoints })
+  return NextResponse.json({ ok: true, message: getMessages().api.slotUnlocked, remainingPoints: newPoints + newBonusPoints })
 }

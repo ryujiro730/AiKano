@@ -3,6 +3,8 @@
 import { useEffect } from 'react'
 import { getAffectionLevel } from '@/lib/affection'
 import { AffectionIcon } from './AffectionIcon'
+import { useI18n } from '@/i18n/client'
+import { fmt } from '@/i18n/fmt'
 
 interface Props {
   level: number
@@ -11,6 +13,7 @@ interface Props {
 }
 
 export function LevelUpToast({ level, characterName, onClose }: Props) {
+  const { m } = useI18n()
   const levelData = getAffectionLevel(
     [0, 50, 200, 500, 1000, 2500, 5000][level - 1] ?? 0
   )
@@ -40,12 +43,12 @@ export function LevelUpToast({ level, characterName, onClose }: Props) {
       <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, borderRadius: 12, marginBottom: 6, background: `${levelData.color}1a`, color: levelData.color }}>
         <AffectionIcon level={levelData.level} size={20} />
       </span>
-      <p style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 2 }}>好感度アップ！</p>
+      <p style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 2 }}>{m.levelUp.title}</p>
       <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text, #17131a)' }}>
-        {characterName} との関係が
+        {fmt(m.levelUp.relation, { name: characterName })}
       </p>
       <p style={{ fontSize: 17, fontWeight: 800, color: levelData.color }}>
-        「{levelData.title}」になった！
+        {fmt(m.levelUp.reached, { title: m.affection.levels[levelData.level - 1] })}
       </p>
       <style>{`
         @keyframes levelUpIn {

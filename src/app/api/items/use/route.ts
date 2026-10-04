@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { logUserAction } from '@/lib/user-action-log'
+import { getMessages } from '@/i18n/server'
 
 // POST /api/items/use - アイテムをチャットで使用（1回消費 + メッセージ送信）
 // 書き込みはサーバー権限で行う（ユーザー権限では user_items / ユーザーメッセージを書けない）
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (!userItem || userItem.quantity <= 0) {
-    return NextResponse.json({ error: 'アイテムが見つかりません' }, { status: 404 })
+    return NextResponse.json({ error: getMessages().api.itemNotFound }, { status: 404 })
   }
 
   // 数量を減らす（読み取った数量を条件にして二重使用を防ぐ）
@@ -39,7 +40,7 @@ export async function POST(req: NextRequest) {
     .eq('id', userItem.id)
     .eq('quantity', userItem.quantity)
     .select('id')
-  if (!dec?.length) return NextResponse.json({ error: 'もう一度お試しください' }, { status: 409 })
+  if (!dec?.length) return NextResponse.json({ error: getMessages().api.tryAgain }, { status: 409 })
 
   const item = userItem.item
 
@@ -62,7 +63,7 @@ export async function POST(req: NextRequest) {
 
   if (!msg) {
     await db.from('user_items').update({ quantity: userItem.quantity }).eq('id', userItem.id)
-    return NextResponse.json({ error: 'メッセージ送信失敗' }, { status: 500 })
+    return NextResponse.json({ error: getMessages().api.sendFailed }, { status: 500 })
   }
 
   await db

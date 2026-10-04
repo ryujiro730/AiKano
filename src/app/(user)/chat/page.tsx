@@ -21,6 +21,9 @@ import { LockedPhotoTile } from '@/components/LockedPhotoTile'
 import { PLANS, type PlanId } from '@/lib/plans'
 import { notifyBadgesChanged } from '@/lib/badge-events'
 import { logAction } from '@/lib/action-log'
+import { useI18n } from '@/i18n/client'
+import { fmt, gap } from '@/i18n/fmt'
+import { localizedCharacter } from '@/lib/character-i18n'
 
 const MAX_CACHED_MSGS = 60
 const CHAT_ENABLED = process.env.NEXT_PUBLIC_CHAT_ENABLED !== 'false'
@@ -33,6 +36,7 @@ function writeCache(key: string, value: unknown) {
 }
 
 export default function ChatPage() {
+  const { m, locale } = useI18n()
   const searchParams = useSearchParams()
   const router = useRouter()
   const characterId = searchParams.get('character')
@@ -201,7 +205,7 @@ export default function ChatPage() {
     if (charCache && cachedConvId) {
       // INSTANT: show cached UI immediately
       const cachedMsgs = readCache<Message[]>(`msgs:${cachedConvId}`) ?? []
-      setCharacter(charCache)
+      setCharacter(localizedCharacter(charCache, locale))
       setMessages(cachedMsgs)
       setConversationId(cachedConvId)
       convIdRef.current = cachedConvId
@@ -223,7 +227,7 @@ export default function ChatPage() {
         }
       }
       if (charRes.data) {
-        setCharacter(charRes.data)
+        setCharacter(localizedCharacter(charRes.data, locale))
         writeCache(`charData:${characterId}`, charRes.data)
       }
       if (photosRes.data) setPhotos(photosRes.data)
@@ -257,7 +261,7 @@ export default function ChatPage() {
         }
       }
       if (charRes.data) {
-        setCharacter(charRes.data)
+        setCharacter(localizedCharacter(charRes.data, locale))
         writeCache(`charData:${characterId}`, charRes.data)
       }
       setPhotos(photosRes.data || [])
@@ -451,7 +455,7 @@ export default function ChatPage() {
 
     const { error: uploadError } = await supabase.storage.from('chat-images').upload(path, uploadBlob, { upsert: false, contentType: uploadContentType })
     if (uploadError) {
-      alert(mediaType === 'video' ? '動画のアップロードに失敗しました' : '画像のアップロードに失敗しました')
+      alert(mediaType === 'video' ? m.chat.uploadVideoFailed : m.chat.uploadImageFailed)
       if (mediaType === 'photo') setSendingPhoto(false)
       else setSendingVideo(false)
       return
@@ -478,7 +482,7 @@ export default function ChatPage() {
       }
       channelRef.current?.send({ type: 'broadcast', event: 'new_message', payload: { message: msg } })
     } else {
-      alert('送信に失敗しました')
+      alert(m.chat.sendFailed)
     }
 
     if (mediaType === 'photo') setSendingPhoto(false)
@@ -522,7 +526,7 @@ export default function ChatPage() {
     } else if (res.status === 402) {
       setPointsShortage({ current: data.current, required: data.required })
     } else {
-      alert('解錠に失敗しました')
+      alert(m.chat.unlockFailed)
     }
   }
 
@@ -558,7 +562,7 @@ export default function ChatPage() {
           </Link>
           {subInfo && subInfo.limit > 0 && (
             <div style={{ fontSize: 10, color: 'var(--color-text-muted)', marginTop: 1 }}>
-              {subInfo.used}/{subInfo.limit}通
+              {fmt(m.chat.usage, { used: subInfo.used, limit: subInfo.limit })}
             </div>
           )}
         </div>
@@ -586,21 +590,21 @@ export default function ChatPage() {
             <div className="flex items-center justify-between mb-1.5">
               <span className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: 'var(--color-text)' }}>
                 <AffectionIcon level={lvData.level} size={13} style={{ color: lvData.color }} />
-                {lvData.title}
+                {m.affection.levels[lvData.level - 1]}
                 <span className="font-normal tabular-nums" style={{ color: 'var(--color-text-muted)' }}>Lv.{lvData.level}</span>
                 {subInfo?.plan ? (
                   <span className="text-[10px] font-bold px-1.5 py-px rounded-md tabular-nums"
                     style={{ background: 'var(--color-primary-soft)', color: 'var(--color-primary)' }}>
-                    会員 ×{PLANS[subInfo.plan as PlanId]?.affection_multiplier ?? 1}
+                    {fmt(m.affection.memberMultiplier, { n: PLANS[subInfo.plan as PlanId]?.affection_multiplier ?? 1 })}
                   </span>
                 ) : (
                   <Link href="/payment" className="text-[10px] font-semibold" style={{ color: 'var(--color-primary)' }}>
-                    会員は2倍
+                    {m.affection.memberDouble}
                   </Link>
                 )}
               </span>
               <span className="text-[11px] tabular-nums" style={{ color: 'var(--color-text-muted)' }}>
-                {nextLv ? `次の「${nextLv.title}」まで ${(nextLv.threshold - affection.points).toLocaleString()}pt` : `${affection.points.toLocaleString()}pt`}
+                {nextLv ? fmt(m.affection.toNext, { title: m.affection.levels[nextLv.level - 1], pt: (nextLv.threshold - affection.points).toLocaleString() }) : `${affection.points.toLocaleString()}pt`}
               </span>
             </div>
             <div style={{ height: 3, borderRadius: 2, overflow: 'hidden', background: 'var(--color-surface-2)' }}>
@@ -624,9 +628,9 @@ export default function ChatPage() {
               <Image src={character.avatar_url} alt={character.name} fill className="object-cover" sizes="80px" />
             </div>
             <p className="font-medium mb-1">{character.name}</p>
-            <p className="text-[var(--color-text-muted)] text-sm">最初のメッセージを送ってみましょう</p>
+            <p className="text-[var(--color-text-muted)] text-sm">{m.chat.firstMessage}</p>
             <p className="text-xs mt-3 max-w-[260px] leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
-              話すほど好感度が上がり、仲が深まると、もっと甘くて濃密な会話ができるようになります
+              {m.chat.affectionIntro}
             </p>
           </div>
         )}
@@ -664,7 +668,7 @@ export default function ChatPage() {
                   suppressContentEditableWarning
                   onInput={handleEditableInput}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendPendingOrText() } }}
-                  data-placeholder={pendingMedia ? '（メディアを送信します）' : 'メッセージを送る…'}
+                  data-placeholder={pendingMedia ? m.chat.sendingMedia : m.chat.placeholder}
                   className="input-warm px-4 py-2.5 outline-none"
                   role="textbox"
                   style={{
@@ -686,7 +690,7 @@ export default function ChatPage() {
                 disabled={(!input.trim() && !pendingMedia) || input.length > 300 || sending}
                 className="btn-primary flex-shrink-0 flex items-center justify-center disabled:opacity-40"
                 style={{ width: 44, height: 44 }}
-                aria-label="送信"
+                aria-label={m.common.send}
               >
                 <Send size={17} />
               </button>
@@ -695,8 +699,8 @@ export default function ChatPage() {
         ) : (
           <div className="rounded-xl px-4 py-3 text-center"
             style={{ background: 'var(--color-primary-soft)', border: '1px solid var(--color-primary-border)' }}>
-            <p className="text-sm font-bold mb-0.5">アイカノでチャットを楽しもう</p>
-            <p className="text-xs text-[var(--color-text-muted)]">AIの女の子と今すぐ話せます。登録は無料・30秒で完了！</p>
+            <p className="text-sm font-bold mb-0.5">{m.chat.guestTitle}</p>
+            <p className="text-xs text-[var(--color-text-muted)]">{m.chat.guestBody}</p>
           </div>
         )}
       </div>
@@ -709,7 +713,7 @@ export default function ChatPage() {
               <div className="relative w-8 h-8 rounded-full overflow-hidden">
                 <Image src={character.avatar_url} alt="" fill className="object-cover" sizes="32px" />
               </div>
-              <p className="text-white font-semibold text-sm">{character.name}のフォト</p>
+              <p className="text-white font-semibold text-sm">{fmt(m.chat.photosOf, { name: character.name })}</p>
             </div>
             <button onClick={() => setShowAlbum(false)} className="p-2 text-white/70 hover:text-white">
               <X size={22} />
@@ -811,20 +815,22 @@ export default function ChatPage() {
 }
 
 function IntimacyHintCard({ hint, characterName, isMember }: { hint: IntimacyHint; characterName: string; isMember: boolean }) {
+  const { m, locale } = useI18n()
+  const levelText = fmt(m.chat.hintBodyLevel, { level: hint.level, title: m.affection.levels[hint.level - 1] })
   return (
     <div className="mx-auto w-full max-w-[320px] rounded-[var(--radius-card,12px)] px-4 py-3 text-center animate-fade-in"
       style={{ background: 'var(--color-primary-soft)', border: '1px solid var(--color-primary-border)' }}>
       <p className="flex items-center justify-center gap-1.5 text-xs font-bold mb-1" style={{ color: 'var(--color-primary)' }}>
         <AffectionIcon level={hint.level} size={13} />
-        {characterName}との仲がもっと深まると…
+        {fmt(m.chat.hintTitle, { name: characterName })}
       </p>
       <p className="text-[13px] leading-relaxed" style={{ color: 'var(--color-text)' }}>
-        好感度が<strong>Lv.{hint.level}「{hint.title}」</strong>になると、もっと甘くて濃密な会話ができるようになります
+        {m.chat.hintBodyA.trim()}{gap(locale, levelText)}<strong>{levelText}</strong>{gap(locale, m.chat.hintBodyB.trim())}{m.chat.hintBodyB.trim()}
       </p>
       <p className="text-[11px] mt-1.5" style={{ color: 'var(--color-text-muted)' }}>
-        好感度は、たくさん話すほど上がります
+        {m.chat.hintRaise}
         {!isMember && (
-          <>　<Link href="/payment" className="font-semibold underline" style={{ color: 'var(--color-primary)' }}>会員は上がり方2倍</Link></>
+          <>　<Link href="/payment" className="font-semibold underline" style={{ color: 'var(--color-primary)' }}>{m.chat.hintMember}</Link></>
         )}
       </p>
     </div>
@@ -837,6 +843,7 @@ function MessageBubble({ message, characterName, characterAvatar, onImageClick, 
   unlockedVideos?: Set<string>
   onUnlockVideo?: (messageId: string) => Promise<void>
 }) {
+  const { m } = useI18n()
   const [unlocking, setUnlocking] = useState(false)
   const isUser = message.sender_role === 'user'
   const isItem = !!message.metadata?.item_id
@@ -872,9 +879,9 @@ function MessageBubble({ message, characterName, characterAvatar, onImageClick, 
               </div>
             )}
             <div>
-              <p className="text-[10px] opacity-70 mb-0.5">ギフト</p>
+              <p className="text-[10px] opacity-70 mb-0.5">{m.chat.gift}</p>
               <p className="text-sm font-semibold">{message.metadata?.item_name}</p>
-              <p className="text-[11px] opacity-70 mt-0.5">を贈りました</p>
+              <p className="text-[11px] opacity-70 mt-0.5">{m.chat.giftSent}</p>
             </div>
           </div>
         ) : hasVideo ? (
@@ -891,15 +898,15 @@ function MessageBubble({ message, characterName, characterAvatar, onImageClick, 
               <div className="flex flex-col items-center justify-center gap-2 px-5 py-6"
                 style={{ background: 'var(--color-surface-2)', minWidth: '180px' }}>
                 <div className="text-3xl">🎬</div>
-                <p className="text-xs font-semibold text-center" style={{ color: 'var(--color-text)' }}>動画メッセージ</p>
-                <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>50ptで視聴できます</p>
+                <p className="text-xs font-semibold text-center" style={{ color: 'var(--color-text)' }}>{m.chat.videoMessage}</p>
+                <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{fmt(m.chat.videoPrice, { pt: 50 })}</p>
                 <button
                   onClick={handleUnlockVideo}
                   disabled={unlocking}
                   className="mt-1 px-4 py-1.5 rounded-full text-xs font-bold text-white disabled:opacity-50"
                   style={{ background: 'var(--color-primary)' }}
                 >
-                  {unlocking ? '処理中…' : '50ptで視聴する'}
+                  {unlocking ? m.chat.processing : fmt(m.chat.watchFor, { pt: 50 })}
                 </button>
               </div>
             )}

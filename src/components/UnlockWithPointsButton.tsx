@@ -1,8 +1,11 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useI18n } from '@/i18n/client'
+import { fmt } from '@/i18n/fmt'
 
 export function UnlockWithPointsButton() {
+  const { m } = useI18n()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
@@ -16,7 +19,7 @@ export function UnlockWithPointsButton() {
     if (data.ok) {
       router.refresh()
     } else {
-      setError(data.message ?? 'エラーが発生しました')
+      setError(data.message ?? m.common.error)
     }
   }
 
@@ -32,7 +35,7 @@ export function UnlockWithPointsButton() {
           opacity: loading ? 0.6 : 1,
         }}
       >
-        {loading ? '処理中...' : '3,000ptで解放'}
+        {loading ? m.packages.processing : fmt(m.unlockFor, { pt: '3,000' })}
       </button>
       {error && <p style={{ fontSize: '9px', color: '#ff6b6b', marginTop: '4px', padding: '0 4px' }}>{error}</p>}
     </div>

@@ -4,8 +4,10 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { ChevronLeft, Send, Headphones } from 'lucide-react'
 import { format } from 'date-fns'
-import { ja } from 'date-fns/locale'
+import { DATE_FNS_LOCALE } from '@/i18n/date-locale'
 import { notifyBadgesChanged } from '@/lib/badge-events'
+import { useI18n } from '@/i18n/client'
+import { Lines } from '@/i18n/Lines'
 
 type ChatMessage = {
   id: string
@@ -17,6 +19,7 @@ type ChatMessage = {
 const SUPPORT_SUBJECT = 'お問い合わせ'
 
 export default function SupportPage() {
+  const { m, locale } = useI18n()
   const router = useRouter()
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
@@ -143,8 +146,8 @@ export default function SupportPage() {
           <Headphones size={18} style={{ color: 'var(--color-primary)' }} />
         </div>
         <div>
-          <p className="font-semibold text-sm leading-tight">サポートチーム</p>
-          <p className="text-[11px] text-[var(--color-text-muted)]">お気軽にご相談ください</p>
+          <p className="font-semibold text-sm leading-tight">{m.support.team}</p>
+          <p className="text-[11px] text-[var(--color-text-muted)]">{m.support.teamSub}</p>
         </div>
       </div>
 
@@ -161,8 +164,7 @@ export default function SupportPage() {
               className="px-4 py-2.5 rounded-2xl rounded-bl-sm text-sm leading-relaxed"
               style={{ background: 'var(--color-surface-2)', color: 'var(--color-text)' }}
             >
-              こんにちは！サポートチームです😊<br />
-              ご不明な点やお困りのことがあれば、お気軽にメッセージをどうぞ。
+              <Lines text={m.support.greeting} />
             </div>
           </div>
         </div>
@@ -185,7 +187,7 @@ export default function SupportPage() {
                   <div className="text-center my-2">
                     <span className="text-[10px] px-2 py-0.5 rounded-full"
                       style={{ background: 'var(--color-surface-2)', color: 'var(--color-text-muted)' }}>
-                      {format(new Date(msg.created_at), 'M月d日（E）', { locale: ja })}
+                      {format(new Date(msg.created_at), m.support.datePattern, { locale: DATE_FNS_LOCALE[locale] })}
                     </span>
                   </div>
                 )}
@@ -209,7 +211,7 @@ export default function SupportPage() {
                       {msg.message}
                     </div>
                     <span className="text-[10px] text-[var(--color-text-muted)]">
-                      {format(new Date(msg.created_at), 'HH:mm', { locale: ja })}
+                      {format(new Date(msg.created_at), 'HH:mm')}
                     </span>
                   </div>
                 </div>
@@ -231,7 +233,7 @@ export default function SupportPage() {
           value={input}
           onChange={e => { setInput(e.target.value); adjustTextarea() }}
           onKeyDown={handleKeyDown}
-          placeholder="メッセージを入力…"
+          placeholder={m.support.placeholder}
           rows={1}
           className="flex-1 px-4 py-2.5 text-sm resize-none rounded-2xl outline-none"
           style={{

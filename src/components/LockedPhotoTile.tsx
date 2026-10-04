@@ -1,8 +1,10 @@
 import Link from 'next/link'
 import { Lock } from 'lucide-react'
+import { useI18n } from '@/i18n/client'
 
 /** 非会員向けの会員限定フォト枠（タップで料金プランへ） */
 export function LockedPhotoTile({ className = '' }: { className?: string }) {
+  const { m } = useI18n()
   return (
     <Link
       href="/payment"
@@ -12,7 +14,7 @@ export function LockedPhotoTile({ className = '' }: { className?: string }) {
       <span className="flex items-center justify-center w-8 h-8 rounded-[10px]" style={{ background: 'rgba(255,255,255,0.14)' }}>
         <Lock size={15} strokeWidth={2.2} />
       </span>
-      <span className="text-[10px] font-bold" style={{ letterSpacing: '0.04em' }}>会員限定</span>
+      <span className="text-[10px] font-bold" style={{ letterSpacing: '0.04em' }}>{m.membersOnly}</span>
     </Link>
   )
 }

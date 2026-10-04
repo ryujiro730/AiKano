@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { LOGIN_BONUS, POINTS_PER_MESSAGE, FREE_MESSAGES_PER_LOGIN } from '@/lib/pricing'
+import { useI18n } from '@/i18n/client'
+import { fmt } from '@/i18n/fmt'
 
 interface BonusResult {
   awarded: boolean
@@ -13,6 +15,7 @@ interface BonusResult {
 }
 
 export function LoginBonusDialog() {
+  const { m } = useI18n()
   const [result, setResult] = useState<BonusResult | null>(null)
   const [visible, setVisible] = useState(false)
 
@@ -92,21 +95,21 @@ export function LoginBonusDialog() {
 
         <div style={{ fontSize: '48px', marginBottom: '8px', lineHeight: 1 }}>🎁</div>
         <p style={{ fontSize: '13px', fontWeight: 700, color: '#e8437f', marginBottom: '4px', letterSpacing: '0.05em' }}>
-          ログインボーナス
+          {m.loginBonus.title}
         </p>
         <p style={{ fontSize: '40px', fontWeight: 800, color: '#1a1a2e', lineHeight: 1, margin: '8px 0' }}>
           +{result.amount ?? LOGIN_BONUS} <span style={{ fontSize: '20px', fontWeight: 600 }}>pt</span>
         </p>
         <p style={{ fontSize: '15px', fontWeight: 700, color: '#e8437f', marginBottom: '6px' }}>
-          今日も{Math.floor((result.amount ?? LOGIN_BONUS) / POINTS_PER_MESSAGE)}通分、無料で話せます
+          {fmt(m.loginBonus.today, { n: Math.floor((result.amount ?? LOGIN_BONUS) / POINTS_PER_MESSAGE) })}
         </p>
         <p style={{ fontSize: '11px', color: '#888', marginBottom: '12px' }}>
-          毎日ログインするだけで、毎日{FREE_MESSAGES_PER_LOGIN}通分もらえます
+          {fmt(m.loginBonus.everyday, { n: FREE_MESSAGES_PER_LOGIN })}
         </p>
         <p style={{ fontSize: '12px', color: '#888', marginBottom: '20px' }}>
-          ボーナスポイント残高：{(result.bonus_points ?? 0).toLocaleString()} pt
+          {fmt(m.loginBonus.balance, { pt: (result.bonus_points ?? 0).toLocaleString() })}
           {expiresDate && (
-            <><br /><span style={{ color: '#e8437f' }}>{expiresDate}まで有効</span></>
+            <><br /><span style={{ color: '#e8437f' }}>{fmt(m.loginBonus.validUntil, { date: expiresDate })}</span></>
           )}
         </p>
 
@@ -122,9 +125,8 @@ export function LoginBonusDialog() {
             lineHeight: 1.6,
           }}
         >
-          <span style={{ color: '#e8437f', fontWeight: 600 }}>ボーナスptとは？</span><br />
-          ポイント消費時に通常ptより先に使われます。
-          期限が切れると消滅します。
+          <span style={{ color: '#e8437f', fontWeight: 600 }}>{m.loginBonus.whatIs}</span><br />
+          {m.loginBonus.explain}
         </div>
 
         <button
@@ -141,7 +143,7 @@ export function LoginBonusDialog() {
             cursor: 'pointer',
           }}
         >
-          受け取る！
+          {m.loginBonus.receive}
         </button>
       </div>
 

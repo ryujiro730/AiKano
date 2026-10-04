@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { logUserAction } from '@/lib/user-action-log'
+import { getMessages } from '@/i18n/server'
 
 // POST /api/items/purchase - アイテム購入（ポイント消費）
 export async function POST(req: NextRequest) {
@@ -22,7 +23,7 @@ export async function POST(req: NextRequest) {
   // ユーザーのポイント確認
   const { data: profile } = await supabase
     .from('profiles').select('points, bonus_points, bonus_points_expires_at').eq('id', user.id).single()
-  if (!profile) return NextResponse.json({ error: 'ポイントが不足しています' }, { status: 400 })
+  if (!profile) return NextResponse.json({ error: getMessages().api.notEnoughPoints }, { status: 400 })
 
   const now = new Date()
   const bonusAvailable =
@@ -50,8 +51,8 @@ export async function POST(req: NextRequest) {
     .eq('id', user.id)
     .eq('points', profile.points)
     .select('id')
-  if (pointsError) return NextResponse.json({ error: 'ポイント更新失敗' }, { status: 500 })
-  if (!updated?.length) return NextResponse.json({ error: 'もう一度お試しください' }, { status: 409 })
+  if (pointsError) return NextResponse.json({ error: getMessages().api.updateFailed }, { status: 500 })
+  if (!updated?.length) return NextResponse.json({ error: getMessages().api.tryAgain }, { status: 409 })
 
   // インベントリ追加 or 数量+1
   const { data: existing } = await supabase

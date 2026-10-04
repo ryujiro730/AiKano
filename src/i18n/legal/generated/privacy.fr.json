@@ -1,0 +1,141 @@
+{
+  "title": "Politique de confidentialité",
+  "updated": "Dernière mise à jour : juin 2026",
+  "footer": "Équipe AiKano",
+  "sections": [
+    {
+      "title": "Article 1 — Principes fondamentaux",
+      "items": [
+        "L’équipe de gestion d’AiKano (ci-après « la Société ») reconnaît que la protection des données personnelles des utilisateurs constitue une responsabilité importante et respecte la loi relative à la protection des données personnelles ainsi que les autres lois et réglementations applicables."
+      ]
+    },
+    {
+      "title": "Article 2 – Informations collectées",
+      "preamble": "Dans le cadre de la fourniture du Service, nous collectons les informations suivantes.",
+      "groups": [
+        {
+          "heading": "Informations saisies directement par l’utilisateur",
+          "items": [
+            "Adresse e-mail (lors de l’inscription)",
+            "Mot de passe (lors de l’inscription, stocké sous forme hachée)",
+            "Informations que l’utilisateur choisit de saisir au cours d’une conversation (par exemple, son nom, son adresse ou son numéro de téléphone)"
+          ]
+        },
+        {
+          "heading": "Informations collectées automatiquement lors de l’utilisation du Service",
+          "items": [
+            "Adresse IP et journaux d’accès",
+            "Informations sur l’appareil et le navigateur",
+            "Historique des activités sur le Service (dates et heures de connexion, historique des paiements, personnages utilisés, etc.)",
+            "Contenu des conversations entre l’utilisateur et les personnages IA"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Article 3　Finalités de l’utilisation des informations",
+      "preamble": "Les informations collectées sont utilisées uniquement aux fins suivantes :",
+      "items": [
+        "Fourniture, exploitation et amélioration du Service",
+        "Authentification des utilisateurs et gestion des comptes",
+        "Gestion de la facturation et des points",
+        "Amélioration de la qualité des réponses de l’IA, ainsi qu’entraînement et amélioration de nos modèles d’IA",
+        "Détection et traitement des utilisations frauduleuses et des violations des Conditions d’utilisation",
+        "Réponse aux obligations légales (notamment aux demandes des autorités chargées des enquêtes)",
+        "Réponse aux demandes de renseignements"
+      ]
+    },
+    {
+      "title": "Article 4　Traitement des conversations (important)",
+      "preamble": "Compte tenu de la nature du présent service, le traitement des conversations est défini comme suit.",
+      "items": [
+        {
+          "label": "Examen par notre équipe :",
+          "text": "Les conversations entre les utilisateurs et les personnages peuvent être examinées par notre équipe afin de maintenir et d’améliorer la qualité des réponses, de détecter les utilisations abusives et d’améliorer l’entraînement de nos modèles d’IA."
+        },
+        {
+          "label": "Utilisation pour l’entraînement de l’IA :",
+          "text": "Après avoir été traitées de manière à ne pas permettre l’identification des personnes, les conversations peuvent être utilisées comme données d’entraînement pour nos modèles d’IA."
+        },
+        {
+          "label": "Interdiction de communication à des tiers :",
+          "text": "Nous ne communiquerons ni ne vendrons les conversations à des tiers (annonceurs, autres entreprises, etc.), sauf lorsque la loi l’exige."
+        },
+        {
+          "label": "Respect de la loi :",
+          "text": "Si des actes illégaux, tels que des demandes de pédopornographie ou l’incitation à commettre des infractions, sont détectés, les journaux de conversation concernés pourront être conservés à titre de preuve et, si nécessaire, transmis aux autorités chargées des enquêtes."
+        }
+      ],
+      "note": "En s’inscrivant au présent service, l’utilisateur est réputé accepter le traitement des conversations décrit ci-dessus."
+    },
+    {
+      "title": "Article 5 — Communication à des tiers",
+      "preamble": "Nous ne communiquons pas les données à caractère personnel que nous collectons à des tiers, sauf dans les cas suivants :",
+      "items": [
+        "Lorsque l’utilisateur y a préalablement consenti",
+        "Lorsque la loi l’exige (notamment en réponse à une demande d’un tribunal ou d’une autorité d’enquête)",
+        "Lorsque cela est nécessaire pour protéger la vie, l’intégrité physique ou les biens d’une personne",
+        "Lorsque ces données sont communiquées à des prestataires auxquels nous confions des tâches nécessaires au fonctionnement du service (uniquement si un accord de confidentialité a été conclu)"
+      ]
+    },
+    {
+      "title": "Article 6　Utilisation de services tiers",
+      "preamble": "Le présent service utilise les services tiers suivants, auxquels peuvent s’appliquer leurs propres politiques de confidentialité.",
+      "bullet": true,
+      "items": [
+        {
+          "label": "Services de paiement :",
+          "text": "Traitement des paiements lors de l’achat de points (les informations de carte bancaire ne sont pas stockées sur nos serveurs)"
+        },
+        {
+          "label": "Outils d’analyse :",
+          "text": "Analyse de l’utilisation du service afin de l’améliorer (Google Analytics, entre autres)"
+        },
+        {
+          "label": "Modèles d’IA :",
+          "text": "Nous pouvons utiliser des API d’IA externes (OpenAI, Anthropic, entre autres) pour générer des réponses. Dans ce cas, le contenu des conversations peut être transmis à l’API du service concerné."
+        }
+      ]
+    },
+    {
+      "title": "Article 7 Utilisation des cookies",
+      "items": [
+        "Le présent service utilise des cookies pour maintenir votre session ouverte et améliorer le service. Vous pouvez désactiver les cookies dans les paramètres de votre navigateur, mais certaines fonctionnalités pourraient alors ne plus être disponibles."
+      ]
+    },
+    {
+      "title": "Article 8　Conservation et gestion des données personnelles",
+      "items": [
+        "Nous mettons en œuvre des mesures de sécurité appropriées afin de prévenir la fuite, la perte ou la détérioration des données personnelles.",
+        "Les données personnelles sont conservées pendant la durée nécessaire à la réalisation des finalités de leur utilisation, puis supprimées de manière appropriée lorsqu’elles ne sont plus nécessaires.",
+        "Même après la clôture du compte, nous pouvons conserver pendant une certaine durée les informations dont la conservation est exigée par la loi ainsi que celles nécessaires à la prévention des utilisations frauduleuses."
+      ]
+    },
+    {
+      "title": "Article 9　Données personnelles des mineurs",
+      "items": [
+        "Ce service est réservé aux personnes âgées de 18 ans ou plus, à l’exception des lycéens. S’il s’avère qu’un utilisateur a moins de 18 ans, nous supprimerons son compte et ses données."
+      ]
+    },
+    {
+      "title": "Article 10　Demandes d’accès, de rectification et de suppression",
+      "items": [
+        "Les utilisateurs peuvent demander l’accès à leurs données personnelles détenues par notre société, leur rectification ou leur suppression, ainsi que la suspension de leur utilisation. Pour faire une demande, veuillez contacter notre service dédié à l’adresse info@aikano.chat. Après vérification de votre identité, nous y donnerons suite conformément à la législation applicable."
+      ]
+    },
+    {
+      "title": "Article 11 — Modification de la politique de confidentialité",
+      "items": [
+        "Nous pouvons modifier la présente politique de confidentialité si nécessaire. En cas de modification importante, nous vous en informerons sur le Service. La politique modifiée prendra effet dès sa publication."
+      ]
+    },
+    {
+      "title": "Article 12　Contact",
+      "preamble": "Pour toute question concernant le traitement des données personnelles, veuillez nous contacter à l’adresse suivante.",
+      "contact": [
+        "Service de gestion AiKano",
+        "Adresse e-mail : info@aikano.chat"
+      ]
+    }
+  ]
+}

@@ -8,8 +8,11 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { logAction } from '@/lib/action-log'
 import { PointsShortageDialog } from '@/components/PointsShortageDialog'
+import { useI18n } from '@/i18n/client'
+import { fmt } from '@/i18n/fmt'
 
 export default function ShopPage() {
+  const { m } = useI18n()
   const [shortage, setShortage] = useState<{ current: number; required: number } | null>(null)
   const [items, setItems] = useState<Item[]>([])
   const [categories, setCategories] = useState<ItemCategory[]>([])
@@ -46,7 +49,7 @@ export default function ShopPage() {
     const data = await res.json()
     if (!res.ok) {
       if (data.error === 'insufficient_points') setShortage({ current: data.current, required: data.required })
-      else alert(data.error || '購入に失敗しました')
+      else alert(data.error || m.shop.buyFailed)
       setBuying(null)
       return
     }
@@ -94,7 +97,7 @@ export default function ShopPage() {
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
           <ShoppingBag size={20} className="text-[var(--color-primary)]" />
-          <h1 className="text-lg font-bold">ショップ</h1>
+          <h1 className="text-lg font-bold">{m.shop.title}</h1>
         </div>
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full"
           style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border-warm)' }}>
@@ -110,8 +113,8 @@ export default function ShopPage() {
           <div className="flex items-center gap-3">
             <span className="text-3xl">🎬</span>
             <div>
-              <p className="font-bold text-white text-base leading-tight">キャラ動画</p>
-              <p className="text-white/80 text-xs mt-0.5">人気キャラの限定動画を視聴しよう</p>
+              <p className="font-bold text-white text-base leading-tight">{m.shop.videosTitle}</p>
+              <p className="text-white/80 text-xs mt-0.5">{m.shop.videosSub}</p>
             </div>
           </div>
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.9 }}>
@@ -131,7 +134,7 @@ export default function ShopPage() {
               : { background: 'var(--color-surface-2)', color: 'var(--color-text-muted)', border: '1px solid var(--color-border)' }
             }
           >
-            すべて
+            {m.shop.all}
           </button>
           {categories.map(cat => (
             <button
@@ -152,13 +155,13 @@ export default function ShopPage() {
       {items.length === 0 ? (
         <div className="text-center py-16 text-[var(--color-text-muted)]">
           <Gift size={40} className="mx-auto mb-3 opacity-30" />
-          <p className="text-sm">アイテムはまだありません</p>
+          <p className="text-sm">{m.shop.noItems}</p>
         </div>
       ) : selectedCategory ? (
         /* カテゴリー選択時：フラット表示 */
         filteredItems.length === 0 ? (
           <div className="text-center py-16 text-[var(--color-text-muted)]">
-            <p className="text-sm">このジャンルにアイテムはありません</p>
+            <p className="text-sm">{m.shop.noItemsInCategory}</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3">
@@ -172,7 +175,7 @@ export default function ShopPage() {
             <div key={category?.id ?? '__none__'}>
               <h2 className="text-sm font-bold mb-3 flex items-center gap-1.5">
                 <span style={{ color: 'var(--color-primary)' }}>|</span>
-                {category?.name ?? 'その他'}
+                {category?.name ?? m.shop.other}
               </h2>
               <div className="grid grid-cols-2 gap-3">
                 {sectionItems.map(item => <ItemCard key={item.id} item={item} qty={getQuantity(item.id)} buying={buying} bought={bought} points={points} onBuy={buyItem} />)}
@@ -184,11 +187,11 @@ export default function ShopPage() {
 
       <div className="mt-6 text-center">
         <Link href="/payment#points" className="text-sm text-[var(--color-primary)] underline-offset-2 hover:underline">
-          ポイントを購入する →
+          {m.shop.buyPoints}
         </Link>
       </div>
       {shortage && (
-        <PointsShortageDialog currentPoints={shortage.current} requiredPoints={shortage.required} title="アイテムの購入にはポイントが必要です" onClose={() => setShortage(null)} />
+        <PointsShortageDialog currentPoints={shortage.current} requiredPoints={shortage.required} title={m.shop.itemShortage} onClose={() => setShortage(null)} />
       )}
     </div>
   )
@@ -202,6 +205,7 @@ function ItemCard({ item, qty, buying, bought, points, onBuy }: {
   points: number
   onBuy: (item: Item) => void
 }) {
+  const { m } = useI18n()
   const isBuying = buying === item.id
   const isBought = bought === item.id
   const canAfford = points >= item.price_points
@@ -230,7 +234,7 @@ function ItemCard({ item, qty, buying, bought, points, onBuy }: {
             <span className="text-xs text-[var(--color-text-muted)]">pt</span>
           </div>
           {qty > 0 && (
-            <span className="text-xs text-[var(--color-text-muted)]">所持: {qty}個</span>
+            <span className="text-xs text-[var(--color-text-muted)]">{fmt(m.shop.owned, { n: qty })}</span>
           )}
         </div>
         <button
@@ -240,13 +244,13 @@ function ItemCard({ item, qty, buying, bought, points, onBuy }: {
           style={{ borderRadius: '10px' }}
         >
           {isBuying ? (
-            <><Loader2 size={12} className="animate-spin" />購入中...</>
+            <><Loader2 size={12} className="animate-spin" />{m.shop.buying}</>
           ) : isBought ? (
-            <><Check size={12} />購入完了！</>
+            <><Check size={12} />{m.shop.bought}</>
           ) : !canAfford ? (
-            'ポイント不足'
+            m.shop.notEnough
           ) : (
-            '購入する'
+            m.shop.buy
           )}
         </button>
       </div>

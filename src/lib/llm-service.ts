@@ -165,7 +165,7 @@ function buildCharacterInstructions(
 
   parts.push(`【このユーザーについての記憶】\n${memoryText?.trim() || '（まだ何も知らない）'}`)
 
-  parts.push('必ず日本語で返信してください。')
+  parts.push('【返信の言語】\n- ユーザーの最新のメッセージと同じ言語で返信する（英語なら英語、スペイン語ならスペイン語、日本語なら日本語）。途中で言語が変わったら、それに合わせる。\n- 日本語以外で話すときも、名前・性格・関係の距離感はそのまま。日本語特有の語尾や一人称は、その言語で自然な話し方に置き換える。')
 
   return parts.join('\n\n')
 }
@@ -174,7 +174,7 @@ function buildCharacterInstructions(
  * Chat Completions のリクエストボディを組み立てる。
  * gpt-5 系 / o 系（推論モデル）は max_tokens 非対応・推論でトークンを消費するため分岐。
  */
-function openAIChatBody(model: string, messages: { role: string; content: string }[], maxOutput: number, temperature = 0.9) {
+export function openAIChatBody(model: string, messages: { role: string; content: string }[], maxOutput: number, temperature = 0.9) {
   const isReasoning = /^(gpt-5|gpt-6|o\d)/.test(model) && !model.includes('chat-latest')
   return isReasoning
     ? { model, messages, max_completion_tokens: maxOutput + 2048, reasoning_effort: process.env.OPENAI_REASONING_EFFORT || 'low' }
@@ -360,7 +360,7 @@ async function generateWithOpenAI(
 
   const model = modelOverride || process.env.OPENAI_MODEL || 'gpt-6-luna'
   const systemPrompt =
-    buildSystemPrompt(character, 'ja') + '\n\n必ず日本語で返信してください。短く自然な口語で返してください。'
+    buildSystemPrompt(character, 'ja') + '\n\nユーザーの最新のメッセージと同じ言語で、短く自然な口語で返してください。'
 
   const messages = [
     { role: 'system', content: systemPrompt },
@@ -401,7 +401,7 @@ async function generateWithOpenRouter(
 
   const model = process.env.OPENROUTER_MODEL ?? 'google/gemma-3-4b-it'
   const systemPrompt =
-    buildSystemPrompt(character, 'ja') + '\n\n必ず日本語で返信してください。短く自然な口語で返してください。'
+    buildSystemPrompt(character, 'ja') + '\n\nユーザーの最新のメッセージと同じ言語で、短く自然な口語で返してください。'
 
   const messages = [
     ...history.map((m) => ({ role: m.role, content: m.content })),

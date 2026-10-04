@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { createClient } from '@supabase/supabase-js'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
+import { getMessages } from '@/i18n/server'
 
 const SHARE_COOLDOWN_DAYS = 7
 const BASE_CHARACTER_LIMIT = 3
@@ -69,7 +70,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       ok: false,
       error: 'invalid_url',
-      message: '対応していないURLです。X・Threads・Facebook・Instagramの投稿URLを貼り付けてください',
+      message: getMessages().api.unsupportedUrl,
     }, { status: 400 })
   }
 
@@ -101,7 +102,7 @@ export async function POST(req: NextRequest) {
     .eq('tweet_url', shareUrl)
 
   if ((dupCount ?? 0) > 0) {
-    return NextResponse.json({ ok: false, error: 'duplicate_url', message: 'このURLはすでに使用されています' }, { status: 400 })
+    return NextResponse.json({ ok: false, error: 'duplicate_url', message: getMessages().api.duplicateUrl }, { status: 400 })
   }
 
   const { error } = await adminClient.from('share_logs').insert({
@@ -112,5 +113,5 @@ export async function POST(req: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  return NextResponse.json({ ok: true, message: 'キャラクター枠が1つ解放されました！' })
+  return NextResponse.json({ ok: true, message: getMessages().api.slotUnlocked })
 }

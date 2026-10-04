@@ -4,12 +4,16 @@ import './globals.css'
 import ServiceWorkerRegister from '@/components/ServiceWorkerRegister'
 import UtmCapture from '@/components/UtmCapture'
 import { STRIPE_REVIEW_MODE } from '@/lib/review-mode'
+import { getLocale, getMessages } from '@/i18n/server'
+import { I18nProvider } from '@/i18n/client'
 
 const GA_ID = 'G-E01TLB4KY3'
 
-export const metadata: Metadata = {
- title: 'アイカノ｜国産AI彼女チャット【日本語AI唯一の自由会話】',
- description: '独自チューニングのAIが、あなただけにリアルタイム返信。日本語AIで唯一、制限のない自由な会話に対応。リアルな日本人キャラと写真も楽しめます。',
+export function generateMetadata(): Metadata {
+  const m = getMessages()
+  return {
+  title: m.meta.title,
+  description: m.meta.siteDescription,
   manifest: '/manifest.json',
   icons: {
     icon: [
@@ -29,6 +33,7 @@ export const metadata: Metadata = {
     statusBarStyle: 'black-translucent',
     title: 'AiKano',
   },
+  }
 }
 
 export const viewport: Viewport = {
@@ -38,8 +43,9 @@ export const viewport: Viewport = {
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const locale = getLocale()
   return (
-    <html lang="ja">
+    <html lang={locale}>
       <head>
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
         <meta name="mobile-web-app-capable" content="yes" />
@@ -69,7 +75,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </Script>
         <UtmCapture />
         <ServiceWorkerRegister />
-        {children}
+        <I18nProvider locale={locale} messages={getMessages(locale)}>
+          {children}
+        </I18nProvider>
       </body>
     </html>
   )

@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { createClient } from '@supabase/supabase-js'
+import { LanguageSelect } from '@/components/LanguageSelect'
 
 // キャラ写真は10分ごとに更新（ビルド時にも生成されるため、公開鍵だけで読む）
 export const revalidate = 600
@@ -24,9 +25,12 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
   return (
     <div className="min-h-screen user-layout" style={{ background: 'var(--color-bg)' }}>
       <div className="w-full max-w-sm mx-auto px-5 pt-6 pb-12">
-        <Link href="/" className="inline-block text-[17px] font-bold mb-8" style={{ color: 'var(--color-text)', letterSpacing: '0.02em' }}>
-          Ai<span style={{ color: 'var(--color-primary)' }}>Kano</span>
-        </Link>
+        <div className="flex items-center justify-between mb-8">
+          <Link href="/" className="inline-block text-[17px] font-bold" style={{ color: 'var(--color-text)', letterSpacing: '0.02em' }}>
+            Ai<span style={{ color: 'var(--color-primary)' }}>Kano</span>
+          </Link>
+          <LanguageSelect />
+        </div>
         {chars.length > 0 && (
           <div className="flex mb-5" aria-hidden>
             {chars.map((c, i) => (

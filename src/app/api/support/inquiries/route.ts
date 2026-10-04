@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { getMessages } from '@/i18n/server'
 
 function admin() {
   return createAdminClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest) {
 
   const { subject, message } = await req.json()
   if (!subject?.trim() || !message?.trim()) {
-    return NextResponse.json({ error: '件名とメッセージは必須です' }, { status: 400 })
+    return NextResponse.json({ error: getMessages().api.required }, { status: 400 })
   }
 
   const { data, error } = await admin()

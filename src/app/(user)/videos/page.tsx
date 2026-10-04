@@ -5,6 +5,8 @@ import { ChevronLeft, Lock, Play, Loader2, X } from 'lucide-react'
 import Link from 'next/link'
 import { logAction } from '@/lib/action-log'
 import { PointsShortageDialog } from '@/components/PointsShortageDialog'
+import { useI18n } from '@/i18n/client'
+import { fmt } from '@/i18n/fmt'
 
 interface VideoItem {
   id: string
@@ -20,6 +22,7 @@ interface VideoItem {
 }
 
 export default function VideosPage() {
+  const { m } = useI18n()
   const [shortage, setShortage] = useState<{ current: number; required: number } | null>(null)
   const [videos, setVideos] = useState<VideoItem[]>([])
   const [purchasedIds, setPurchasedIds] = useState<Set<string>>(new Set())
@@ -49,7 +52,7 @@ export default function VideosPage() {
 
   const purchaseVideo = async (video: VideoItem) => {
     if (purchasing) return
-    if (!confirm(`「${video.title}」を${video.price_points}ptで購入しますか？`)) return
+    if (!confirm(fmt(m.videos.confirm, { title: video.title, pt: video.price_points }))) return
     setPurchasing(video.id)
 
     const res = await fetch('/api/videos/purchase', {
@@ -63,10 +66,10 @@ export default function VideosPage() {
       if (data.error === 'insufficient_points') {
         setShortage({ current: data.current, required: data.required })
       } else if (data.error === 'already_purchased') {
-        alert('この動画は既に購入済みです。')
+        alert(m.videos.alreadyBought)
         setPurchasedIds(prev => { const next = new Set(Array.from(prev)); next.add(video.id); return next })
       } else {
-        alert(data.error || '購入に失敗しました')
+        alert(data.error || m.shop.buyFailed)
       }
       setPurchasing(null)
       return
@@ -94,7 +97,7 @@ export default function VideosPage() {
           <Link href="/shop" className="p-1.5 rounded-xl hover:bg-[var(--color-surface-2)] transition-colors text-[var(--color-text-muted)]">
             <ChevronLeft size={20} />
           </Link>
-          <h1 className="text-lg font-bold">キャラ動画</h1>
+          <h1 className="text-lg font-bold">{m.videos.title}</h1>
         </div>
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full"
           style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border-warm)' }}>
@@ -106,7 +109,7 @@ export default function VideosPage() {
       {videos.length === 0 ? (
         <div className="text-center py-20 text-[var(--color-text-muted)]">
           <span className="text-4xl mb-3 block">🎬</span>
-          <p className="text-sm">動画はまだありません</p>
+          <p className="text-sm">{m.videos.empty}</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3">
@@ -190,14 +193,14 @@ export default function VideosPage() {
                       <div className="flex items-center gap-2">
                         <span className="text-xs px-2 py-1 rounded-full font-medium"
                           style={{ background: 'rgba(236,72,153,0.1)', color: 'var(--color-primary)' }}>
-                          視聴済み
+                          {m.videos.watched}
                         </span>
                         <button
                           onClick={() => video.video_url && setPlayingVideo(video)}
                           className="flex-1 btn-primary py-1.5 text-xs flex items-center justify-center gap-1"
                           style={{ borderRadius: '10px' }}
                         >
-                          <Play size={12} />視聴する
+                          <Play size={12} />{m.videos.watch}
                         </button>
                       </div>
                     ) : (
@@ -215,11 +218,11 @@ export default function VideosPage() {
                           style={{ borderRadius: '10px' }}
                         >
                           {isPurchasing ? (
-                            <><Loader2 size={12} className="animate-spin" />購入中...</>
+                            <><Loader2 size={12} className="animate-spin" />{m.shop.buying}</>
                           ) : !canAfford ? (
-                            'ポイント不足'
+                            m.shop.notEnough
                           ) : (
-                            '購入して視聴'
+                            m.videos.buyAndWatch
                           )}
                         </button>
                       </div>
@@ -234,7 +237,7 @@ export default function VideosPage() {
 
       <div className="mt-6 text-center">
         <Link href="/payment#points" className="text-sm text-[var(--color-primary)] underline-offset-2 hover:underline">
-          ポイントを購入する →
+          {m.shop.buyPoints}
         </Link>
       </div>
 
@@ -243,13 +246,14 @@ export default function VideosPage() {
         <VideoModal video={playingVideo} onClose={() => setPlayingVideo(null)} />
       )}
       {shortage && (
-        <PointsShortageDialog currentPoints={shortage.current} requiredPoints={shortage.required} title="動画の購入にはポイントが必要です" onClose={() => setShortage(null)} />
+        <PointsShortageDialog currentPoints={shortage.current} requiredPoints={shortage.required} title={m.videos.shortage} onClose={() => setShortage(null)} />
       )}
     </div>
   )
 }
 
 function VideoModal({ video, onClose }: { video: VideoItem; onClose: () => void }) {
+  const { m } = useI18n()
   const videoRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
@@ -294,7 +298,7 @@ function VideoModal({ video, onClose }: { video: VideoItem; onClose: () => void 
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-[var(--color-text-muted)]">
-              <p className="text-sm">動画を読み込めませんでした</p>
+              <p className="text-sm">{m.videos.loadFailed}</p>
             </div>
           )}
         </div>

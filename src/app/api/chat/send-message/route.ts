@@ -5,6 +5,8 @@ import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { PLANS, type PlanId } from '@/lib/plans'
 import { POINTS_PER_MESSAGE } from '@/lib/pricing'
 import { logUserAction } from '@/lib/user-action-log'
+import { getMessages } from '@/i18n/server'
+import { fmt } from '@/i18n/fmt'
 
 // ユーザーメッセージ送信：ポイント消費 → メッセージ保存をサーバー側で一括実行。
 // AI返信は ai-reply 側でポイント残高に関係なく返す。
@@ -33,7 +35,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'conversationId, content are required' }, { status: 400 })
   }
   if (content.length > MAX_CONTENT_LENGTH) {
-    return NextResponse.json({ error: `メッセージは${MAX_CONTENT_LENGTH}文字以内にしてください` }, { status: 400 })
+    return NextResponse.json({ error: fmt(getMessages().api.messageTooLong, { n: MAX_CONTENT_LENGTH }) }, { status: 400 })
   }
 
   const db = adminDb()

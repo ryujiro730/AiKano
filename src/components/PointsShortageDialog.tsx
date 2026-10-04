@@ -5,6 +5,8 @@ import { X, CalendarCheck } from 'lucide-react'
 import { LOGIN_BONUS, FREE_MESSAGES_PER_LOGIN } from '@/lib/pricing'
 import { logAction } from '@/lib/action-log'
 import { PointPackageList } from './PointPackageList'
+import { useI18n } from '@/i18n/client'
+import { fmt } from '@/i18n/fmt'
 
 interface Props {
   currentPoints: number
@@ -14,7 +16,9 @@ interface Props {
   title?: string
 }
 
-export function PointsShortageDialog({ currentPoints, requiredPoints, onClose, title = '続けて話すにはポイントが必要です' }: Props) {
+export function PointsShortageDialog({ currentPoints, requiredPoints, onClose, title: titleProp }: Props) {
+  const { m } = useI18n()
+  const title = titleProp ?? m.shortage.defaultTitle
   const shortage = Math.max(0, requiredPoints - currentPoints)
 
   useEffect(() => {
@@ -37,12 +41,12 @@ export function PointsShortageDialog({ currentPoints, requiredPoints, onClose, t
           <div>
             <p className="font-bold text-base">{title}</p>
             <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
-              残高 <strong>{currentPoints.toLocaleString()}pt</strong>
-              　 必要 <strong style={{ color: 'var(--color-primary)' }}>{requiredPoints.toLocaleString()}pt</strong>
-              　 不足 <strong style={{ color: '#ef4444' }}>{shortage.toLocaleString()}pt</strong>
+              {m.shortage.balance} <strong>{currentPoints.toLocaleString()}pt</strong>
+              　 {m.shortage.required} <strong style={{ color: 'var(--color-primary)' }}>{requiredPoints.toLocaleString()}pt</strong>
+              　 {m.shortage.short} <strong style={{ color: '#ef4444' }}>{shortage.toLocaleString()}pt</strong>
             </p>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg" style={{ color: 'var(--color-text-muted)' }} aria-label="閉じる">
+          <button onClick={onClose} className="p-1.5 rounded-lg" style={{ color: 'var(--color-text-muted)' }} aria-label={m.common.close}>
             <X size={18} />
           </button>
         </div>
@@ -53,8 +57,8 @@ export function PointsShortageDialog({ currentPoints, requiredPoints, onClose, t
           style={{ background: 'var(--color-primary-soft)', border: '1px solid var(--color-primary-border)' }}>
           <CalendarCheck size={18} style={{ color: 'var(--color-primary)', flexShrink: 0 }} />
           <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text)' }}>
-            <strong>毎日ログインで{LOGIN_BONUS}pt（{FREE_MESSAGES_PER_LOGIN}通分）無料</strong><br />
-            <span style={{ color: 'var(--color-text-muted)' }}>明日また会いに来れば、{FREE_MESSAGES_PER_LOGIN}通分話せます</span>
+            <strong>{fmt(m.shortage.dailyFree, { pt: LOGIN_BONUS, n: FREE_MESSAGES_PER_LOGIN })}</strong><br />
+            <span style={{ color: 'var(--color-text-muted)' }}>{fmt(m.shortage.comeBack, { n: FREE_MESSAGES_PER_LOGIN })}</span>
           </p>
         </div>
 

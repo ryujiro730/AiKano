@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
+import { getMessages } from '@/i18n/server'
 
 function adminSupabase() {
   return createAdminClient(
@@ -22,7 +23,7 @@ export async function POST(req: NextRequest) {
 
   const { characterId, postUrl, screenshotUrl } = body
   if (!characterId || !postUrl?.trim()) {
-    return NextResponse.json({ error: 'characterId と postUrl は必須です' }, { status: 400 })
+    return NextResponse.json({ error: getMessages().api.required }, { status: 400 })
   }
 
   const admin = adminSupabase()

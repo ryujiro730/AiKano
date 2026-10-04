@@ -1,0 +1,141 @@
+{
+  "title": "Privacy Policy",
+  "updated": "Last updated: June 2026",
+  "footer": "AiKano Operations Team",
+  "sections": [
+    {
+      "title": "Article 1: Basic Policy",
+      "items": [
+        "The AiKano Operations Team (hereinafter referred to as “the Company”) recognizes the protection of users’ personal information as an important responsibility and complies with the Act on the Protection of Personal Information and other applicable laws and regulations."
+      ]
+    },
+    {
+      "title": "Article 2: Information We Collect",
+      "preamble": "We collect the following information in connection with providing the Service.",
+      "groups": [
+        {
+          "heading": "Information Provided Directly by Users",
+          "items": [
+            "Email address (when registering)",
+            "Password (when registering; stored in hashed form)",
+            "Information users voluntarily enter during conversations (such as their name, address, or phone number)"
+          ]
+        },
+        {
+          "heading": "Information Collected Automatically Through Use of the Service",
+          "items": [
+            "IP address and access logs",
+            "Device and browser information",
+            "Activity history on the Service (such as login dates and times, payment history, and characters used)",
+            "Chat content between users and AI characters"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Article 3: Purposes of Use of Information",
+      "preamble": "We use the information we collect solely for the following purposes.",
+      "items": [
+        "Providing, operating, and improving the Service",
+        "User authentication and account management",
+        "Billing and points management",
+        "Improving the quality of AI responses and training and improving our AI models",
+        "Detecting and responding to unauthorized use and violations of the Terms",
+        "Responding to legal requirements (including inquiries from law enforcement authorities)",
+        "Responding to inquiries"
+      ]
+    },
+    {
+      "title": "Article 4: Handling of Chat Content (Important)",
+      "preamble": "Given the nature of this service, chat content is handled as follows.",
+      "items": [
+        {
+          "label": "Staff Review:",
+          "text": "Our staff may review chats between users and characters to maintain and improve response quality, detect misuse, and improve the training of our AI models."
+        },
+        {
+          "label": "Use for AI Training:",
+          "text": "Chat content may be processed to remove personally identifiable information and then used as training data for our AI models."
+        },
+        {
+          "label": "No Sharing with Third Parties:",
+          "text": "We do not provide or sell chat content to third parties, including advertisers or other companies, except as required by law."
+        },
+        {
+          "label": "Legal Compliance:",
+          "text": "If illegal activity, such as requests for child pornography or encouragement of criminal acts, is detected, we may preserve the relevant chat logs as evidence and provide them to law enforcement authorities as necessary."
+        }
+      ],
+      "note": "By registering for this service, users agree to the handling of chat content described above."
+    },
+    {
+      "title": "Article 5: Provision of Personal Information to Third Parties",
+      "preamble": "We will not provide the personal information we collect to third parties except in the following cases:",
+      "items": [
+        "When the user has given prior consent",
+        "When required by law (e.g., in response to an inquiry from a court or investigative authority)",
+        "When necessary to protect a person's life, physical safety, or property",
+        "When providing information to contractors necessary to operate the Service (only if they have entered into a confidentiality agreement)"
+      ]
+    },
+    {
+      "title": "Article 6: Use of Third-Party Services",
+      "preamble": "This service uses the following third-party services, whose respective privacy policies may apply.",
+      "bullet": true,
+      "items": [
+        {
+          "label": "Payment services:",
+          "text": "Payment processing when purchasing points (we do not store credit card information on our servers)"
+        },
+        {
+          "label": "Analytics tools:",
+          "text": "Usage analytics to improve the service (such as Google Analytics)"
+        },
+        {
+          "label": "AI foundation models:",
+          "text": "We may use external AI APIs (such as OpenAI and Anthropic) to generate responses. In such cases, conversation content may be sent to the relevant service's API."
+        }
+      ]
+    },
+    {
+      "title": "Article 7: Use of Cookies",
+      "items": [
+        "This service uses cookies to keep you logged in and improve the service. You can disable cookies in your browser settings, but some features may become unavailable."
+      ]
+    },
+    {
+      "title": "Article 8: Storage and Management of Personal Information",
+      "items": [
+        "We take appropriate security measures to prevent the leakage, loss, or damage of personal information.",
+        "We retain personal information for as long as necessary to achieve the purposes for which it is used, and dispose of it appropriately when it is no longer needed.",
+        "Even after you close your account, we may retain certain information for a specified period if required by law or necessary to prevent unauthorized use."
+      ]
+    },
+    {
+      "title": "Article 9: Personal Information of Minors",
+      "items": [
+        "This service is intended for individuals aged 18 or older (excluding high school students). If we determine that a user is under 18, we will delete their account and data."
+      ]
+    },
+    {
+      "title": "Article 10: Requests for Disclosure, Correction, and Deletion",
+      "items": [
+        "Users may request disclosure, correction, deletion, or suspension of the use of their personal information held by the Company. Please submit requests to our contact desk at info@aikano.chat. We will verify your identity and respond in accordance with applicable laws and regulations."
+      ]
+    },
+    {
+      "title": "Article 11: Changes to the Privacy Policy",
+      "items": [
+        "We may revise this Privacy Policy as necessary. If we make any material changes, we will notify you through the Service. The revised policy will take effect when it is posted."
+      ]
+    },
+    {
+      "title": "Article 12: Contact",
+      "preamble": "For inquiries regarding the handling of personal information, please contact us at:",
+      "contact": [
+        "AiKano Administration Office",
+        "Email: info@aikano.chat"
+      ]
+    }
+  ]
+}

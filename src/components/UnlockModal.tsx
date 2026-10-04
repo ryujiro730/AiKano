@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { X, ExternalLink, Send } from 'lucide-react'
+import { useI18n } from '@/i18n/client'
+import { fmt } from '@/i18n/fmt'
 
 interface Props {
   characterId: string
@@ -11,13 +13,14 @@ interface Props {
 }
 
 export function UnlockModal({ characterId, characterName, onClose, onSuccess }: Props) {
+  const { m } = useI18n()
   const [postUrl, setPostUrl] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = async () => {
-    if (!postUrl.trim()) { setError('投稿URLを入力してください'); return }
-    if (!postUrl.startsWith('http')) { setError('正しいURLを入力してください'); return }
+    if (!postUrl.trim()) { setError(m.unlock.urlRequired); return }
+    if (!postUrl.startsWith('http')) { setError(m.unlock.urlInvalid); return }
 
     setSubmitting(true)
     setError(null)
@@ -32,18 +35,18 @@ export function UnlockModal({ characterId, characterName, onClose, onSuccess }: 
 
       if (!res.ok) {
         if (data.error === 'already_submitted') {
-          setError('既に申請済みです。審査をお待ちください。')
+          setError(m.unlock.alreadyRequested)
         } else if (data.error === 'already_unlocked') {
           onSuccess()
         } else {
-          setError('送信に失敗しました。再度お試しください。')
+          setError(m.unlock.sendFailed)
         }
         return
       }
 
       onSuccess()
     } catch {
-      setError('通信エラーが発生しました。')
+      setError(m.unlock.networkError)
     } finally {
       setSubmitting(false)
     }
@@ -68,7 +71,7 @@ export function UnlockModal({ characterId, characterName, onClose, onSuccess }: 
       >
         {/* ヘッダー */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-          <p style={{ fontWeight: 800, fontSize: 17 }}>🔓 {characterName}を解放する</p>
+          <p style={{ fontWeight: 800, fontSize: 17 }}>🔓 {fmt(m.unlock.title, { name: characterName })}</p>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: 'var(--color-text-muted)' }}>
             <X size={20} />
           </button>
@@ -81,19 +84,19 @@ export function UnlockModal({ characterId, characterName, onClose, onSuccess }: 
           borderRadius: 16, padding: '14px 16px', marginBottom: 20,
         }}>
           <p style={{ fontSize: 14, fontWeight: 700, marginBottom: 6, color: 'var(--color-primary)' }}>
-            SNSで宣伝してキャラ解放！
+            {m.unlock.heading}
           </p>
           <ol style={{ paddingLeft: 18, margin: 0, fontSize: 13, lineHeight: 2, color: 'var(--color-text-muted)' }}>
-            <li>AiKanoをSNS（Twitter / Instagram等）で紹介する</li>
-            <li>投稿のURLをコピーして下に貼り付ける</li>
-            <li>スタッフが確認後、{characterName}が解放されます</li>
+            <li>{m.unlock.step1}</li>
+            <li>{m.unlock.step2}</li>
+            <li>{fmt(m.unlock.step3, { name: characterName })}</li>
           </ol>
         </div>
 
         {/* URL入力 */}
         <div style={{ marginBottom: 16 }}>
           <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text-muted)', letterSpacing: '0.06em', marginBottom: 8, display: 'block' }}>
-            投稿URL
+            {m.unlock.urlLabel}
           </label>
           <input
             type="url"
@@ -131,11 +134,11 @@ export function UnlockModal({ characterId, characterName, onClose, onSuccess }: 
           }}
         >
           <Send size={16} />
-          {submitting ? '送信中...' : '申請する'}
+          {submitting ? m.unlock.sending : m.unlock.submit}
         </button>
 
         <p style={{ fontSize: 11, color: 'var(--color-text-muted)', textAlign: 'center', marginTop: 12, lineHeight: 1.6 }}>
-          通常1〜3営業日以内に審査完了します
+          {m.unlock.reviewTime}
         </p>
       </div>
     </div>
