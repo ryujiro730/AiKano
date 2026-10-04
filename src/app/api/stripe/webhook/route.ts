@@ -6,6 +6,19 @@ import { PLANS, type PlanId } from '@/lib/plans'
 import { grantSubscriptionBonus } from '@/lib/subscription-bonus'
 import { logUserAction } from '@/lib/user-action-log'
 
+// 現行APIでは請求期間はサブスク本体ではなく items に入っている
+function subscriptionPeriod(sub: any) {
+  const item = sub.items?.data?.[0]
+  const start: number = item?.current_period_start ?? sub.current_period_start
+  const end: number = item?.current_period_end ?? sub.current_period_end
+  return { start, endIso: new Date(end * 1000).toISOString() }
+}
+
+// 現行APIでは請求書のサブスクIDは parent.subscription_details に入っている
+function invoiceSubscriptionId(invoice: any): string | null {
+  return invoice.parent?.subscription_details?.subscription ?? invoice.subscription ?? null
+}
+
 export async function POST(request: Request) {
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2026-09-30.endive' as any })
 
@@ -107,8 +120,8 @@ export async function POST(request: Request) {
 
     // subscription_id から period_end を取得
     const subscriptionId = session.subscription as string
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId) as any
-    const periodEnd = new Date(subscription.current_period_end * 1000).toISOString()
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId)
+    const { start: periodStart, endIso: periodEnd } = subscriptionPeriod(subscription)
 
     await admin.from('profiles').update({
       stripe_customer_id: session.customer as string,
@@ -121,7 +134,7 @@ export async function POST(request: Request) {
     }).eq('id', userId)
 
     await logUserAction(admin, userId, 'subscription_start', { plan: plan.name, method: 'クレジットカード', price_yen: plan.price_yen })
-    await grantSubscriptionBonus(admin, userId, planId, `stripe:${subscriptionId}:${subscription.current_period_start}`)
+    await grantSubscriptionBonus(admin, userId, planId, `stripe:${subscriptionId}:${periodStart}`)
   }
 
   // ── サブスク更新（プラン変更・更新）────────────────────────────
@@ -140,7 +153,7 @@ export async function POST(request: Request) {
     const priceId = subscription.items.data[0]?.price?.id
     const newPlanId = (Object.entries(PLANS).find(([, p]) => p.stripe_price_id === priceId)?.[0] ?? profile.subscription_plan) as PlanId | null
     const plan = newPlanId ? PLANS[newPlanId] : null
-    const periodEnd = new Date(subscription.current_period_end * 1000).toISOString()
+    const { endIso: periodEnd } = subscriptionPeriod(subscription)
 
     await admin.from('profiles').update({
       subscription_plan: newPlanId,
@@ -171,9 +184,10 @@ export async function POST(request: Request) {
     if ((invoice as any).billing_reason !== 'subscription_cycle') return NextResponse.json({ received: true })
 
     const customerId = invoice.customer as string
-    const subscriptionId = (invoice as any).subscription as string
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId) as any
-    const periodEnd = new Date(subscription.current_period_end * 1000).toISOString()
+    const subscriptionId = invoiceSubscriptionId(invoice)
+    if (!subscriptionId) return NextResponse.json({ received: true })
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId)
+    const { start: periodStart, endIso: periodEnd } = subscriptionPeriod(subscription)
 
     await admin.from('profiles').update({
       subscription_status: 'active',
@@ -186,7 +200,7 @@ export async function POST(request: Request) {
       .from('profiles').select('id, subscription_plan').eq('stripe_customer_id', customerId).single()
     if (renewed) {
       await logUserAction(admin, renewed.id, 'subscription_renew', { plan: renewed.subscription_plan })
-      await grantSubscriptionBonus(admin, renewed.id, renewed.subscription_plan, `stripe:${subscriptionId}:${subscription.current_period_start}`)
+      await grantSubscriptionBonus(admin, renewed.id, renewed.subscription_plan, `stripe:${subscriptionId}:${periodStart}`)
     }
   }
 
