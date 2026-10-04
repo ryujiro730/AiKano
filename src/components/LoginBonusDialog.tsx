@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { LOGIN_BONUS } from '@/lib/pricing'
+import { LOGIN_BONUS, POINTS_PER_MESSAGE, FREE_MESSAGES_PER_LOGIN } from '@/lib/pricing'
 
 interface BonusResult {
   awarded: boolean
@@ -96,6 +96,12 @@ export function LoginBonusDialog() {
         </p>
         <p style={{ fontSize: '40px', fontWeight: 800, color: '#1a1a2e', lineHeight: 1, margin: '8px 0' }}>
           +{result.amount ?? LOGIN_BONUS} <span style={{ fontSize: '20px', fontWeight: 600 }}>pt</span>
+        </p>
+        <p style={{ fontSize: '15px', fontWeight: 700, color: '#e8437f', marginBottom: '6px' }}>
+          今日も{Math.floor((result.amount ?? LOGIN_BONUS) / POINTS_PER_MESSAGE)}通分、無料で話せます
+        </p>
+        <p style={{ fontSize: '11px', color: '#888', marginBottom: '12px' }}>
+          毎日ログインするだけで、毎日{FREE_MESSAGES_PER_LOGIN}通分もらえます
         </p>
         <p style={{ fontSize: '12px', color: '#888', marginBottom: '20px' }}>
           ボーナスポイント残高：{(result.bonus_points ?? 0).toLocaleString()} pt

@@ -6,6 +6,7 @@ import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { generateReply, extractMemoryUpdate, type LLMMessage } from '@/lib/llm-service'
 import { getActivePlan } from '@/lib/plans'
 import { logUserAction } from '@/lib/user-action-log'
+import { intimacyUnlockFor } from '@/lib/intimacy'
 
 // 1通あたりの好感度上昇（会員はプランの倍率を掛ける）
 const BASE_AFFECTION_POINTS = 3
@@ -195,5 +196,7 @@ export async function POST(req: NextRequest) {
       .catch(() => {})
   }
 
-  return NextResponse.json({ message: newMsg, affection: affErr ? null : affection })
+  const intimacyHint = intimacyUnlockFor(userMessage, (affection as { affection_level?: number } | null)?.affection_level ?? uc?.affection_level ?? 1)
+
+  return NextResponse.json({ message: newMsg, affection: affErr ? null : affection, intimacyHint })
 }

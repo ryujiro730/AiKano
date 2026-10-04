@@ -3,7 +3,7 @@ import Link from 'next/link'
 import AnimateOnScroll from '@/components/AnimateOnScroll'
 import { Cpu, Database, Dna, Unlock, Image as ImageIcon } from 'lucide-react'
 import type { Metadata } from 'next'
-import { REGISTRATION_BONUS, REFERRAL_BONUS, LOGIN_BONUS, YEN_PER_POINT } from '@/lib/pricing'
+import { REGISTRATION_BONUS, REFERRAL_BONUS, LOGIN_BONUS, YEN_PER_POINT, FREE_MESSAGES_PER_LOGIN } from '@/lib/pricing'
 
 export const metadata: Metadata = {
   alternates: {
@@ -445,7 +445,7 @@ export default async function HomePage() {
               <div style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '14px', padding: '16px 20px', marginBottom: '28px', textAlign: 'left' }}>
                 {[
                   `✅ 登録で${REGISTRATION_BONUS}ptプレゼント`,
-                  `✅ 毎日ログインで${LOGIN_BONUS}pt`,
+                  `✅ 毎日ログインで${LOGIN_BONUS}pt（毎日${FREE_MESSAGES_PER_LOGIN}通分無料）`,
                   '✅ 登録無料・使った分だけのポイント制',
                 ].map(item => (
                   <p key={item} style={{ color: 'rgba(255,255,255,0.85)', fontSize: '13px', lineHeight: 1.8, margin: 0 }}>{item}</p>

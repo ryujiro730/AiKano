@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect } from 'react'
-import { X } from 'lucide-react'
+import { X, CalendarCheck } from 'lucide-react'
+import { LOGIN_BONUS, FREE_MESSAGES_PER_LOGIN } from '@/lib/pricing'
 import { logAction } from '@/lib/action-log'
 import { PointPackageList } from './PointPackageList'
 
@@ -47,6 +48,15 @@ export function PointsShortageDialog({ currentPoints, requiredPoints, onClose, t
         </div>
 
         <div className="h-px mx-5" style={{ background: 'var(--color-border)' }} />
+
+        <div className="mx-5 mt-3 rounded-[var(--radius-card,12px)] px-4 py-2.5 flex items-center gap-2.5"
+          style={{ background: 'var(--color-primary-soft)', border: '1px solid var(--color-primary-border)' }}>
+          <CalendarCheck size={18} style={{ color: 'var(--color-primary)', flexShrink: 0 }} />
+          <p className="text-xs leading-relaxed" style={{ color: 'var(--color-text)' }}>
+            <strong>毎日ログインで{LOGIN_BONUS}pt（{FREE_MESSAGES_PER_LOGIN}通分）無料</strong><br />
+            <span style={{ color: 'var(--color-text-muted)' }}>明日また会いに来れば、{FREE_MESSAGES_PER_LOGIN}通分話せます</span>
+          </p>
+        </div>
 
         <div className="px-4 pt-3 pb-6">
           <PointPackageList shortage={shortage} />

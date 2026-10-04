@@ -18,3 +18,6 @@ export const LOGIN_BONUS_DAYS = 30
 
 /** 登録ボーナスで送れる通数 */
 export const FREE_MESSAGES_ON_SIGNUP = Math.floor(REGISTRATION_BONUS / POINTS_PER_MESSAGE)
+
+/** 毎日のログインボーナスで送れる通数 */
+export const FREE_MESSAGES_PER_LOGIN = Math.floor(LOGIN_BONUS / POINTS_PER_MESSAGE)

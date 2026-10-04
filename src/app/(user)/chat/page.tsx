@@ -15,6 +15,7 @@ import { compressImage, isHeic, heicToBlob } from '@/lib/compress-image'
 import { PointsShortageDialog } from '@/components/PointsShortageDialog'
 import { LevelUpToast } from '@/components/LevelUpToast'
 import { AffectionMeter } from '@/components/AffectionMeter'
+import type { IntimacyHint } from '@/lib/intimacy'
 import { AffectionIcon } from '@/components/AffectionIcon'
 import { LockedPhotoTile } from '@/components/LockedPhotoTile'
 import { PLANS, type PlanId } from '@/lib/plans'
@@ -57,6 +58,7 @@ export default function ChatPage() {
   const [unlockedVideos, setUnlockedVideos] = useState<Set<string>>(new Set())
   const [subInfo, setSubInfo] = useState<{ plan: string | null; used: number; limit: number } | null>(null)
   const [levelUp, setLevelUp] = useState<{ level: number } | null>(null)
+  const [intimacyHint, setIntimacyHint] = useState<IntimacyHint | null>(null)
   const [affection, setAffection] = useState<{ points: number; level: number; messageCount: number } | null>(null)
 
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -321,6 +323,7 @@ export default function ChatPage() {
     }
 
     setSending(true)
+    setIntimacyHint(null)
     const content = rawContent.trim()
     setInput('')
     if (editableRef.current) editableRef.current.innerText = ''
@@ -385,6 +388,13 @@ export default function ChatPage() {
         if (aff) {
           setAffection({ points: aff.affection_points, level: aff.affection_level, messageCount: aff.message_count })
           if (aff.leveled_up) setLevelUp({ level: aff.affection_level })
+        }
+        // 好感度が足りずかわされた話題は、仲が深まれば解放されることを1日1回だけ案内する
+        if (data.intimacyHint) {
+          const key = `intimacy_hint_${character.id}_${new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' })}`
+          let shown = false
+          try { shown = !!localStorage.getItem(key); localStorage.setItem(key, '1') } catch {}
+          if (!shown) setIntimacyHint(data.intimacyHint)
         }
       } else {
         console.error('[chat] AI返信エラー:', await res.text())
@@ -615,11 +625,17 @@ export default function ChatPage() {
             </div>
             <p className="font-medium mb-1">{character.name}</p>
             <p className="text-[var(--color-text-muted)] text-sm">最初のメッセージを送ってみましょう</p>
+            <p className="text-xs mt-3 max-w-[260px] leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
+              話すほど好感度が上がり、仲が深まると、もっと甘くて濃密な会話ができるようになります
+            </p>
           </div>
         )}
         {messages.map((msg) => (
           <MessageBubble key={msg.id} message={msg} characterName={character.name} characterAvatar={character.avatar_url} onImageClick={setImageLightboxUrl} unlockedVideos={unlockedVideos} onUnlockVideo={unlockVideo} />
         ))}
+        {intimacyHint && !isTyping && (
+          <IntimacyHintCard hint={intimacyHint} characterName={character.name} isMember={!!subInfo?.plan} />
+        )}
         {isTyping && (
           <div className="flex items-end gap-2 animate-fade-in">
             <div className="relative w-7 h-7 rounded-full overflow-hidden border border-[var(--color-border)] flex-shrink-0">
@@ -790,6 +806,27 @@ export default function ChatPage() {
           onClose={() => setLevelUp(null)}
         />
       )}
+    </div>
+  )
+}
+
+function IntimacyHintCard({ hint, characterName, isMember }: { hint: IntimacyHint; characterName: string; isMember: boolean }) {
+  return (
+    <div className="mx-auto w-full max-w-[320px] rounded-[var(--radius-card,12px)] px-4 py-3 text-center animate-fade-in"
+      style={{ background: 'var(--color-primary-soft)', border: '1px solid var(--color-primary-border)' }}>
+      <p className="flex items-center justify-center gap-1.5 text-xs font-bold mb-1" style={{ color: 'var(--color-primary)' }}>
+        <AffectionIcon level={hint.level} size={13} />
+        {characterName}との仲がもっと深まると…
+      </p>
+      <p className="text-[13px] leading-relaxed" style={{ color: 'var(--color-text)' }}>
+        好感度が<strong>Lv.{hint.level}「{hint.title}」</strong>になると、もっと甘くて濃密な会話ができるようになります
+      </p>
+      <p className="text-[11px] mt-1.5" style={{ color: 'var(--color-text-muted)' }}>
+        好感度は、たくさん話すほど上がります
+        {!isMember && (
+          <>　<Link href="/payment" className="font-semibold underline" style={{ color: 'var(--color-primary)' }}>会員は上がり方2倍</Link></>
+        )}
+      </p>
     </div>
   )
 }

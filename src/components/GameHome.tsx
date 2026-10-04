@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react'
 import { getAffectionLevel, getAffectionProgress } from '@/lib/affection'
 import { UnlockModal } from './UnlockModal'
 import { AffectionIcon } from './AffectionIcon'
-import { Lock, MessageCircle, ChevronRight } from 'lucide-react'
+import { Lock, MessageCircle, ChevronRight, CalendarCheck } from 'lucide-react'
+import { LOGIN_BONUS, FREE_MESSAGES_PER_LOGIN } from '@/lib/pricing'
 
 type CharData = {
   id: string
@@ -104,6 +105,20 @@ export function GameHome({
           background: 'linear-gradient(to top, rgba(13,10,14,0.96) 0%, rgba(13,10,14,0.8) 24%, rgba(13,10,14,0.35) 48%, transparent 68%)',
           pointerEvents: 'none',
         }} />
+
+        {/* ログインボーナス案内 */}
+        <div
+          style={{
+            position: 'absolute', top: 14, left: 14,
+            display: 'flex', alignItems: 'center', gap: 6,
+            background: 'rgba(13,10,14,0.55)', color: '#fff',
+            border: '1px solid rgba(255,255,255,0.18)', backdropFilter: 'blur(10px)',
+            borderRadius: 8, padding: '5px 10px', fontSize: 12, fontWeight: 600,
+          }}
+        >
+          <CalendarCheck size={13} strokeWidth={2.4} style={{ color: '#f9a8d4' }} />
+          毎日ログインで{LOGIN_BONUS}pt・{FREE_MESSAGES_PER_LOGIN}通分無料
+        </div>
 
         {/* 未読バッジ */}
         {unread > 0 && (

@@ -5,7 +5,7 @@ import { Shield, Clock, CreditCard, MessageCircle, ChevronDown } from 'lucide-re
 import type { Metadata } from 'next'
 import { LpTracker } from '@/components/lp/LpTracker'
 import { LpCtaButton } from '@/components/lp/LpCtaButton'
-import { REGISTRATION_BONUS, REFERRAL_BONUS, LOGIN_BONUS, YEN_PER_POINT, POINTS_PER_MESSAGE } from '@/lib/pricing'
+import { REGISTRATION_BONUS, REFERRAL_BONUS, LOGIN_BONUS, YEN_PER_POINT, POINTS_PER_MESSAGE, FREE_MESSAGES_PER_LOGIN } from '@/lib/pricing'
 import { PLANS } from '@/lib/plans'
 import { TOKEN_PACKAGES } from '@/types'
 
@@ -305,7 +305,7 @@ export default async function LP60sPage({ searchParams }: { searchParams: Record
                 <span style={{ fontSize: '36px', color: '#e8438f' }}>{REGISTRATION_BONUS}ポイント</span>プレゼント
               </p>
               <p style={{ fontSize: '16px', color: 'var(--color-text-muted)', marginBottom: '8px' }}>まずは無料でお試しください（¥{BONUS_YEN}相当）</p>
-              <p style={{ fontSize: '14px', color: 'var(--color-text-muted)' }}>さらに毎日ログインで{LOGIN_BONUS}pt・友達紹介で{REFERRAL_BONUS}ptボーナス</p>
+              <p style={{ fontSize: '14px', color: 'var(--color-text-muted)' }}>さらに毎日ログインで{LOGIN_BONUS}pt（毎日{FREE_MESSAGES_PER_LOGIN}通分無料）・友達紹介で{REFERRAL_BONUS}ptボーナス</p>
             </div>
 
             {/* 基本料金 */}
