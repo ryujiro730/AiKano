@@ -6,13 +6,13 @@
 /** 1ポイントあたりの円換算 */
 export const YEN_PER_POINT = 10
 /** 非会員のメッセージ送信コスト（pt/通） */
-export const POINTS_PER_MESSAGE = 10
+export const POINTS_PER_MESSAGE = 5
 /** 新規登録ボーナス（pt） */
-export const REGISTRATION_BONUS = 50
+export const REGISTRATION_BONUS = 25
 /** 友達紹介ボーナス（紹介者・被紹介者それぞれ、pt） */
 export const REFERRAL_BONUS = 100
 /** 毎日のログインボーナス（pt、有効期限付き） */
-export const LOGIN_BONUS = 20
+export const LOGIN_BONUS = 10
 /** ログインボーナスの有効日数 */
 export const LOGIN_BONUS_DAYS = 30
 

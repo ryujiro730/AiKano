@@ -17,7 +17,7 @@ import { logAction } from '@/lib/action-log'
 import { useI18n } from '@/i18n/client'
 import { fmt, gap } from '@/i18n/fmt'
 import { planFeatures } from '@/lib/plan-i18n'
-import { REFERRAL_BONUS } from '@/lib/pricing'
+import { REFERRAL_BONUS, POINTS_PER_MESSAGE } from '@/lib/pricing'
 
 export default function PaymentPage() {
   const { m, locale } = useI18n()
@@ -313,8 +313,8 @@ export default function PaymentPage() {
         </div>
         <p className="text-xs mb-3" style={{ color: 'var(--color-text-muted)' }}>
           {isSubscribed
-            ? fmt(m.payment.pointsUseMember, { pt: 5 })
-            : fmt(m.payment.pointsUse, { pt: 10 })}
+            ? fmt(m.payment.pointsUseMember, { pt: PLANS.standard.overage_points })
+            : fmt(m.payment.pointsUse, { pt: POINTS_PER_MESSAGE })}
         </p>
         <PointPackageList />
       </div>

@@ -113,7 +113,7 @@ export const ja = {
       affection: '好感度の上がり方が{n}倍',
       photos: '会員限定フォトが見放題',
       premiumVideos: 'プレミアム動画の視聴が可能',
-      overage: '上限超過後も1通{n}pt（通常の半額）',
+      overage: '上限超過後も1通{n}pt（通常より割安）',
       standardModel: 'スタンダードAIモデル',
       premiumModel: '高性能AIモデル（より自然な返答）',
     },

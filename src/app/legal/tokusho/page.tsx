@@ -1,6 +1,8 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
+import { POINTS_PER_MESSAGE } from '@/lib/pricing'
+import { PLANS } from '@/lib/plans'
 
 export const metadata: Metadata = {
   title: '特定商取引法に基づく表記 | AiKano',
@@ -36,7 +38,7 @@ const rows: { label: string; value: React.ReactNode }[] = [
               <tr><td className="py-1 pr-4">¥50,000</td><td className="pr-4">6,500pt</td><td>+1,500pt</td></tr>
             </tbody>
           </table>
-          <p className="text-xs mt-1" style={{ color: '#aaa' }}>1ポイント＝10円相当。ポイントは1通5〜10ptで消費されます。</p>
+          <p className="text-xs mt-1" style={{ color: '#aaa' }}>1ポイント＝10円相当。メッセージは1通{POINTS_PER_MESSAGE}pt（会員の月間上限超過後は{PLANS.standard.overage_points}pt）で消費されます。</p>
         </div>
         <div>
           <p className="font-semibold text-sm text-[#1a1a1a] mb-1">■ 月額サブスクリプション（自動更新）</p>

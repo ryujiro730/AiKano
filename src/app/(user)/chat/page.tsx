@@ -24,6 +24,7 @@ import { logAction } from '@/lib/action-log'
 import { useI18n } from '@/i18n/client'
 import { fmt, gap } from '@/i18n/fmt'
 import { localizedCharacter } from '@/lib/character-i18n'
+import { POINTS_PER_MESSAGE } from '@/lib/pricing'
 
 const MAX_CACHED_MSGS = 60
 const CHAT_ENABLED = process.env.NEXT_PUBLIC_CHAT_ENABLED !== 'false'
@@ -314,7 +315,7 @@ export default function ChatPage() {
     if (!rawContent.trim() || sending || !conversationId || !profile || !character) return
 
     // 残高・サブスク判定はサーバー（send-message）側で行い、不足時は 402 で返る
-    const SEND_COST = 10
+    const SEND_COST = POINTS_PER_MESSAGE
 
     // 初回メッセージの場合はキャラクターを登録
     const isFirstUserMessage = !messages.some(m => m.sender_role === 'user')

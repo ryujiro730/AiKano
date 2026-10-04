@@ -1,4 +1,5 @@
-import { REGISTRATION_BONUS, FREE_MESSAGES_ON_SIGNUP, LOGIN_BONUS, LOGIN_BONUS_DAYS } from '@/lib/pricing'
+import { REGISTRATION_BONUS, FREE_MESSAGES_ON_SIGNUP, LOGIN_BONUS, LOGIN_BONUS_DAYS, POINTS_PER_MESSAGE, YEN_PER_POINT } from '@/lib/pricing'
+import { PLANS } from '@/lib/plans'
 import type { LegalDoc } from './types'
 
 const sections: LegalDoc['sections'] = [
@@ -53,11 +54,11 @@ const sections: LegalDoc['sections'] = [
   {
     title: '第7条　利用料金',
     items: [
-      'テキストチャットは1通10ポイント（¥100相当）を消費します。',
+      `テキストチャットは1通${POINTS_PER_MESSAGE}ポイント（¥${POINTS_PER_MESSAGE * YEN_PER_POINT}相当）を消費します。`,
       'ポイントの単価は1ポイント＝10円（税込）です。ポイントはまとめ買いによりボーナスが付与されます。購入プランの詳細は本サービス内のポイント購入ページをご確認ください。',
       `新規登録時に${REGISTRATION_BONUS}ポイントを無料で付与します（最初の${FREE_MESSAGES_ON_SIGNUP}通分）。また、毎日ログインで${LOGIN_BONUS}ポイント（有効期限${LOGIN_BONUS_DAYS}日）のボーナスを付与します。`,
-      'ポイントの主な消費目安：テキストチャット 10ポイント、プレミアムコンテンツ（動画等）は各コンテンツに表示される価格に従います。消費ポイント数は予告なく変更する場合があります。',
-      '月額サブスクリプションとして「スタンダードプラン（¥2,980/月・300通）」および「プレミアムプラン（¥4,980/月・500通）」を提供します。月間通数を超過した場合、いずれのプランも5ポイント/通で継続利用できます。',
+      `ポイントの主な消費目安：テキストチャット ${POINTS_PER_MESSAGE}ポイント、プレミアムコンテンツ（動画等）は各コンテンツに表示される価格に従います。消費ポイント数は予告なく変更する場合があります。`,
+      `月額サブスクリプションとして「スタンダードプラン（¥2,980/月・300通）」および「プレミアムプラン（¥4,980/月・500通）」を提供します。月間通数を超過した場合、いずれのプランも${PLANS.standard.overage_points}ポイント/通で継続利用できます。`,
       '月額サブスクリプションは毎月契約日に自動更新されます。マイページよりいつでも解約可能です。解約後は当該月の残期間まで利用できます。',
       'コンビニ払いおよびPayPayによる30日間パス（スタンダード¥2,980、プレミアム¥4,980）も提供します。30日間パスは自動更新されません。',
       'ポイント購入・30日間パスはデジタルコンテンツの性質上、購入後の返金には一切応じられません。',

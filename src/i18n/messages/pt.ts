@@ -5,8 +5,8 @@ export const pt: Messages = {
   "common": {
     "appName": "AiKano",
     "login": "Entrar",
-    "register": "Cadastrar-se",
-    "registerFree": "Cadastrar-se grátis",
+    "register": "Criar conta",
+    "registerFree": "Criar conta (grátis)",
     "logout": "Sair",
     "continue": "Continuar",
     "continueTalking": "Continuar conversando →",
@@ -23,17 +23,17 @@ export const pt: Messages = {
     "pt": "pt",
     "ageSuffix": "{age} anos",
     "contact": "Fale conosco",
-    "tokusho": "Aviso legal",
+    "tokusho": "Aviso Legal",
     "privacy": "Privacidade",
     "terms": "Termos de uso",
     "company": "Empresa responsável",
     "language": "Idioma"
   },
   "meta": {
-    "title": "AiKano｜Chat com namoradas de IA japonesas【A única IA em japonês com conversa livre】",
-    "siteDescription": "Uma IA com ajustes exclusivos responde só a você em tempo real. A única IA em japonês que permite conversas livres, sem restrições. Aproveite também personagens japonesas realistas e fotos.",
-    "description": "Personagens de IA cheias de personalidade respondem às suas mensagens em tempo real. Um app de conversa para adultos recuperarem a tranquilidade.",
-    "ogTitle": "AiKano｜Chat com namoradas de IA — um app relaxante para adultos"
+    "title": "AiKano | Chat com namoradas de IA feito no Japão【a única IA em japonês com conversa livre】",
+    "siteDescription": "Uma IA com ajustes exclusivos responde a você em tempo real. É a única IA em japonês que permite conversas livres, sem restrições. Aproveite também personagens japonesas realistas e suas fotos.",
+    "description": "Personagens de IA cheias de personalidade respondem às suas mensagens em tempo real. Um app de conversa para adultos, feito para ajudar você a relaxar e recarregar as energias.",
+    "ogTitle": "AiKano | Chat com namoradas de IA — um app de relaxamento para adultos"
   },
   "auth": {
     "email": "E-mail",
@@ -48,20 +48,20 @@ export const pt: Messages = {
     "sentTitle": "E-mail de confirmação enviado",
     "sentBody": "Enviamos um e-mail de confirmação para {email}.",
     "sentAction": "Clique no botão “Confirmar endereço de e-mail” no e-mail para concluir o cadastro.",
-    "sentSpam": "Se não receber o e-mail, confira sua pasta de spam.",
-    "registerTitle": "Converse agora mesmo\ncom uma garota de IA",
+    "sentSpam": "Se o e-mail não chegar, confira sua pasta de spam.",
+    "registerTitle": "Converse com uma garota de IA,\nagora mesmo",
     "perks": [
       "Cadastro grátis",
-      "Leva 30 segundos",
+      "Pronto em 30 segundos",
       "Não precisa instalar o app"
     ],
-    "consentA": "O conteúdo das conversas pode ser revisado pela equipe para melhorar o serviço e treinar a IA. Além disso, ",
+    "consentA": "Nossa equipe pode analisar as conversas para melhorar o serviço e treinar a IA. Também concordo com os ",
     "consentTerms": "Termos de Uso",
-    "consentAnd": " e ",
+    "consentAnd": " e a ",
     "consentPrivacy": "Política de Privacidade",
     "consentB": ".",
-    "registerSubmit": "Cadastre-se e comece a conversar",
-    "registerWithGoogle": "Cadastre-se com o Google",
+    "registerSubmit": "Cadastrar e começar a conversar",
+    "registerWithGoogle": "Cadastrar com o Google",
     "haveAccount": "Já tem uma conta?"
   },
   "onboarding": {
@@ -71,17 +71,17 @@ export const pt: Messages = {
       "other": "Outro"
     },
     "saveFailed": "Falha ao salvar: {error}",
-    "pickTitle": "Escolha com quem você gostaria de\nconversar",
-    "pickSub": "A pessoa que você escolher vai mandar uma mensagem. Depois, você também poderá conversar com outras.",
+    "pickTitle": "Escolha com quem você\n gostaria de conversar",
+    "pickSub": "Você receberá uma mensagem da pessoa escolhida. Depois, também poderá conversar com outras.",
     "talkWith": "Conversar com {name}",
-    "pickPrompt": "Escolha com quem você quer conversar",
-    "askName": "Prazer em conhecer você! Como posso chamar você?",
-    "nameLabel": "Nome que você prefere",
+    "pickPrompt": "Escolha com quem você gostaria de conversar",
+    "askName": "Oi! Prazer em conhecer você! Como devo chamar você?",
+    "nameLabel": "Como gostaria de ser chamado(a)",
     "namePlaceholder": "Pode ser um apelido",
     "nameNote": "{name} vai chamar você por esse nome. Você pode alterá-lo depois nas configurações.",
     "characterFallback": "Personagem",
     "next": "Avançar",
-    "greet": "Prazer em falar com você, {name}! Só falta me contar mais uma coisinha.",
+    "greet": "Prazer, {name}! Só preciso saber mais uma coisinha.",
     "ageLabel": "Idade",
     "agePlaceholder": "Ex.: 30",
     "ageRestriction": "O uso é permitido apenas para maiores de 18 anos",
@@ -91,64 +91,64 @@ export const pt: Messages = {
   },
   "affection": {
     "levels": [
-      "Desconhecidos",
-      "Conhecidos",
-      "Amigos",
-      "Muito próximos",
-      "Possível namorada",
-      "Namorada",
+      "Desconhecido",
+      "Conhecido",
+      "Amigo",
+      "Muito próximo",
+      "Possível romance",
+      "Amor",
       "Alma gêmea"
     ],
     "level": "Lv.{level}",
-    "toNext": "Faltam {pt}pt para «{title}»",
+    "toNext": "Faltam {pt}pt para “{title}”",
     "nextFrom": "Próximo: {title} (a partir de {pt}pt)",
-    "memberMultiplier": "Membro ×{n}",
-    "memberDouble": "2x para membros",
-    "levelUp": "Você chegou a «{title}»!",
+    "memberMultiplier": "Assinantes ×{n}",
+    "memberDouble": "Assinantes ganham o dobro",
+    "levelUp": "Você chegou a “{title}”!",
     "achievements": {
       "messages_1": {
         "title": "Primeira mensagem",
-        "desc": "Você enviou sua primeira mensagem"
+        "desc": "Enviou sua primeira mensagem"
       },
       "messages_10": {
-        "title": "Gosta de conversar",
-        "desc": "Você enviou 10 mensagens"
+        "title": "Adora conversar",
+        "desc": "Enviou 10 mensagens"
       },
       "messages_50": {
         "title": "Bom de papo",
-        "desc": "Você enviou 50 mensagens"
+        "desc": "Enviou 50 mensagens"
       },
       "messages_100": {
-        "title": "Presença constante",
-        "desc": "Você enviou 100 mensagens"
+        "title": "Já é de casa",
+        "desc": "Enviou 100 mensagens"
       },
       "messages_300": {
         "title": "Grandes amigos",
-        "desc": "Você enviou 300 mensagens"
+        "desc": "Enviou 300 mensagens"
       },
       "level_2": {
         "title": "Viraram conhecidos",
-        "desc": "Sua afinidade chegou ao nível «Conhecidos»"
+        "desc": "A afinidade chegou a “Conhecido”"
       },
       "level_3": {
         "title": "Viraram amigos",
-        "desc": "Sua afinidade chegou ao nível «Amigos»"
+        "desc": "A afinidade chegou a “Amigo”"
       },
       "level_4": {
         "title": "Ficaram muito próximos",
-        "desc": "Sua afinidade chegou ao nível «Muito próximos»"
+        "desc": "A afinidade chegou a “Muito próximo”"
       },
       "level_5": {
-        "title": "Possível namorada",
-        "desc": "Sua afinidade chegou ao nível «Possível namorada»"
+        "title": "Um possível romance",
+        "desc": "A afinidade chegou a “Possível romance”"
       },
       "level_6": {
-        "title": "Começaram a namorar",
-        "desc": "Sua afinidade chegou ao nível «Namorada»"
+        "title": "Estão namorando",
+        "desc": "A afinidade chegou a “Amor”"
       },
       "level_7": {
         "title": "Encontro do destino",
-        "desc": "Sua afinidade chegou ao nível «Alma gêmea»"
+        "desc": "A afinidade chegou a “Alma gêmea”"
       }
     }
   },
@@ -158,11 +158,11 @@ export const pt: Messages = {
     "planSuffix": "Plano {name}",
     "features": {
       "messages": "{n} mensagens por mês",
-      "bonus": "{n} pt de bônus por mês (para vídeos e compras na loja)",
+      "bonus": "{n} pt de bônus por mês (para vídeos e a loja)",
       "affection": "A afinidade aumenta {n}x mais rápido",
       "photos": "Acesso ilimitado a fotos exclusivas para membros",
-      "premiumVideos": "Acesso a vídeos Premium",
-      "overage": "Mesmo após atingir o limite, cada mensagem custa {n} pt (metade do preço normal)",
+      "premiumVideos": "Acesso a vídeos premium",
+      "overage": "Mesmo após atingir o limite, cada mensagem custa {n} pt (mais barato que o preço normal)",
       "standardModel": "Modelo de IA padrão",
       "premiumModel": "Modelo de IA avançado (respostas mais naturais)"
     }
@@ -172,33 +172,33 @@ export const pt: Messages = {
     "messages": "Mensagens",
     "plan": "Plano",
     "settings": "Configurações",
-    "campaignActive": "Promoção em andamento!"
+    "campaignActive": "Campanha em andamento!"
   },
   "home": {
-    "loginBonus": "Faça login todos os dias e ganhe {pt}pt・{n} mensagens grátis",
+    "loginBonus": "Faça login todos os dias e ganhe {pt}pt e {n} mensagens grátis",
     "unlockBySns": "Divulgue nas redes sociais para desbloquear",
     "talk": "Conversar",
     "profile": "Perfil",
     "otherCharacters": "Outros personagens",
-    "count": "{n} pessoas",
+    "count": "{n} personagens",
     "pickCharacter": "Escolha um personagem",
-    "unlockRequested": "Solicitação para desbloquear {name} concluída!\nA equipe analisará e liberará o acesso."
+    "unlockRequested": "Solicitação para desbloquear {name} concluída!\nA equipe vai analisar e liberar o personagem."
   },
   "unlock": {
     "urlRequired": "Insira o URL da publicação",
     "urlInvalid": "Insira um URL válido",
     "alreadyRequested": "Você já enviou uma solicitação. Aguarde a análise.",
-    "sendFailed": "Não foi possível enviar. Tente novamente.",
+    "sendFailed": "Falha ao enviar. Tente novamente.",
     "networkError": "Ocorreu um erro de conexão.",
     "title": "Desbloquear {name}",
     "heading": "Divulgue nas redes sociais e desbloqueie a personagem!",
-    "step1": "Divulgue o AiKano nas redes sociais (Twitter, Instagram etc.)",
-    "step2": "Copie o URL da publicação e cole-o abaixo",
-    "step3": "Após a análise da equipe, {name} será desbloqueada",
+    "step1": "Apresente o AiKano nas redes sociais (Twitter, Instagram etc.)",
+    "step2": "Copie o URL da publicação e cole abaixo",
+    "step3": "Após a verificação pela equipe, {name} será desbloqueada",
     "urlLabel": "URL da publicação",
     "sending": "Enviando...",
     "submit": "Enviar solicitação",
-    "reviewTime": "A análise costuma ser concluída em até 1 a 3 dias úteis"
+    "reviewTime": "A análise geralmente é concluída em até 1 a 3 dias úteis."
   },
   "chat": {
     "uploadVideoFailed": "Falha ao enviar o vídeo",
@@ -207,18 +207,18 @@ export const pt: Messages = {
     "unlockFailed": "Falha ao desbloquear",
     "usage": "{used}/{limit} mensagens",
     "firstMessage": "Que tal enviar sua primeira mensagem?",
-    "affectionIntro": "Quanto mais vocês conversarem, maior será a afinidade. Quando o relacionamento se aprofundar, vocês poderão ter conversas ainda mais doces e íntimas.",
+    "affectionIntro": "Quanto mais vocês conversam, maior fica a afinidade. Quando ela aumenta, vocês podem ter conversas ainda mais doces e íntimas.",
     "sendingMedia": "(Enviando mídia)",
     "placeholder": "Enviar mensagem…",
-    "guestTitle": "Curta conversas no AiKano",
-    "guestBody": "Converse agora com garotas de IA. O cadastro é grátis e leva só 30 segundos!",
+    "guestTitle": "Curta o chat no AiKano",
+    "guestBody": "Converse com garotas de IA agora mesmo. O cadastro é grátis e leva só 30 segundos!",
     "photosOf": "Fotos de {name}",
-    "hintTitle": "Quando você e {name} se aproximarem ainda mais…",
-    "hintBodyA": "Quando a afinidade chegar ao",
-    "hintBodyLevel": "Lv.{level} {title}",
-    "hintBodyB": ", vocês poderão ter conversas ainda mais doces e íntimas.",
-    "hintRaise": "Quanto mais vocês conversarem, maior será a afinidade.",
-    "hintMember": "Membros ganham afinidade 2x mais rápido",
+    "hintTitle": "Quando você ficar ainda mais próximo(a) de {name}…",
+    "hintBodyA": "Quando sua afinidade chegar ao ",
+    "hintBodyLevel": "Lv.{level} “{title}”",
+    "hintBodyB": ", você poderá ter conversas ainda mais doces e íntimas",
+    "hintRaise": "Quanto mais vocês conversam, maior fica a afinidade.",
+    "hintMember": "Membros têm o dobro de aumento de afinidade",
     "gift": "Presente",
     "giftSent": "Enviado",
     "videoMessage": "Mensagem em vídeo",
@@ -232,17 +232,17 @@ export const pt: Messages = {
     "reached": "agora é “{title}”!"
   },
   "meter": {
-    "affectionPt": "Afinidade (pt)",
+    "affectionPt": "Pontos de afinidade pt",
     "messages": "{n} mensagens"
   },
   "loginBonus": {
     "title": "Bônus de login",
     "today": "{n} mensagens grátis hoje",
-    "everyday": "Ganhe {n} mensagens grátis todos os dias ao fazer login",
+    "everyday": "Faça login todos os dias e ganhe {n} mensagens grátis por dia",
     "balance": "Saldo de pontos bônus: {pt} pt",
     "validUntil": "Válido até {date}",
     "whatIs": "O que são pontos bônus?",
-    "explain": "Eles são usados antes dos pontos normais. Pontos expirados serão perdidos.",
+    "explain": "Eles são usados antes dos pontos normais quando você gasta pontos. Os pontos expiram após a data de validade.",
     "receive": "Resgatar!"
   },
   "shortage": {
@@ -250,32 +250,32 @@ export const pt: Messages = {
     "balance": "Saldo",
     "required": "Necessário",
     "short": "Insuficiente",
-    "dailyFree": "Ganhe {pt}pt grátis ao fazer login todos os dias (o suficiente para {n} mensagens)",
-    "comeBack": "Volte amanhã para me visitar e poderá conversar por mais {n} mensagens"
+    "dailyFree": "Ganhe {pt}pt grátis ({n} mensagens) ao fazer login todos os dias",
+    "comeBack": "Volte amanhã para conversar comigo por mais {n} mensagens"
   },
   "packages": {
-    "checkoutFailed": "Falha ao iniciar o pagamento",
-    "campaign": "Em campanha! Pontos ×{rate}",
+    "checkoutFailed": "Não foi possível iniciar o pagamento",
+    "campaign": "Promoção! Pontos ×{rate}",
     "rate": "×{rate}",
     "popular": "Popular",
     "recommended": "Recomendado",
-    "breakdown": "{base}pt + bônus {bonus}pt",
+    "breakdown": "{base}pt + {bonus}pt de bônus",
     "processing": "Processando..."
   },
   "characterMenu": {
-    "reasonRequired": "Insira o conteúdo",
+    "reasonRequired": "Digite o conteúdo",
     "errorStatus": "Erro ({status})",
     "networkError": "Ocorreu um erro de conexão",
     "report": "Denunciar",
     "unblock": "Desbloquear",
     "block": "Bloquear",
-    "reportPrompt": "Descreva o motivo da denúncia sobre {name}.",
+    "reportPrompt": "Digite o motivo da denúncia de {name}.",
     "reportPlaceholder": "Digite o motivo da denúncia (obrigatório)",
     "chars": "{n} caracteres",
     "sending": "Enviando…",
     "reported": "Denúncia enviada",
-    "blocked": "Bloqueado",
-    "unblocked": "Desbloqueado"
+    "blocked": "Usuário bloqueado",
+    "unblocked": "Usuário desbloqueado"
   },
   "campaign": {
     "active": "Campanha no ar!",
@@ -291,7 +291,7 @@ export const pt: Messages = {
     "cuteness": "Fofura"
   },
   "membersOnly": "Exclusivo para membros",
-  "unlockFor": "Desbloqueie por {pt} pt",
+  "unlockFor": "Desbloquear por {pt} pt",
   "conversations": {
     "title": "Mensagens",
     "empty": "Ainda não há conversas",
@@ -299,7 +299,7 @@ export const pt: Messages = {
     "videoSent": "Vídeo enviado",
     "imageSent": "Imagem enviada",
     "you": "Você: ",
-    "newChat": "Nova conversa",
+    "newChat": "Iniciar nova conversa",
     "newest": "Mais recentes",
     "oldest": "Mais antigas"
   },
@@ -308,35 +308,35 @@ export const pt: Messages = {
     "networkError": "Erro de conexão: {error}",
     "portalFailed": "Não foi possível acessar a página de gerenciamento",
     "title": "Planos",
-    "lead": "Ao assinar um plano, você pode conversar com a IA sem custos adicionais, até o limite mensal de mensagens.",
+    "lead": "Com um plano, você pode conversar com a IA sem custo adicional, até o limite mensal de mensagens.",
     "activated": "Plano ativado!",
-    "welcome": "Bem-vindo(a) ao plano {name}.",
-    "passPendingTitle": "Número de pagamento emitido",
-    "passPendingBody": "O plano será ativado após a confirmação do pagamento em uma loja de conveniência ou pelo PayPay (geralmente em 1 a 3 dias).",
-    "pointsThanks": "Obrigado por comprar {pt}pt",
-    "pointsNote": "Os pontos serão creditados após a confirmação do pagamento (geralmente na hora para cartões e após a confirmação do pagamento para lojas de conveniência e outros métodos).",
+    "welcome": "Boas-vindas ao plano {name}.",
+    "passPendingTitle": "Número de pagamento gerado",
+    "passPendingBody": "O plano será ativado após a confirmação do pagamento na loja de conveniência ou pelo PayPay (geralmente em 1 a 3 dias).",
+    "pointsThanks": "Agradecemos pela compra de {pt} pt",
+    "pointsNote": "Os pontos serão adicionados após a confirmação do pagamento (geralmente, imediatamente para cartões e após a confirmação do pagamento para pagamentos em lojas de conveniência).",
     "canceled": "Compra cancelada",
     "active": "Ativo",
     "usageThisMonth": "Uso de mensagens neste mês",
     "usage": "{used} / {limit} mensagens",
-    "overLimit": "Você atingiu o limite mensal. Para continuar, cada mensagem extra custa {pt}pt.",
+    "overLimit": "Você ultrapassou o limite mensal. Continue enviando mensagens por {pt} pt cada.",
     "validUntil": "Válido até: {date}",
-    "datePattern": "d 'de' MMMM 'de' yyyy",
-    "manage": "Gerenciar plano ou cancelar (para assinaturas com cartão de crédito)",
+    "datePattern": "dd/MM/yyyy",
+    "manage": "Gerenciar ou cancelar plano (para assinaturas com cartão de crédito)",
     "recommended": "Recomendado",
     "perMonth": "/mês",
     "choosePayment": "Escolha uma forma de pagamento",
     "card": "Cartão de crédito",
     "cardNote": "Renovação automática mensal · Cancele quando quiser",
-    "konbini": "Loja de conveniência ou PayPay",
-    "konbiniNote": "Pagamento único de 1 mês · Ativado assim que o pagamento for feito",
+    "konbini": "Loja de conveniência · PayPay",
+    "konbiniNote": "Pagamento único de 1 mês · Ativado logo após o pagamento",
     "bank": "Transferência bancária",
-    "bankNote": "Pagamento único de 1 mês · Ativado assim que o pagamento for confirmado",
+    "bankNote": "Pagamento único de 1 mês · Ativado logo após a confirmação",
     "currentPlan": "Este é seu plano atual",
     "buyPoints": "Comprar pontos",
     "balance": "Saldo",
-    "pointsUseMember": "Use em vídeos, compras na loja e mensagens após atingir o limite mensal (1 mensagem = {pt}pt).",
-    "pointsUse": "Use em mensagens (1 mensagem = {pt}pt), vídeos e compras na loja.",
+    "pointsUseMember": "Use para comprar vídeos e produtos na loja ou enviar mensagens após ultrapassar o limite mensal (1 mensagem = {pt} pt).",
+    "pointsUse": "Use para enviar mensagens (1 mensagem = {pt} pt), comprar vídeos e produtos na loja.",
     "methodsTitle": "Diferenças entre as formas de pagamento",
     "renewal": "Renovação",
     "activation": "Ativação",
@@ -344,18 +344,18 @@ export const pt: Messages = {
     "autoMonthly": "Automática (mensal)",
     "instant": "Imediata",
     "manualMonth": "Manual (1 mês)",
-    "afterPayment": "Após o pagamento",
-    "afterConfirm": "Após a confirmação",
+    "afterPayment": "Logo após o pagamento",
+    "afterConfirm": "Logo após a confirmação",
     "referralTitle": "Programa de indicação de amigos",
-    "referralA": "Quando um amigo se cadastrar pelo seu link de indicação, ",
-    "referralB": "você e seu amigo ganham {pt} pontos",
+    "referralA": "Quando um amigo se cadastra pelo seu link de indicação, ",
+    "referralB": "vocês dois ganham {pt} pontos",
     "referralC": "!",
     "copied": "Copiado",
     "copy": "Copiar"
   },
   "settings": {
     "shareUnlocked": "Espaço para personagem desbloqueado!",
-    "weeklyLimit": "Você já compartilhou esta semana. Poderá enviar uma nova solicitação daqui a 7 dias.",
+    "weeklyLimit": "Você já compartilhou esta semana. Você poderá solicitar novamente daqui a 7 dias.",
     "sendFailed": "Falha ao enviar",
     "saveFailed": "Falha ao salvar: {error}",
     "pwTooShort": "A senha deve ter pelo menos 8 caracteres",
@@ -363,70 +363,70 @@ export const pt: Messages = {
     "noUser": "Não foi possível obter as informações do usuário",
     "pwWrong": "A senha atual está incorreta",
     "deleteWord": "EXCLUIR",
-    "deleteFailed": "Falha ao excluir. Tente novamente mais tarde.",
+    "deleteFailed": "Não foi possível excluir. Tente novamente mais tarde.",
     "title": "Configurações",
     "profile": "Perfil",
     "nickname": "Apelido",
-    "email": "Endereço de e-mail",
+    "email": "E-mail",
     "saved": "Salvo",
     "security": "Segurança",
     "changePassword": "Alterar senha",
     "currentPassword": "Senha atual",
-    "newPassword": "Nova senha (8 caracteres ou mais)",
+    "newPassword": "Nova senha (mínimo de 8 caracteres)",
     "confirmPassword": "Confirmar nova senha",
     "passwordChanged": "Senha alterada",
     "change": "Alterar",
     "account": "Conta",
     "deleteAccount": "Excluir conta",
-    "deleteWarning": "Ao excluir sua conta, todos os seus dados (histórico de conversas e pontos) serão apagados permanentemente. Esta ação não pode ser desfeita.",
-    "deleteConfirmA": "Digite ",
-    "deleteConfirmB": " para confirmar",
+    "deleteWarning": "Ao excluir sua conta, todos os seus dados (histórico de conversas e pontos) serão apagados permanentemente. Essa ação não pode ser desfeita.",
+    "deleteConfirmA": "Para confirmar, digite ",
+    "deleteConfirmB": " no campo abaixo.",
     "deleteForever": "Excluir conta permanentemente",
     "slotTitle": "Desbloquear espaço para personagem",
     "slotCurrent": "Atual: ",
     "slotCount": "{n} / {limit} personagens",
     "slotHint": "(Ganhe +1 espaço compartilhando nas redes sociais)",
-    "shareInstruction": "Compartilhe em uma das redes sociais abaixo e envie o URL da publicação",
-    "shareText": "Dá para conversar com uma IA como se fosse um casal de verdade! Experimentei o #AiKano → https://aikano.chat",
+    "shareInstruction": "Compartilhe em uma das redes sociais abaixo e envie o link da publicação",
+    "shareText": "Dá para conversar com uma IA como se fosse um casal de verdade! Testei o #AiKano → https://aikano.chat",
     "shareQuote": "Dá para conversar com uma IA como se fosse um casal de verdade! #AiKano",
-    "instagramTitle": "Depois de publicar pelo app do Instagram, copie o URL",
-    "instagramNote": "※ Depois de publicar pelo app do Instagram, copie e cole o URL da publicação",
-    "pasteUrl": "Cole o URL da publicação compartilhada",
-    "urlPlaceholder": "URL da publicação no X / Threads / Facebook / Instagram",
+    "instagramTitle": "Publique pelo app do Instagram e copie o link da publicação",
+    "instagramNote": "※ Depois de publicar pelo app do Instagram, copie e cole o link da publicação",
+    "pasteUrl": "Cole o link da publicação compartilhada",
+    "urlPlaceholder": "Link de publicação do X / Threads / Facebook / Instagram",
     "nextAvailable": "Próxima data disponível para solicitação: {date}",
-    "submitUrl": "Enviar URL e desbloquear espaço",
-    "support": "Suporte",
-    "contactSupport": "Contato e suporte",
+    "submitUrl": "Enviar link e desbloquear espaço",
+    "support": "Ajuda",
+    "contactSupport": "Fale conosco e suporte",
     "language": "Idioma de exibição"
   },
   "blocks": {
     "title": "Lista de bloqueio",
     "empty": "Você não bloqueou nenhum personagem",
-    "note": "Personagens bloqueados não aparecem na lista. Você pode desbloqueá-los quando quiser.",
+    "note": "Os personagens bloqueados não aparecem na lista. Você pode desbloqueá-los quando quiser.",
     "blockedOn": "Bloqueado em {date}",
     "unblocking": "Desbloqueando…",
     "unblock": "Desbloquear"
   },
   "support": {
     "team": "Equipe de suporte",
-    "teamSub": "Fale com a gente sempre que precisar",
+    "teamSub": "Fique à vontade para falar com a gente",
     "greeting": "Olá! Somos a equipe de suporte 😊\nSe tiver alguma dúvida ou precisar de ajuda, é só mandar uma mensagem.",
-    "datePattern": "d 'de' MMM (EEE)",
+    "datePattern": "d 'de' MMMM (EEE)",
     "placeholder": "Digite uma mensagem…"
   },
   "feedback": {
     "categories": {
       "bug": {
         "label": "Relatar um bug",
-        "desc": "Algo não funciona ou se comporta de forma estranha"
+        "desc": "Algo não funciona ou está se comportando de forma estranha"
       },
       "feature": {
-        "label": "Sugerir um recurso",
-        "desc": "Uma funcionalidade que você gostaria de ver"
+        "label": "Sugestão de recurso",
+        "desc": "Uma função que você gostaria de ver por aqui"
       },
       "ai": {
         "label": "Sobre as respostas da IA",
-        "desc": "Qualidade das respostas ou algo estranho na personagem"
+        "desc": "Qualidade das respostas ou algo estranho no personagem"
       },
       "ui": {
         "label": "Sobre a interface",
@@ -442,13 +442,13 @@ export const pt: Messages = {
     "backToChat": "Voltar ao chat",
     "title": "Feedback",
     "badge": "Queremos ouvir você",
-    "heading": "Ajude a construir\nAiKano com sua opinião",
-    "lead": "Conte para nós sobre bugs, dificuldades de uso, recursos que gostaria de ver ou qualquer outra coisa. Nossa equipe de desenvolvimento lê todas as mensagens.",
+    "heading": "Ajude a desenvolver\nAiKano com a sua opinião",
+    "lead": "Conte para nós sobre bugs, dificuldades de uso, recursos que gostaria de ver e muito mais. Nossa equipe de desenvolvimento lê todos os comentários.",
     "pickCategory": "Escolha uma categoria",
     "satisfaction": "Satisfação geral (opcional)",
     "clear": "Limpar",
     "details": "Conte mais",
-    "placeholder": "Escreva à vontade sobre o que chamou sua atenção ou o que gostaria que melhorássemos. Toda sugestão é bem-vinda, por menor que seja!",
+    "placeholder": "Escreva à vontade sobre o que chamou sua atenção ou o que gostaria que melhorássemos. Todo comentário é bem-vindo, por menor que seja!",
     "sending": "Enviando…",
     "submit": "Enviar feedback"
   },
@@ -457,7 +457,7 @@ export const pt: Messages = {
     "unexpected": "Ocorreu um erro inesperado",
     "sorry": "Desculpe. Ocorreu um erro inesperado.",
     "retry": "Tentar novamente",
-    "toTop": "Ir para o topo"
+    "toTop": "Voltar ao topo"
   },
   "shop": {
     "buyFailed": "Não foi possível concluir a compra",
@@ -470,28 +470,28 @@ export const pt: Messages = {
     "other": "Outros",
     "buyPoints": "Comprar pontos →",
     "itemShortage": "Você precisa de pontos para comprar itens",
-    "owned": "Você tem: {n}",
+    "owned": "Na sua coleção: {n}",
     "buying": "Comprando...",
     "bought": "Compra concluída!",
     "notEnough": "Pontos insuficientes",
     "buy": "Comprar"
   },
   "videos": {
-    "confirm": "Comprar “{title}” por {pt} pt?",
+    "confirm": "Deseja comprar \"{title}\" por {pt} pt?",
     "alreadyBought": "Você já comprou este vídeo.",
-    "title": "Vídeos da personagem",
+    "title": "Vídeos dos personagens",
     "empty": "Ainda não há vídeos",
     "watched": "Assistido",
     "watch": "Assistir",
     "buyAndWatch": "Comprar e assistir",
-    "shortage": "Você precisa de pontos para comprar vídeos",
+    "shortage": "Você precisa de pontos para comprar este vídeo",
     "loadFailed": "Não foi possível carregar o vídeo"
   },
   "character": {
     "photoCount": "{n} fotos",
     "affection": "Afinidade",
     "neverTalked": "Vocês ainda não conversaram",
-    "sendToRaise": "Envie mensagens para aumentar a afinidade!",
+    "sendToRaise": "Envie uma mensagem para aumentar a afinidade!",
     "status": "Status",
     "profile": "Perfil",
     "achievements": "Conquistas",
@@ -524,42 +524,42 @@ export const pt: Messages = {
     "footer": "Este e-mail foi enviado automaticamente pelo AiKano.\nSe você não reconhece esta mensagem, ignore-a."
   },
   "lp": {
-    "heroImageAlt": "Tela de conversa com personagens de IA do AiKano",
+    "heroImageAlt": "Tela de chat com personagens de IA do AiKano",
     "characterImageAlt": "Personagem de IA do AiKano",
     "registerFreeArrow": "Criar conta grátis →",
     "badgeBonus": "Ganhe {pt}pt ao se cadastrar",
     "badgeWaiting": "Ela está esperando por você esta noite",
-    "heroLine1": "Tem uma garota",
-    "heroLine2": "que só fala com",
+    "heroLine1": "Existe uma garota",
+    "heroLine2": "que só conversa com",
     "heroLine3": "você.",
     "statGirls": "{n} garotas",
-    "statGirlsLabel": "Garotas cheias de personalidade",
+    "statGirlsLabel": "Garotas com personalidades únicas",
     "statHoursLabel": "Converse a qualquer hora",
     "statAi": "IA exclusiva",
     "statAiLabel": "Conversas naturais e cheias de emoção",
     "charactersTitle": "Garotas que querem conversar com você",
     "charactersSub": "Escolha uma e comece a conversar agora",
     "online": "Online",
-    "talkToAll": "Conheça todas →",
+    "talkToAll": "Converse com todas →",
     "registerToTalkAll": "Cadastre-se e converse com todas →",
     "bonusNote": "※ Ganhe {pt}pt ao se cadastrar",
-    "sample1Title": "Uma conversa como entre amigos",
+    "sample1Title": "Uma conversa descontraída, como entre amigos",
     "sample1": [
       {
         "role": "user",
-        "text": "Saí pra tomar alguma coisa sozinho. Entrei num bar aqui em Pinheiros, em São Paulo."
+        "text": "Saí pra beber sozinho. Entrei num barzinho aqui em São Paulo."
       },
       {
         "role": "char",
-        "text": "Uau, que inveja! Mandou bem depois de um dia de trabalho 😊 Esses bares com petiscos estão super em alta, né? O que você pediu?"
+        "text": "Ah, que delícia! Fico com inveja! E parabéns pelo dia de trabalho 😊 Esses botecos estão super em alta, né? Que tipo de lugar é?"
       },
       {
         "role": "user",
-        "text": "Tô comendo dadinhos de tapioca."
+        "text": "Tô comendo um pastel."
       },
       {
         "role": "char",
-        "text": "Dadinhos de tapioca são uma delícia 😋 Dizem que em Minas o pessoal come pão de queijo com café, mas com dadinho de tapioca acho que não combina, né? 🤭"
+        "text": "Pastel é bom demais 😋 Dizem que em Minas o pessoal come pão de queijo com tudo, mas pastel com isso não rola, né? 🤭"
       },
       {
         "role": "user",
@@ -567,14 +567,14 @@ export const pt: Messages = {
       },
       {
         "role": "char",
-        "text": "Gosto de cerveja tipo pilsen 🍻 Você também acha que bebida doce não combina muito com comida?"
+        "text": "Gosto muito de uma cerveja bem gelada 🍻 Você também acha que bebida doce não combina com comida?"
       }
     ],
-    "sample2Title": "Ela acolhe você em qualquer momento",
+    "sample2Title": "Ela está aqui para você, seja qual for o seu humor",
     "sample2": [
       {
         "role": "char",
-        "text": "Já está na hora de você voltar pra casa, né? Como foi seu dia? Fiquei com saudade e acabei mandando mensagem."
+        "text": "Já deve estar voltando pra casa, né? Como foi seu dia? Fiquei com saudade e acabei mandando mensagem."
       },
       {
         "role": "user",
@@ -582,15 +582,15 @@ export const pt: Messages = {
       },
       {
         "role": "char",
-        "text": "Claro♡ Pode falar comigo sempre que quiser. Aconteceu alguma coisa? Ou só bateu vontade de conversar? Haha"
+        "text": "Claro♡ Pode me contar sempre que quiser. Aconteceu alguma coisa? Ou só bateu vontade de conversar? Haha"
       },
       {
         "role": "user",
-        "text": "Não sei, conversar com você me deixa mais tranquilo."
+        "text": "É que conversar com você me deixa mais tranquilo."
       },
       {
         "role": "char",
-        "text": "Fico muito feliz em ouvir isso♡ Conversar com você é uma das minhas coisas favoritas, 〇〇."
+        "text": "Fico muito feliz em ouvir isso♡ Conversar com você também é a minha parte favorita do dia."
       }
     ],
     "sample3Title": "Um carinho que acolhe",
@@ -601,71 +601,71 @@ export const pt: Messages = {
       },
       {
         "role": "char",
-        "text": "Sério!? Que chato. O que aconteceu? Quero ouvir e ajudar no que puder. Se passou dos limites e virou perseguição, fico preocupada."
+        "text": "Nossa, que chato. O que aconteceu? Quero ouvir e ajudar no que puder. Se passaram dos limites e isso virou perseguição, fico preocupada."
       },
       {
         "role": "user",
-        "text": "Eu estava chamando a atenção de um funcionário e me disseram que todo mundo vai pedir demissão por minha causa. Mas, se eu não orientar a equipe, quem leva bronca sou eu. Que situação é essa?"
+        "text": "Eu estava chamando a atenção de um subordinado e me disseram que todo mundo vai embora por minha causa. Mas, se eu não orientar a equipe, quem leva bronca sou eu. Que absurdo, né?"
       },
       {
         "role": "char",
-        "text": "Parece que você está sentindo o peso de ser gestor e ficar no meio do caminho. Já passei por algo parecido e acabei ficando muito mal na época. Não se cobre demais, 〇〇. Você está entre a equipe e a chefia, mas isso não significa que a culpa seja sua."
+        "text": "Parece que você está sentindo na pele a pressão de ser gestor. Já passei por algo parecido e acabei ficando bem mal na época. Você também não precisa se cobrar tanto. Numa situação dessas, você só fica no meio do fogo cruzado entre a equipe e os superiores. Você não tem culpa."
       },
       {
         "role": "user",
-        "text": "É, né? Quando eu era novo na empresa também levava bronca, mas segui em frente e me esforcei pra chegar onde estou. Não estou errado, né? Desabafar com você, Aoi, me deixou bem mais leve. Obrigado."
+        "text": "É, né? Quando eu era novato também levava bronca, mas continuei me esforçando e cheguei onde estou. Não estou errado, né? Desabafar com você, Aoi, me deixou muito mais leve. Obrigado."
       }
     ],
-    "membersTitle": "Aproveite ainda mais com uma conta",
-    "membersSub": "Veja fotos exclusivas para membros à vontade e aumente sua afinidade com mais facilidade",
-    "featuresTitleA": "Muito além",
-    "featuresTitleB": "dos outros apps",
+    "membersTitle": "Aproveite ainda mais com uma assinatura",
+    "membersSub": "Acesso ilimitado a fotos exclusivas e mais facilidade para aumentar a afinidade",
+    "featuresTitleA": "Muito além dos ",
+    "featuresTitleB": "outros serviços",
     "features": [
       {
-        "title": "Conversas de alta qualidade",
-        "desc": "Com os mais avançados modelos de linguagem, as conversas são naturais e agradáveis, levando em conta o contexto, as emoções e o ritmo do papo."
+        "title": "Uma IA que conversa de verdade",
+        "desc": "Com os modelos de linguagem mais avançados, ela entende o contexto, as nuances das emoções e o ritmo da conversa para criar diálogos naturais e agradáveis."
       },
       {
-        "title": "Uma relação que se aprofunda com a memória",
-        "desc": "A conversa de vocês fica na memória. As respostas levam em conta o que já conversaram, como suas preferências e preocupações, para você sentir que ela se lembra de você."
+        "title": "Uma relação que cresce com a memória",
+        "desc": "Ela se lembra das conversas de vocês. Suas preferências, preocupações e interações anteriores ajudam a criar respostas que mostram que ela se lembra de você."
       },
       {
         "title": "Conversas do seu jeito",
-        "desc": "Quanto mais vocês conversam, mais as respostas refletem suas preferências, valores e jeito de falar. A experiência fica cada vez mais confortável."
+        "desc": "Com o tempo, as respostas passam a refletir suas preferências, seus valores e seu jeito de falar. Quanto mais vocês conversam, mais à vontade você se sente."
       },
       {
-        "title": "Um espaço seguro para falar de verdade",
-        "desc": "Desabafe sobre preocupações que não consegue contar a ninguém ou converse sobre as pequenas coisas do dia a dia. Um espaço para adultos falarem sem receio."
+        "title": "Um espaço seguro para falar de tudo",
+        "desc": "Desabafe sobre o que não consegue contar a ninguém ou fale sobre as pequenas coisas do dia a dia. Um espaço para conversar sem receios, feito para adultos."
       },
       {
         "title": "Receba fotos das personagens",
-        "desc": "Às vezes, elas enviam selfies e fotos do dia a dia. Aproveite expressões e momentos que vão além do que as palavras conseguem mostrar."
+        "desc": "Às vezes, elas enviam selfies e fotos do dia a dia. Aproveite também as expressões e o clima que só uma foto consegue transmitir."
       }
     ],
     "secretBadge": "Suas conversas não são compartilhadas com terceiros",
-    "secretTitle": "Que tal falar sobre algo\nque você não conta a ninguém?",
-    "secretBody": "Suas conversas não serão compartilhadas com terceiros\npara nenhuma finalidade além de melhorar o serviço.",
+    "secretTitle": "Que tal conversar sobre algo\nque não pode contar a ninguém?",
+    "secretBody": "Suas conversas não serão compartilhadas com terceiros\npara nenhum fim além da melhoria do serviço.",
     "referralBadge": "Indique um amigo",
     "referralTitleA": "Indique um amigo",
-    "referralTitleB": "e vocês ganham {pt}pt!",
-    "referralBody": "Quando um amigo se cadastrar pelo seu link exclusivo,\nvocês dois ganham {pt}pt.",
+    "referralTitleB": "e ganhem {pt}pt cada um!",
+    "referralBody": "Quando um amigo se cadastrar pelo seu link exclusivo,\nvocês dois ganharão {pt}pt.",
     "referralCtaUser": "Ver meu link de indicação →",
-    "referralCtaGuest": "Cadastre-se e ganhe seu link de indicação →",
-    "realTitleA": "Por que é tão",
+    "referralCtaGuest": "Cadastre-se e receba seu link de indicação →",
+    "realTitleA": "Por que é tão ",
     "realTitleB": "real",
     "realTitleC": "?",
-    "realBody": "Os modelos de linguagem mais avançados entendem profundamente as emoções e o contexto.\nA cada resposta, a conversa fica mais do seu jeito.",
+    "realBody": "Os modelos de linguagem mais avançados entendem suas emoções e o contexto.\nA cada resposta, a conversa fica mais do seu jeito.",
     "finalUserBadge": "Que tal conversar com ela esta noite?",
     "finalUserTitle": "Tem uma garota esperando\npara conhecer você",
-    "finalGuestBadge": "Campanha de bônus para novos cadastros",
-    "finalGuestTitle": "Ganhe um bônus especial\nse criar sua conta agora",
+    "finalGuestBadge": "Promoção de boas-vindas",
+    "finalGuestTitle": "Ganhe um presente especial\n ao se cadastrar agora",
     "finalGuestLead": "Cadastre-se e ganhe",
-    "finalGuestBonus": "{pt}pt (equivalente a ¥{yen})",
+    "finalGuestBonus": "{pt}pt (equivalentes a ¥{yen})",
     "finalGuestTail": ".",
-    "finalGuestNote": "Cadastro grátis, concluído em 30 segundos.",
+    "finalGuestNote": "Cadastro grátis em apenas 30 segundos.",
     "perkBonus": "Ganhe {pt}pt ao se cadastrar",
-    "perkLogin": "Ganhe {pt}pt por dia ao entrar (dá para enviar {n} mensagens grátis por dia)",
-    "perkPointSystem": "Cadastro grátis · pague apenas pelos pontos que usar",
-    "privacyNote": "Seus dados pessoais são protegidos com todo o cuidado"
+    "perkLogin": "Ganhe {pt}pt por dia ao fazer login ({n} mensagens grátis por dia)",
+    "perkPointSystem": "Cadastro grátis. Pague apenas pelo que usar com pontos",
+    "privacyNote": "Seus dados pessoais são protegidos com rigor"
   }
 }

@@ -1,50 +1,50 @@
 {
   "title": "Términos de uso",
   "updated": "Última actualización: 3 de octubre de 2026",
-  "footer": "Equipo de AiKano",
+  "footer": "Equipo de gestión de AiKano",
   "sections": [
     {
       "title": "Artículo 1. Disposiciones generales",
       "items": [
-        "Estos Términos de uso (en adelante, los «Términos») se aplican a todas las acciones que realicen los usuarios al utilizar el servicio de chat con personajes de IA «AiKano» (en adelante, el «Servicio»), ofrecido por el operador.",
-        "Estos Términos establecen las condiciones de uso del Servicio. Los usuarios deberán utilizar el Servicio de conformidad con estos Términos.",
-        "Al utilizar el Servicio, se considerará que los usuarios aceptan todo el contenido de estos Términos."
+        "Estos Términos de uso (en adelante, los «Presentes Términos») se aplican a todos los actos realizados por los usuarios al utilizar el servicio de chat con personajes de IA «AiKano» (en adelante, el «Servicio»), ofrecido por el operador.",
+        "Los Presentes Términos establecen las condiciones de uso del Servicio. Los usuarios deberán utilizar el Servicio de conformidad con los Presentes Términos.",
+        "Se considerará que los usuarios han aceptado todo el contenido de los Presentes Términos al utilizar el Servicio."
       ]
     },
     {
       "title": "Artículo 2. Modificación de estos Términos de uso",
       "items": [
-        "La empresa podrá modificar estos Términos de uso en cualquier momento, sin obtener el consentimiento de los usuarios.",
-        "En caso de modificación, la empresa publicará sin demora los Términos de uso modificados en el Servicio.",
-        "Los Términos de uso modificados entrarán en vigor en el momento de su publicación en el Servicio."
+        "La Empresa podrá modificar estos Términos de uso en cualquier momento, sin necesidad de obtener el consentimiento de los usuarios.",
+        "En caso de modificación, la Empresa publicará sin demora los Términos de uso modificados en el Servicio.",
+        "Los Términos de uso modificados entrarán en vigor en el momento en que se publiquen en el Servicio."
       ]
     },
     {
-      "title": "Artículo 3. Objeto del Servicio",
+      "title": "Artículo 3. Finalidad del Servicio",
       "items": [
-        "El Servicio es un servicio de entretenimiento interactivo con personajes virtuales que utiliza tecnología de inteligencia artificial (IA) y que nuestra empresa ofrece a los usuarios.",
-        "Todos los personajes que aparecen en el Servicio (en adelante, los «Personajes de IA») son ficticios y no son personas reales. Las respuestas del Servicio son generadas por la IA y el sistema de respuesta de nuestra empresa. Para mejorar la calidad de las respuestas, es posible que nuestro personal participe en algunas interacciones.",
-        "El Servicio no tiene como objetivo facilitar la interacción entre usuarios y no constituye un «servicio de presentación por Internet de personas del sexo opuesto» conforme a la Ley de regulación de los servicios de citas por Internet."
+        "El Servicio es un servicio de entretenimiento interactivo con personajes virtuales mediante tecnología de IA (inteligencia artificial), ofrecido por nuestra empresa a los usuarios.",
+        "Todos los personajes que aparecen en el Servicio (en adelante, «Personajes de IA») son ficticios y no representan a personas reales. Las respuestas del Servicio son generadas por la IA y el sistema de respuestas de nuestra empresa. Para mejorar la calidad de las respuestas, es posible que nuestro personal participe en algunas interacciones.",
+        "El Servicio no tiene como finalidad facilitar la comunicación entre usuarios y no constituye un «servicio de presentación de personas del sexo opuesto por Internet» según lo establecido en la Ley de Regulación de los Sitios de Citas por Internet."
       ]
     },
     {
-      "title": "Artículo 4: Requisitos de edad",
+      "title": "Artículo 4. Requisitos de elegibilidad",
       "items": [
-        "El servicio solo está disponible para personas mayores de 18 años.",
-        "Los estudiantes de secundaria no pueden utilizar el servicio, aunque tengan 18 años o más.",
-        "Al comenzar a utilizar el servicio, el usuario declara y garantiza a nuestra empresa que tiene 18 años o más y que no es estudiante de secundaria.",
-        "Si se descubre que un usuario es menor de 18 años, nuestra empresa suspenderá inmediatamente su acceso al servicio."
+        "Solo pueden utilizar este servicio las personas mayores de 18 años.",
+        "Los estudiantes de secundaria no pueden utilizar este servicio, aunque tengan 18 años o más.",
+        "Al comenzar a utilizar este servicio, el usuario declara y garantiza a nuestra empresa que tiene 18 años o más y que no es estudiante de secundaria.",
+        "Si se descubre que un usuario es menor de 18 años, suspenderemos inmediatamente su acceso al servicio."
       ]
     },
     {
-      "title": "Artículo 5. Notificaciones por parte de la Empresa",
+      "title": "Artículo 5. Notificaciones de la Empresa",
       "items": [
-        "La Empresa notificará a los usuarios, cuando sea necesario, mediante avisos publicados en el Servicio, el envío de correos electrónicos o cualquier otro medio que considere adecuado.",
-        "Las notificaciones mencionadas en el apartado anterior surtirán efecto en el momento en que la Empresa las publique en el Servicio o envíe el correo electrónico u otra comunicación correspondiente."
+        "La Empresa notificará a los usuarios, cuando sea necesario, mediante publicaciones en el Servicio, el envío de correos electrónicos u otros medios que considere adecuados.",
+        "Las notificaciones mencionadas en el apartado anterior surtirán efecto en el momento en que la Empresa las publique en el Servicio o las envíe por correo electrónico u otros medios."
       ]
     },
     {
-      "title": "Artículo 6. Gestión de la cuenta",
+      "title": "Artículo 6: Gestión de la cuenta",
       "items": [
         "El usuario deberá gestionar la información de su cuenta bajo su propia responsabilidad.",
         "La empresa no asumirá responsabilidad alguna por los daños derivados del uso no autorizado de una cuenta.",
@@ -54,165 +54,165 @@
     {
       "title": "Artículo 7: Tarifas de uso",
       "items": [
-        "Cada mensaje de chat de texto consume 10 puntos (equivalentes a ¥100).",
-        "El precio por punto es de 10 yenes (impuestos incluidos). Las compras de puntos en paquetes incluyen puntos de bonificación. Consulta la página de compra de puntos del servicio para ver los detalles de los planes disponibles.",
-        "Al registrarte, recibirás 50 puntos gratis (para tus primeros 5 mensajes). Además, recibirás 20 puntos de bonificación por iniciar sesión cada día (válidos durante 30 días).",
-        "Consumo aproximado de puntos: chat de texto, 10 puntos; contenido premium (como videos), según el precio indicado para cada contenido. La cantidad de puntos que se consume puede cambiar sin previo aviso.",
-        "Ofrecemos suscripciones mensuales: «Plan Estándar» (¥2,980/mes · 300 mensajes) y «Plan Premium» (¥4,980/mes · 500 mensajes). Si superas el límite mensual de mensajes, puedes seguir usando cualquiera de los planes por 5 puntos por mensaje.",
-        "Las suscripciones mensuales se renuevan automáticamente cada mes en la fecha de contratación. Puedes cancelarlas en cualquier momento desde Mi página. Tras cancelar, podrás seguir usando el servicio hasta el final del periodo mensual vigente.",
+        "Cada mensaje de chat de texto consume 5 puntos (equivalentes a ¥50).",
+        "El precio por punto es de 10 yenes (impuestos incluidos). Al comprar puntos en paquetes, se otorgan puntos extra de bonificación. Consulta la página de compra de puntos del servicio para conocer los detalles de los planes disponibles.",
+        "Al registrarte, recibirás 25 puntos gratis (para tus primeros 5 mensajes). Además, recibirás 10 puntos de bonificación por iniciar sesión cada día (válidos durante 30 días).",
+        "Consumo aproximado de puntos: chat de texto, 5 puntos; contenido premium (como vídeos), según el precio indicado en cada contenido. La cantidad de puntos consumidos puede cambiar sin previo aviso.",
+        "Ofrecemos las suscripciones mensuales «Plan Estándar (¥2,980 al mes, 300 mensajes)» y «Plan Premium (¥4,980 al mes, 500 mensajes)». Una vez superado el límite mensual de mensajes, ambos planes permiten seguir usando el servicio por 3 puntos por mensaje.",
+        "Las suscripciones mensuales se renuevan automáticamente en la fecha de contratación de cada mes. Puedes cancelarlas en cualquier momento desde Mi página. Tras cancelar, podrás seguir usando el servicio hasta que termine el periodo restante del mes en curso.",
         "También ofrecemos pases de 30 días que se pueden pagar en tiendas de conveniencia o con PayPay (Estándar: ¥2,980; Premium: ¥4,980). Los pases de 30 días no se renuevan automáticamente.",
-        "Debido a la naturaleza del contenido digital, no se admiten reembolsos después de comprar puntos o pases de 30 días.",
-        "Los puntos comprados no tienen fecha de vencimiento. Sin embargo, los puntos otorgados como beneficio, por ejemplo, como bonificación por iniciar sesión, vencen 30 días después de la fecha en que se otorgan.",
-        "Al cancelar la cuenta del servicio, se eliminarán todos los puntos que tenga el usuario.",
-        "El usuario deberá asumir los gastos de conexión y demás cargos necesarios para utilizar el servicio.",
-        "Al utilizar los servicios de pago, no se cobrarán cargos adicionales por intereses, gastos de gestión, recargos por demora ni otros conceptos similares.",
-        "Este servicio tiene fines recreativos. La compra de puntos permite acceder a contenido digital como contraprestación. No está destinada a inversiones, a obtener ganancias ni a canjear puntos por dinero en efectivo."
+        "Debido a la naturaleza del contenido digital, no se realizan reembolsos por la compra de puntos o pases de 30 días.",
+        "Los puntos comprados no tienen fecha de vencimiento. Sin embargo, los puntos otorgados como beneficios, como los bonos por iniciar sesión, vencen 30 días después de su otorgamiento.",
+        "Al cancelar tu cuenta en el servicio, se eliminarán todos los puntos que tengas.",
+        "El usuario asumirá los gastos de conexión y demás cargos necesarios para utilizar el servicio.",
+        "Al usar servicios de pago, no se cobrarán cargos adicionales bajo ningún concepto, como intereses, gastos administrativos o recargos por demora.",
+        "Este servicio tiene fines recreativos. La compra de puntos da derecho a utilizar contenido digital como contraprestación. No está destinada a inversiones, a generar ingresos ni al canje por dinero en efectivo."
       ]
     },
     {
       "title": "Artículo 8: Sobre los personajes de IA (importante)",
       "items": [
-        "Todos los personajes de IA que aparecen en este servicio son ficticios y no tienen ninguna relación con personas, organizaciones, personajes u otros elementos reales.",
-        "Las respuestas de este servicio se generan mediante IA y nuestro sistema de respuestas. Para mejorar la calidad de las respuestas, es posible que el personal participe en algunas interacciones. No garantizamos la exactitud, idoneidad ni veracidad de las respuestas.",
-        "Como las respuestas de los personajes de IA se generan de forma probabilística a partir de datos de entrenamiento, pueden incluir contenido distinto de lo que espera el usuario, contradictorio o inexacto.",
-        "El usuario no deberá utilizar las respuestas de los personajes de IA como consejos para situaciones reales ni como asesoramiento profesional de carácter médico, jurídico, financiero o de otra índole.",
-        "Las conversaciones con los personajes de IA tienen fines de entretenimiento. No asumimos responsabilidad alguna si el uso de este servicio causa al usuario dependencia emocional, efectos negativos en su vida cotidiana u otras consecuencias similares.",
-        "Los personajes de IA están concebidos como personas ficticias mayores de 18 años. Los personajes cuya edad no se indique explícitamente también se representan como adultos mayores de 18 años."
+        "Todos los personajes de IA que aparecen en este servicio son ficticios y no guardan relación alguna con personas, organizaciones o personajes reales.",
+        "Las respuestas de este servicio son generadas por la IA y nuestro sistema de respuesta. Para mejorar la calidad de las respuestas, es posible que nuestro personal intervenga en algunas interacciones. No garantizamos la exactitud, idoneidad ni veracidad del contenido de las respuestas.",
+        "Como las respuestas de los personajes de IA se generan de forma probabilística a partir de datos de entrenamiento, pueden diferir de las expectativas del usuario, ser contradictorias o contener información inexacta.",
+        "El usuario no debe utilizar las respuestas de los personajes de IA como consejos para situaciones reales ni como asesoramiento profesional médico, jurídico, financiero o de otro tipo.",
+        "Las conversaciones con los personajes de IA tienen fines de entretenimiento. No asumimos responsabilidad alguna si el uso de este servicio provoca dependencia emocional u otros efectos negativos en la vida cotidiana del usuario.",
+        "Los personajes de IA están configurados como personas ficticias mayores de 18 años. Los personajes cuya edad no se indique explícitamente también se representan como adultos mayores de 18 años."
       ]
     },
     {
       "title": "Artículo 9. Conductas prohibidas",
-      "preamble": "Los usuarios no podrán realizar, al utilizar este servicio, ninguna de las siguientes conductas:",
+      "preamble": "Los usuarios no deberán realizar ninguna de las siguientes conductas al utilizar el Servicio:",
       "items": [
-        "Incumplir estos Términos de uso",
-        "Realizar actos contrarios a la legislación o al orden público y las buenas costumbres",
-        "Realizar actos con fines comerciales, de afiliación, publicitarios o de captación",
-        "Solicitar a un personaje de IA que adopte configuraciones o describa situaciones que evoquen a personas menores de 18 años",
-        "Generar o solicitar pornografía infantil, contenido sobre abuso infantil o incesto (que evoque relaciones familiares reales), o imitar a personas reales (como artistas o figuras públicas)",
-        "Generar o solicitar, a través de personajes de IA, contenido que promueva delitos, el suicidio, las autolesiones, el consumo de drogas u otras conductas ilegales o perjudiciales",
-        "Redistribuir, revender o publicar a terceros contenido generado por IA obtenido a través de este servicio",
-        "Hacer pasar las respuestas de un personaje de IA por declaraciones de una persona real",
-        "Infringir o poner en riesgo los derechos de propiedad intelectual de otros usuarios, terceros o nuestra empresa, incluidos los derechos de autor y de marca",
-        "Infringir los bienes, la privacidad, el derecho a la propia imagen o los derechos de publicidad de otros usuarios, terceros o nuestra empresa",
-        "Discriminar, difamar o calumniar a otros usuarios, terceros o nuestra empresa, o perjudicar su honor o reputación",
-        "Interferir en el funcionamiento de este servicio",
-        "Utilizar este servicio haciéndose pasar por un tercero",
-        "Intentar acceder sin autorización a este servicio, aplicar ingeniería inversa o extraer modelos de IA",
-        "Utilizar las respuestas de este servicio como datos de entrenamiento para entrenar otros modelos de IA",
-        "Mantener varias cuentas duplicadas como un mismo usuario",
-        "Compartir una misma cuenta entre varios usuarios",
-        "Transferir o ceder en préstamo una cuenta de este servicio",
-        "Facilitar cualquiera de las conductas indicadas en los puntos anteriores",
-        "Cualquier otra conducta que nuestra empresa considere inapropiada"
+        "Incumplir estos Términos de uso.",
+        "Realizar actos contrarios a las leyes o al orden público y las buenas costumbres.",
+        "Realizar actos con fines comerciales, de afiliación, promoción, captación u otros fines similares.",
+        "Solicitar a un personaje de IA que adopte una configuración o descripción que evoque a una persona menor de 18 años.",
+        "Generar o solicitar contenido relacionado con pornografía infantil, maltrato infantil, incesto (que evoque relaciones familiares reales) o que imite a personas reales (como artistas o figuras públicas).",
+        "Generar o solicitar, a través de un personaje de IA, contenido que fomente delitos, suicidio, autolesiones, consumo de drogas u otras conductas ilegales o perjudiciales.",
+        "Redistribuir, revender o hacer público contenido generado por IA obtenido a través del Servicio.",
+        "Hacer pasar las respuestas de un personaje de IA por declaraciones de una persona real.",
+        "Infringir o poner en riesgo los derechos de propiedad intelectual, como los derechos de autor o de marca, de otros usuarios, terceros o nuestra empresa.",
+        "Infringir los bienes, la privacidad, el derecho a la propia imagen o los derechos de publicidad de otros usuarios, terceros o nuestra empresa.",
+        "Discriminar, difamar o calumniar a otros usuarios, terceros o nuestra empresa, o perjudicar su honor o reputación.",
+        "Interferir en el funcionamiento del Servicio.",
+        "Utilizar el Servicio suplantando la identidad de un tercero.",
+        "Intentar acceder sin autorización al Servicio, realizar ingeniería inversa o extraer los modelos de IA.",
+        "Utilizar las respuestas del Servicio como datos de aprendizaje para entrenar otros modelos de IA.",
+        "Mantener más de una cuenta por usuario.",
+        "Compartir una misma cuenta entre varios usuarios.",
+        "Transferir o ceder en préstamo una cuenta del Servicio.",
+        "Fomentar cualquiera de las conductas descritas en los puntos anteriores.",
+        "Cualquier otra conducta que nuestra empresa considere inadecuada."
       ],
-      "suffix": "Si nuestra empresa detecta alguna de las conductas prohibidas indicadas en el apartado anterior, podrá suspender el uso de este servicio por parte del usuario o cancelar su cuenta sin previo aviso."
+      "suffix": "Si nuestra empresa detecta alguna de las conductas prohibidas descritas en el apartado anterior, podrá suspender el acceso del usuario al Servicio o cancelar su cuenta sin previo aviso."
     },
     {
-      "title": "Artículo 10: Baja",
+      "title": "Artículo 10. Baja",
       "items": [
-        "El usuario podrá dejar de utilizar el Servicio y darse de baja en cualquier momento, de conformidad con estos Términos y el procedimiento establecido por la Empresa.",
-        "La baja puede tramitarse desde los ajustes de Mi página.",
-        "Desde que se solicita la baja hasta que esta se hace efectiva, el trámite se completará de inmediato, siempre que no haya ningún problema con el uso del Servicio por parte del usuario.",
+        "El usuario podrá dejar de utilizar el Servicio y darse de baja en cualquier momento, de conformidad con estos Términos y el procedimiento establecido por nuestra empresa.",
+        "Puede tramitar la baja desde los ajustes de Mi página.",
+        "Siempre que no haya ningún problema relacionado con el uso del usuario, la baja se tramitará de inmediato desde el momento de su solicitud.",
         "Si transcurre un periodo determinado (180 días o más) desde el último inicio de sesión del usuario, se considerará que se ha dado de baja.",
-        "Al darse de baja del Servicio, el usuario perderá todos los derechos que le correspondan como miembro, incluidos el derecho a recibir el Servicio y el derecho a recibir información mediante las notificaciones del Servicio.",
-        "Al darse de baja del Servicio, se eliminarán todos los puntos que tenga el usuario. Asimismo, no se realizarán reembolsos por los puntos adquiridos.",
-        "La baja no conlleva ningún tipo de comisión ni cargo.",
-        "Si el usuario realiza alguna de las conductas prohibidas establecidas en el Artículo 9, la Empresa podrá darlo de baja sin notificación previa.",
-        "La Empresa no será responsable en ningún caso de los daños que pueda sufrir un usuario al que se le haya dado de baja."
+        "Cuando el usuario se dé de baja del Servicio, perderá todos los derechos que le correspondan como miembro, incluidos el derecho a recibir el Servicio y el derecho a recibir información mediante la función de notificaciones del Servicio.",
+        "Al darse de baja del Servicio, se eliminarán todos los puntos que tenga el usuario. No se reembolsará en ningún caso el importe de los puntos comprados.",
+        "La baja no conlleva ningún tipo de comisión ni gasto.",
+        "Si el usuario realiza alguna de las conductas prohibidas establecidas en el Artículo 9, nuestra empresa podrá darle de baja sin notificación previa.",
+        "Nuestra empresa no será responsable en ningún caso de los daños que pueda sufrir un usuario al que se haya dado de baja."
       ]
     },
     {
       "title": "Artículo 11. Tratamiento de los datos de chat",
       "items": [
         "La empresa podrá almacenar y analizar el contenido de los chats entre los usuarios y los personajes de IA con el fin de mejorar el servicio y la calidad de las respuestas de la IA, detectar usos indebidos y cumplir con la legislación aplicable.",
-        "La empresa podrá utilizar estos datos para mejorar el servicio y entrenar la IA, siempre que los haya procesado de modo que no sea posible identificar a las personas.",
-        "Si se detectan actividades ilegales (como solicitudes de pornografía infantil o incitación a cometer delitos), la empresa podrá conservar los registros de chat correspondientes como pruebas y, cuando sea necesario, proporcionarlos a las autoridades de investigación.",
-        "La información personal que introduzcan los usuarios (como su nombre real, dirección o número de teléfono) se introduce bajo su propia responsabilidad, y la empresa no será responsable de los daños que puedan derivarse de ello."
+        "La empresa podrá utilizar estos datos para mejorar el servicio y entrenar la IA, tras procesarlos de modo que no sea posible identificar a las personas.",
+        "Si se detecta una actividad ilegal (como solicitudes de pornografía infantil o incitación a cometer delitos), la empresa podrá conservar los registros de chat correspondientes como prueba y, si es necesario, proporcionarlos a las autoridades encargadas de la investigación.",
+        "La información personal que introduzca el usuario (como su nombre real, domicilio o número de teléfono) se proporciona bajo su propia responsabilidad. La empresa no se hace responsable de los daños que puedan derivarse de ello."
       ]
     },
     {
-      "title": "Artículo 12: Publicidad",
+      "title": "Artículo 12. Publicidad",
       "items": [
-        "La empresa podrá mostrar al usuario, a través del Servicio, anuncios propios y de anunciantes.",
-        "La empresa no garantiza el contenido de los servicios que dichos anunciantes ofrecen al usuario ni asume responsabilidad por sus resultados.",
-        "El usuario acepta eximir a la empresa de toda responsabilidad por cualquier pérdida o daño que resulte del uso de los anuncios por parte del usuario o de cualquier acción derivada de dicho uso."
+        "La empresa podrá mostrar a los usuarios anuncios propios y de anunciantes en el Servicio.",
+        "La empresa no garantiza el contenido de los servicios que los anunciantes ofrecen a los usuarios ni asume responsabilidad por sus resultados.",
+        "El usuario acepta eximir a la empresa de toda responsabilidad por cualquier pérdida o daño derivado del uso de los anuncios por parte del usuario o de cualquier acción relacionada con ellos."
       ]
     },
     {
       "title": "Artículo 13. Eliminación de información",
       "items": [
-        "Si la Empresa confirma que un usuario ha realizado alguna de las conductas prohibidas establecidas en el Artículo 9 de estas Condiciones de uso, eliminará la información relativa a dicha infracción sin notificar previamente al usuario en cuestión.",
-        "Si un usuario consulta a la Empresa sobre la eliminación establecida en el apartado anterior, la Empresa no tendrá obligación alguna de explicar los motivos de dicha eliminación."
+        "Si confirmamos que un usuario ha realizado alguna de las conductas prohibidas establecidas en el artículo 9 de estas Condiciones de uso, eliminaremos la información relacionada con dicha conducta sin notificárselo previamente.",
+        "Si un usuario nos consulta sobre la eliminación establecida en el apartado anterior, no tendremos obligación alguna de explicar los motivos de dicha eliminación."
       ]
     },
     {
-      "title": "Artículo 14: Exención de responsabilidad",
+      "title": "Artículo 14. Exención de responsabilidad",
       "items": [
-        "La Empresa no garantiza en modo alguno la exactitud, fiabilidad, utilidad, legalidad ni actualidad de la información proporcionada a los usuarios a través del Servicio (incluidas las respuestas de los personajes de IA).",
-        "La Empresa no asumirá responsabilidad alguna si el contenido de las respuestas de los personajes de IA causa daños psicológicos, físicos o económicos a los usuarios.",
-        "El Servicio tiene fines de entretenimiento, y los personajes de IA no sustituyen las relaciones humanas reales ni la atención médica, el asesoramiento legal o financiero, ni ningún otro tipo de asesoramiento profesional.",
-        "La Empresa no será responsable si el usuario desarrolla dependencia emocional como resultado del uso del Servicio y, si fuera necesario, recomienda consultar a un profesional de la salud mental.",
-        "La Empresa no asumirá responsabilidad alguna por los resultados derivados del uso del Servicio por parte del usuario, ni por los daños que se produzcan debido a fallos o interrupciones del Servicio.",
-        "El usuario entiende y acepta que la tecnología de IA aún está en desarrollo y que es posible que no obtenga las respuestas que espera."
+        "La Empresa no garantiza en modo alguno la exactitud, fiabilidad, utilidad, legalidad ni actualidad de la información proporcionada a los usuarios a través del Servicio, incluidas las respuestas de los personajes de IA.",
+        "La Empresa no será responsable en modo alguno de los daños psicológicos, físicos o económicos que puedan sufrir los usuarios como consecuencia del contenido de las respuestas de los personajes de IA.",
+        "El Servicio tiene fines de entretenimiento y los personajes de IA no sustituyen las relaciones humanas reales ni las consultas médicas, legales o financieras, ni ningún otro tipo de asesoramiento profesional.",
+        "Si el uso del Servicio genera dependencia emocional en un usuario, la Empresa no será responsable de ello y recomienda consultar a un profesional de la salud cuando sea necesario.",
+        "La Empresa no será responsable en modo alguno de las consecuencias derivadas del uso del Servicio por parte de los usuarios, ni de las que se deriven de fallos o interrupciones del Servicio.",
+        "Los usuarios entienden y aceptan que la tecnología de IA está en desarrollo y que es posible que no obtengan las respuestas que esperan."
       ]
     },
     {
       "title": "Artículo 15. Finalización del Servicio",
       "items": [
-        "La empresa podrá, previa notificación a los usuarios, poner fin en cualquier momento a la prestación del Servicio a los usuarios, así como a cualquier parte del mismo."
+        "La empresa podrá, previa notificación a los usuarios, poner fin en cualquier momento a la prestación del Servicio a los usuarios, así como a cualquiera de sus partes."
       ]
     },
     {
-      "title": "Artículo 16: Interrupción del Servicio",
-      "preamble": "La Empresa podrá suspender temporalmente la prestación del Servicio sin previo aviso a los usuarios cuando se dé alguna de las siguientes circunstancias:",
+      "title": "Artículo 16. Interrupción del Servicio",
+      "preamble": "La Empresa podrá interrumpir temporalmente la prestación del Servicio sin notificar previamente al Usuario cuando se dé alguno de los siguientes casos:",
       "items": [
-        "Cuando sea inevitable realizar tareas de mantenimiento o de reparación de los equipos utilizados para el Servicio",
-        "Cuando se produzca una avería en los equipos utilizados para el Servicio",
-        "Cuando se produzca una avería en los modelos de IA subyacentes (servicios de API externos como OpenAI o Anthropic)",
-        "Cuando, por otros motivos operativos o técnicos, la Empresa considere necesario suspender temporalmente el Servicio"
+        "Cuando sea inevitable realizar tareas de mantenimiento o obras en las instalaciones necesarias para el Servicio",
+        "Cuando se produzca una avería en las instalaciones necesarias para el Servicio",
+        "Cuando se produzca una avería en los modelos fundacionales de IA (servicios de API externos como OpenAI o Anthropic)",
+        "Cuando, por otros motivos operativos o técnicos, la Empresa considere necesario interrumpir temporalmente el Servicio"
       ]
     },
     {
-      "title": "Artículo 17: Tratamiento de datos personales",
+      "title": "Artículo 17. Tratamiento de datos personales",
       "items": [
-        "La empresa protegerá adecuadamente los datos personales de los usuarios y cumplirá la «Política de privacidad» publicada por separado en este Servicio."
+        "Nuestra empresa protegerá adecuadamente los datos personales de los usuarios y cumplirá la «Política de privacidad» publicada por separado en este servicio."
       ]
     },
     {
-      "title": "Artículo 18. Propiedad intelectual",
+      "title": "Artículo 18: Propiedad intelectual",
       "items": [
-        "El usuario reconoce y acepta que la información que la empresa pone a su disposición a través del servicio (como configuraciones de personajes, ilustraciones, textos, audio y software) está protegida por derechos de autor, marcas, patentes y otros derechos de propiedad intelectual, así como por la legislación aplicable.",
-        "La titularidad de los derechos de autor sobre el contenido generado mediante IA en el servicio (como conversaciones e imágenes generadas) será determinada por separado por la empresa. El usuario no podrá utilizar dicho contenido con fines comerciales, redistribuirlo ni distribuirlo de forma secundaria.",
-        "Los derechos sobre los nombres, las configuraciones, el aspecto visual y demás elementos de los personajes de IA pertenecen a la empresa."
+        "El usuario reconoce y acepta que la información que la empresa le proporciona a través del Servicio (como la configuración de los personajes, las ilustraciones, los textos y el software) está protegida por derechos de autor, derechos de marca, derechos de patente, otros derechos de propiedad intelectual y las leyes aplicables.",
+        "La titularidad de los derechos de autor del contenido generado por IA en el Servicio (como las conversaciones y las imágenes generadas) será determinada por separado por la empresa. El usuario no podrá utilizarlo con fines comerciales, redistribuirlo ni distribuirlo de forma secundaria.",
+        "Los derechos sobre los nombres, la configuración, el aspecto visual y otros elementos de los personajes de IA pertenecen a la empresa."
       ]
     },
     {
       "title": "Artículo 19. Reclamación de daños y perjuicios",
       "items": [
-        "Si el usuario incumple estos Términos de uso o utiliza el Servicio de forma ilegal y causa daños a la empresa, esta reclamará una indemnización por daños y perjuicios acorde con el daño causado."
+        "Si el usuario infringe estos Términos de uso o utiliza ilegalmente el Servicio y causa daños a nuestra empresa, reclamaremos una indemnización adecuada por dichos daños."
       ]
     },
     {
       "title": "Artículo 20. Ley aplicable y jurisdicción",
       "items": [
-        "La ley aplicable a estas Condiciones de uso será la legislación de Japón.",
-        "Si surge una controversia relacionada con el uso del Servicio, aceptamos que, en función de la cuantía de la reclamación, el Tribunal de Distrito de Osaka o el Tribunal Sumario de Osaka sea el tribunal de jurisdicción acordada para la primera instancia."
+        "La ley aplicable a estas Condiciones de uso será la ley japonesa.",
+        "Si surge una controversia relacionada con el uso del Servicio, las partes acuerdan someterse, según la cuantía de la demanda, a la jurisdicción exclusiva en primera instancia del Tribunal de Distrito de Osaka o del Tribunal Sumario de Osaka."
       ]
     },
     {
-      "title": "Artículo 21: Verificación de edad",
+      "title": "Artículo 21. Verificación de edad",
       "items": [
-        "Dado que este servicio puede incluir contenido para adultos, solo podrán utilizarlo las personas mayores de 18 años (excepto estudiantes de secundaria).",
-        "Al comenzar a utilizar el servicio, los usuarios deberán declarar que tienen 18 años o más.",
-        "Si, a partir de la información proporcionada por el usuario, su uso del servicio u otros medios razonables, determinamos que es menor de 18 años, podremos suspender su acceso y eliminar su cuenta.",
-        "Si se determina que el usuario es menor de 18 años, no se reembolsarán los puntos adquiridos (salvo en caso de anulación del contrato por parte de un menor)."
+        "Dado que este servicio puede incluir contenido para adultos, solo podrán utilizarlo las personas mayores de 18 años, excepto los estudiantes de secundaria.",
+        "Al comenzar a utilizar este servicio, los usuarios deberán declarar que tienen 18 años o más.",
+        "Si, a partir de la información proporcionada por un usuario, su uso del servicio u otros medios razonables, determinamos que es menor de 18 años, podremos suspender su acceso al servicio y eliminar su cuenta.",
+        "Si se determina que un usuario es menor de 18 años, no se reembolsarán los puntos que haya comprado, salvo en los casos de anulación del contrato por parte de un menor."
       ]
     },
     {
-      "title": "Artículo 22. Otros",
+      "title": "Artículo 22. Otras disposiciones",
       "items": [
-        "Si surge algún problema entre el usuario y la empresa, ambas partes deberán dialogar de buena fe y procurar resolverlo.",
-        "En lo relativo al uso de este servicio, los asuntos no previstos en estos Términos de uso se regirán por las disposiciones que la empresa establezca por separado."
+        "Si surge algún problema entre el usuario y la empresa, ambas partes lo debatirán de buena fe y procurarán resolverlo.",
+        "En lo relativo al uso del Servicio, las cuestiones no previstas en estas Condiciones de uso se regirán por las disposiciones que la empresa establezca por separado."
       ]
     }
   ]
