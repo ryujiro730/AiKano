@@ -60,6 +60,16 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 })
 
+  // 振込額を売上として記録（stripe_session_id の一意制約で二重記録を防ぐ）
+  await admin.from('point_transactions').insert({
+    user_id: request.user_id,
+    amount: 0,
+    type: 'purchase',
+    description: `${plan.name}プラン（銀行振込）`,
+    price_yen: request.amount_yen,
+    stripe_session_id: `bank:${request.id}`,
+  })
+
   await grantSubscriptionBonus(admin, request.user_id, request.plan_id, `bank:${request.id}`)
 
   return NextResponse.json({ ok: true })

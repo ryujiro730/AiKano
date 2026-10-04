@@ -181,11 +181,26 @@ export async function POST(request: Request) {
   // ── 請求成功（毎月の自動更新）──────────────────────────────────
   if (event.type === 'invoice.payment_succeeded') {
     const invoice = event.data.object as Stripe.Invoice
-    if ((invoice as any).billing_reason !== 'subscription_cycle') return NextResponse.json({ received: true })
-
     const customerId = invoice.customer as string
     const subscriptionId = invoiceSubscriptionId(invoice)
     if (!subscriptionId) return NextResponse.json({ received: true })
+
+    // サブスク代金を売上として記録（初回・更新とも。stripe_session_id の一意制約で二重記録を防ぐ）
+    if ((invoice.amount_paid ?? 0) > 0) {
+      const { data: payer } = await admin.from('profiles').select('id').eq('stripe_customer_id', customerId).maybeSingle()
+      if (payer) {
+        await admin.from('point_transactions').insert({
+          user_id: payer.id,
+          amount: 0,
+          type: 'purchase',
+          description: '月額プラン（クレジットカード）',
+          price_yen: invoice.amount_paid,
+          stripe_session_id: invoice.id,
+        })
+      }
+    }
+
+    if ((invoice as any).billing_reason !== 'subscription_cycle') return NextResponse.json({ received: true })
     const subscription = await stripe.subscriptions.retrieve(subscriptionId)
     const { start: periodStart, endIso: periodEnd } = subscriptionPeriod(subscription)
 

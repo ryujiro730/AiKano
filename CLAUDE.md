@@ -277,7 +277,7 @@ src/
     UtmCapture.tsx          # UTMパラメータ捕捉
     PointsShortageDialog.tsx # ポイント不足ダイアログ
 .github/workflows/deploy.yml  # デプロイ＆cron設定
-supabase/migrations/          # マイグレーション（070まで適用済み）
+supabase/migrations/          # マイグレーション（070まで適用済み。071 は tjym 用で要手動適用）
 ```
 
 ---
