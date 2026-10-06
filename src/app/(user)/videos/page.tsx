@@ -77,7 +77,7 @@ export default function VideosPage() {
 
     setPoints(data.newPoints)
     setPurchasedIds(prev => { const next = new Set(Array.from(prev)); next.add(video.id); return next })
-    setVideos(prev => prev.map(v => v.id === video.id ? { ...v, video_url: data.videoUrl } : v))
+    setVideos(prev => prev.map(v => v.id === video.id ? { ...v, video_url: data.videoUrl, thumbnail_url: data.thumbnailUrl ?? null } : v))
     setPurchasing(null)
   }
 
@@ -130,32 +130,25 @@ export default function VideosPage() {
                   style={{ aspectRatio: '16/9' }}
                   onClick={() => isPurchased && video.video_url ? setPlayingVideo(video) : undefined}
                 >
-                  {video.thumbnail_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={video.thumbnail_url}
-                      alt={video.title}
-                      className="w-full h-full object-cover"
-                      style={!isPurchased ? { filter: 'blur(6px) brightness(0.7)', transform: 'scale(1.05)' } : undefined}
-                    />
+                  {isPurchased ? (
+                    video.thumbnail_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={video.thumbnail_url} alt={video.title} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-[var(--color-surface-2)]">
+                        <Play size={26} className="opacity-40" />
+                      </div>
+                    )
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-[var(--color-surface-2)]">
-                      <span className="text-3xl opacity-40">🎬</span>
-                    </div>
-                  )}
-
-                  {!isPurchased && (
                     <>
-                      {/* ピクセルオーバーレイ */}
-                      <div
-                        className="absolute inset-0"
-                        style={{
-                          background: 'repeating-linear-gradient(0deg, rgba(0,0,0,0.15) 0px, rgba(0,0,0,0.15) 2px, transparent 2px, transparent 8px), repeating-linear-gradient(90deg, rgba(0,0,0,0.1) 0px, rgba(0,0,0,0.1) 2px, transparent 2px, transparent 8px)',
-                        }}
-                      />
-                      <div className="absolute inset-0 flex items-center justify-center">
+                      {/* 未購入はモザイク（極小サムネイルを拡大表示） */}
+                      <div className="absolute inset-0" style={{ background: 'linear-gradient(160deg, #3a2a33 0%, #17131a 100%)' }} />
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={`/api/media/preview?v=${video.id}&w=6&h=4`} alt="" className="absolute inset-0 w-full h-full object-cover"
+                        style={{ imageRendering: 'pixelated' }} onError={e => { e.currentTarget.style.display = 'none' }} />
+                      <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.25)' }}>
                         <div className="w-10 h-10 rounded-full flex items-center justify-center"
-                          style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}>
+                          style={{ background: 'rgba(0,0,0,0.6)' }}>
                           <Lock size={18} className="text-white" />
                         </div>
                       </div>

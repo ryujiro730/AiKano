@@ -1,17 +1,20 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Heart, MessageCircle, Crown, Settings, X, Sparkles } from 'lucide-react'
+import { Heart, MessageCircle, Crown, Settings, X, Sparkles, Gem } from 'lucide-react'
 import { useI18n } from '@/i18n/client'
 
 const tabs = [
   { href: '/characters',    icon: Heart,          label: 'home' as const },
   { href: '/conversations', icon: MessageCircle,  label: 'messages' as const },
+  { href: '/gacha',         icon: Gem,            label: 'gacha' as const },
   { href: '/payment',       icon: Crown,          label: 'plan' as const },
   { href: '/settings',      icon: Settings,       label: 'settings' as const },
 ]
 
 interface Props {
+  /** 写真ガチャのタブを出すか（公開前は管理者だけ） */
+  showGacha?: boolean
   unreadCount?: number
   supportCount?: number
   activeCampaign?: { id: string; catchphrase: string } | null
@@ -23,6 +26,7 @@ export function BottomNav({
   supportCount = 0,
   activeCampaign = null,
   onDismissCampaign,
+  showGacha = false,
 }: Props) {
   const { m } = useI18n()
   const pathname = usePathname()
@@ -40,8 +44,8 @@ export function BottomNav({
       }}
     >
       <div className="max-w-2xl mx-auto flex relative" style={{ height: '56px' }}>
-        {tabs.map(({ href, icon: Icon, label }) => {
-          const isActive = pathname === href || pathname.startsWith(href + '/')
+        {tabs.filter(t => showGacha || t.href !== '/gacha').map(({ href, icon: Icon, label }) => {
+          const isActive = pathname === href || pathname.startsWith(href + '/') || (href === '/gacha' && pathname.startsWith('/album'))
           const isPayment = href === '/payment'
 
           const badge =

@@ -13,10 +13,14 @@ import { Suspense } from 'react'
 import { PointsDisplay } from '@/components/PointsDisplay'
 import { BottomNavLive } from '@/components/BottomNavLive'
 import { BottomNavServer } from '@/components/BottomNavServer'
+import { canUseGacha } from '@/lib/features'
 import { LoginBonusDialog } from '@/components/LoginBonusDialog'
 import { CampaignBanner } from '@/components/CampaignBanner'
 import { CampaignProvider } from '@/components/CampaignProvider'
 import { LoginPing } from '@/components/LoginPing'
+import { LocaleSync } from '@/components/LocaleSync'
+import { getLocale } from '@/i18n/server'
+import { isLocale } from '@/i18n/config'
 
 export default async function UserLayout({ children }: { children: React.ReactNode }) {
   noStore()
@@ -29,7 +33,7 @@ export default async function UserLayout({ children }: { children: React.ReactNo
   const [{ data: profile }] = await Promise.all([
     admin
       .from('profiles')
-      .select('display_name, age, points, bonus_points, bonus_points_expires_at, role, subscription_status, subscription_plan')
+      .select('display_name, age, points, bonus_points, bonus_points_expires_at, role, subscription_status, subscription_plan, locale')
       .eq('id', userId)
       .single(),
     admin
@@ -68,6 +72,7 @@ export default async function UserLayout({ children }: { children: React.ReactNo
         </div>
       </header>
 
+      {isLocale((profile as any)?.locale) && (profile as any).locale !== getLocale() && <LocaleSync locale={(profile as any).locale} />}
       <CampaignBanner />
 
       <main className="max-w-2xl mx-auto px-4" style={{ paddingTop: 'var(--main-pt, 72px)', paddingBottom: '88px' }}>
@@ -77,8 +82,8 @@ export default async function UserLayout({ children }: { children: React.ReactNo
       <LoginPing />
       <LoginBonusDialog />
       {/* ボトムナビ: サーバーで初期値を取得し、クライアントで定期ポーリング更新 */}
-      <Suspense fallback={<BottomNavLive />}>
-        <BottomNavServer userId={userId} />
+      <Suspense fallback={<BottomNavLive showGacha={canUseGacha(profile?.role)} />}>
+        <BottomNavServer userId={userId} showGacha={canUseGacha(profile?.role)} />
       </Suspense>
     </div>
     </CampaignProvider>

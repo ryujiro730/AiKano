@@ -21,6 +21,8 @@ export type ServerActionType =
   | 'login_bonus'
   | 'level_up'
   | 'video_purchase'
+  | 'media_unlock'
+  | 'gacha_draw'
   | 'item_purchase'
   | 'item_use'
   | 'character_block'

@@ -32,12 +32,14 @@
     "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.1",
     "resend": "^6.12.3",
-    "stripe": "^20.4.1"
+    "stripe": "^20.4.1",
+    "three": "^0.186.1"
   },
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "@types/three": "^0.186.0",
     "autoprefixer": "^10.0.1",
     "concurrently": "^9.2.1",
     "eslint": "^8",

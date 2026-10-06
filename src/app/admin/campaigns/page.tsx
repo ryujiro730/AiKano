@@ -11,6 +11,8 @@ type Campaign = {
   description: string
   cta_text: string
   bonus_rate: number
+  /** 高額パックの倍率（例: 1万円以上は3倍） */
+  rate_tiers: { min_yen: number; rate: number }[]
   starts_at: string | null
   ends_at: string | null
   is_active: boolean
@@ -25,6 +27,7 @@ const EMPTY: Omit<Campaign, 'id' | 'created_at'> = {
   description: '',
   cta_text: 'ポイントを購入する',
   bonus_rate: 1.5,
+  rate_tiers: [],
   starts_at: null,
   ends_at: null,
   is_active: false,
@@ -80,6 +83,7 @@ export default function CampaignsPage() {
       description: c.description,
       cta_text: c.cta_text,
       bonus_rate: c.bonus_rate,
+      rate_tiers: c.rate_tiers ?? [],
       starts_at: c.starts_at,
       ends_at: c.ends_at,
       is_active: c.is_active,
@@ -103,16 +107,22 @@ export default function CampaignsPage() {
       description: form.description.trim(),
       cta_text: form.cta_text.trim() || 'ポイントを購入する',
       bonus_rate: Number(form.bonus_rate),
+      rate_tiers: form.rate_tiers.filter(t => t.min_yen > 0 && t.rate > 0),
       starts_at: form.starts_at,
       ends_at: form.ends_at,
       is_active: form.is_active,
       display_frequency: form.display_frequency,
       one_time_per_user: form.one_time_per_user,
     }
-    if (editing) {
-      await supabase.from('campaigns').update(payload).eq('id', editing.id)
-    } else {
-      await supabase.from('campaigns').insert(payload)
+    const { data: saved } = editing
+      ? await supabase.from('campaigns').update(payload).eq('id', editing.id).select('id').single()
+      : await supabase.from('campaigns').insert(payload).select('id').single()
+    // 文言を各言語に自動翻訳（ユーザーの表示言語で出す）
+    if (saved?.id) {
+      await fetch('/api/admin/content-translate', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ table: 'campaigns', id: saved.id }),
+      }).catch(() => {})
     }
     setSaving(false)
     closeForm()
@@ -166,6 +176,7 @@ export default function CampaignsPage() {
                     )}
                     <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
                       {c.bonus_rate}倍ボーナス
+                      {(c.rate_tiers ?? []).map(t => `・¥${t.min_yen.toLocaleString()}以上は${t.rate}倍`).join('')}
                     </span>
                   </div>
                   {c.catchphrase && (
@@ -265,6 +276,35 @@ export default function CampaignsPage() {
                     value={form.bonus_rate}
                     onChange={e => setForm(f => ({ ...f, bonus_rate: Number(e.target.value) }))}
                   />
+                </div>
+              </div>
+
+              {/* 高額パックの倍率 */}
+              <div>
+                <label className="text-xs font-medium block mb-1">高額パックの倍率（上のボーナス倍率より高くしたいとき）</label>
+                <div className="space-y-2">
+                  {form.rate_tiers.map((t, i) => (
+                    <div key={i} className="flex items-center gap-2 text-sm">
+                      <span>¥</span>
+                      <input type="number" min="0" step="1000" value={t.min_yen}
+                        onChange={e => setForm(f => ({ ...f, rate_tiers: f.rate_tiers.map((x, j) => j === i ? { ...x, min_yen: Number(e.target.value) } : x) }))}
+                        className="w-28 px-3 py-1.5 rounded-xl text-sm"
+                        style={{ background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)' }} />
+                      <span>以上のパックは</span>
+                      <input type="number" min="1" step="0.1" value={t.rate}
+                        onChange={e => setForm(f => ({ ...f, rate_tiers: f.rate_tiers.map((x, j) => j === i ? { ...x, rate: Number(e.target.value) } : x) }))}
+                        className="w-20 px-3 py-1.5 rounded-xl text-sm"
+                        style={{ background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)' }} />
+                      <span>倍</span>
+                      <button type="button" onClick={() => setForm(f => ({ ...f, rate_tiers: f.rate_tiers.filter((_, j) => j !== i) }))}
+                        className="p-1 text-[var(--color-text-muted)]"><X size={14} /></button>
+                    </div>
+                  ))}
+                  <button type="button"
+                    onClick={() => setForm(f => ({ ...f, rate_tiers: [...f.rate_tiers, { min_yen: 10000, rate: Math.max(2, Number(f.bonus_rate) + 1) }] }))}
+                    className="text-xs flex items-center gap-1" style={{ color: 'var(--color-primary)' }}>
+                    <Plus size={12} />段階を追加
+                  </button>
                 </div>
               </div>
 

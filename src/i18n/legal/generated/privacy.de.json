@@ -1,91 +1,91 @@
 {
   "title": "Datenschutzerklärung",
   "updated": "Zuletzt aktualisiert: Juni 2026",
-  "footer": "AiKano-Team",
+  "footer": "AiKano-Betriebsteam",
   "sections": [
     {
-      "title": "Artikel 1 – Grundsatz",
+      "title": "Artikel 1　Grundsatz",
       "items": [
-        "Die für den Betrieb von AiKano zuständige Stelle (im Folgenden „wir“) erkennt den Schutz der personenbezogenen Daten der Nutzer als wichtige Verantwortung an und hält sich an das Gesetz zum Schutz personenbezogener Informationen sowie an alle sonstigen einschlägigen Gesetze und Vorschriften."
+        "Die für den Betrieb von AiKano zuständige Stelle (im Folgenden „unser Unternehmen“) betrachtet den Schutz der personenbezogenen Daten der Nutzer als wichtige Verantwortung und hält sich an das Gesetz zum Schutz personenbezogener Daten sowie an alle sonstigen einschlägigen Gesetze und Vorschriften."
       ]
     },
     {
-      "title": "Artikel 2 – Erhobene Informationen",
-      "preamble": "Zur Bereitstellung des Dienstes erheben wir die folgenden Informationen.",
+      "title": "Artikel 2: Erhobene Informationen",
+      "preamble": "Bei der Bereitstellung dieses Dienstes erheben wir die folgenden Informationen:",
       "groups": [
         {
           "heading": "Vom Nutzer direkt eingegebene Informationen",
           "items": [
             "E-Mail-Adresse (bei der Registrierung)",
-            "Passwort (bei der Registrierung; wird gehasht gespeichert)",
+            "Passwort (bei der Registrierung; wird verschlüsselt gespeichert)",
             "Informationen, die der Nutzer während eines Gesprächs freiwillig eingibt (z. B. Name, Adresse oder Telefonnummer, sofern der Nutzer diese angibt)"
           ]
         },
         {
-          "heading": "Bei der Nutzung des Dienstes automatisch erhobene Informationen",
+          "heading": "Im Zusammenhang mit der Nutzung des Dienstes automatisch erhobene Informationen",
           "items": [
             "IP-Adresse und Zugriffsprotokolle",
             "Geräte- und Browserinformationen",
-            "Nutzungsverlauf im Dienst (z. B. Anmeldezeiten, Zahlungsübersicht und verwendete Charaktere)",
-            "Chat-Inhalte zwischen Nutzern und KI-Charakteren"
+            "Nutzungsverlauf innerhalb dieses Dienstes (z. B. Anmeldezeiten, Zahlungshistorie und genutzte Charaktere)",
+            "Chat-Inhalte zwischen dem Nutzer und den KI-Charakteren"
           ]
         }
       ]
     },
     {
-      "title": "Artikel 3: Zweck der Nutzung von Informationen",
-      "preamble": "Die erhobenen Informationen werden ausschließlich für folgende Zwecke verwendet:",
+      "title": "Artikel 3: Zwecke der Datennutzung",
+      "preamble": "Die erhobenen Informationen werden ausschließlich zu den folgenden Zwecken verwendet:",
       "items": [
-        "Bereitstellung, Betrieb und Verbesserung des Dienstes",
+        "Bereitstellung, Betrieb und Verbesserung dieses Dienstes",
         "Authentifizierung der Nutzer und Verwaltung ihrer Konten",
         "Abrechnung und Verwaltung von Punkten",
         "Verbesserung der Qualität von KI-Antworten sowie Training und Verbesserung unserer KI-Modelle",
         "Erkennung und Bearbeitung von Missbrauch und Verstößen gegen die Nutzungsbedingungen",
-        "Maßnahmen gemäß den geltenden Gesetzen und Vorschriften (z. B. Auskunftsersuchen von Ermittlungsbehörden)",
+        "Erfüllung gesetzlicher Pflichten (z. B. Auskünfte an Ermittlungsbehörden)",
         "Bearbeitung von Anfragen"
       ]
     },
     {
-      "title": "Artikel 4: Umgang mit Chat-Inhalten (wichtig)",
-      "preamble": "Aufgrund der Art dieses Dienstes gelten für den Umgang mit Chat-Inhalten die folgenden Bestimmungen:",
+      "title": "Artikel 4: Umgang mit Chat-Inhalten (Wichtig)",
+      "preamble": "Aufgrund der Art unseres Dienstes gelten für den Umgang mit Chat-Inhalten die folgenden Bestimmungen:",
       "items": [
         {
-          "label": "Überprüfung durch Mitarbeitende:",
-          "text": "Mitarbeitende unseres Unternehmens können die Chat-Inhalte zwischen Nutzern und Charakteren überprüfen, um die Qualität der Antworten zu gewährleisten und zu verbessern, Missbrauch zu erkennen und das Training unserer KI-Modelle zu optimieren."
+          "label": "Überprüfung durch Mitarbeiter:",
+          "text": "Chat-Inhalte zwischen Nutzern und Charakteren können von unseren Mitarbeitern überprüft werden, um die Qualität der Antworten zu erhalten und zu verbessern, Missbrauch zu erkennen und das Training unserer KI-Modelle zu optimieren."
         },
         {
           "label": "Nutzung für das KI-Training:",
-          "text": "Chat-Inhalte können so verarbeitet werden, dass keine Rückschlüsse auf einzelne Personen möglich sind, und anschließend als Trainingsdaten für unsere KI-Modelle verwendet werden."
+          "text": "Chat-Inhalte können in einer Form, die keine Rückschlüsse auf einzelne Personen zulässt, als Trainingsdaten für unsere KI-Modelle verwendet werden."
         },
         {
           "label": "Keine Weitergabe an Dritte:",
-          "text": "Wir geben Chat-Inhalte nicht an Dritte (z. B. Werbetreibende oder andere Unternehmen) weiter und verkaufen sie nicht, es sei denn, dies ist gesetzlich vorgeschrieben."
+          "text": "Wir geben Chat-Inhalte nicht an Dritte (z. B. Werbetreibende oder andere Unternehmen) weiter und verkaufen sie auch nicht, es sei denn, wir sind gesetzlich dazu verpflichtet."
         },
         {
           "label": "Einhaltung gesetzlicher Vorschriften:",
-          "text": "Werden rechtswidrige Handlungen wie Aufforderungen zu Kinderpornografie oder die Förderung von Straftaten festgestellt, können die betreffenden Chat-Protokolle als Beweismittel gesichert und bei Bedarf den Ermittlungsbehörden zur Verfügung gestellt werden."
+          "text": "Werden illegale Handlungen wie die Aufforderung zu Kinderpornografie oder die Förderung von Straftaten erkannt, können die entsprechenden Chat-Protokolle als Beweismittel gesichert und bei Bedarf den Ermittlungsbehörden übermittelt werden."
         }
       ],
       "note": "Mit der Registrierung für diesen Dienst erklären sich Nutzer mit dem oben beschriebenen Umgang mit Chat-Inhalten einverstanden."
     },
     {
-      "title": "Artikel 5: Weitergabe an Dritte",
+      "title": "Artikel 5 – Weitergabe an Dritte",
       "preamble": "Wir geben die erhobenen personenbezogenen Daten nicht an Dritte weiter, außer in den folgenden Fällen:",
       "items": [
         "Wenn der Nutzer zuvor eingewilligt hat",
-        "Wenn dies gesetzlich vorgeschrieben ist (z. B. auf Anfrage eines Gerichts oder einer Ermittlungsbehörde)",
-        "Wenn dies zum Schutz von Leben, körperlicher Unversehrtheit oder Eigentum erforderlich ist",
-        "Wenn Daten an Dienstleister weitergegeben werden, die für den Betrieb dieses Dienstes erforderlich sind (nur sofern eine Vertraulichkeitsvereinbarung geschlossen wurde)"
+        "Wenn dies gesetzlich vorgeschrieben ist (z. B. bei Auskunftsersuchen von Gerichten oder Ermittlungsbehörden)",
+        "Wenn dies zum Schutz von Leben, körperlicher Unversehrtheit oder Eigentum einer Person erforderlich ist",
+        "Wenn die Daten an Auftragsverarbeiter weitergegeben werden, deren Leistungen für den Betrieb dieses Dienstes erforderlich sind (nur bei Abschluss einer Vertraulichkeitsvereinbarung)"
       ]
     },
     {
       "title": "Artikel 6: Nutzung externer Dienste",
-      "preamble": "Dieser Dienst nutzt die folgenden externen Dienste. Für diese können jeweils eigene Datenschutzrichtlinien gelten.",
+      "preamble": "Dieser Dienst nutzt die folgenden externen Dienste, für die jeweils eigene Datenschutzrichtlinien gelten können.",
       "bullet": true,
       "items": [
         {
           "label": "Zahlungsdienste:",
-          "text": "Abwicklung von Zahlungen beim Kauf von Punkten (Kreditkarteninformationen werden nicht auf unseren Servern gespeichert)"
+          "text": "Abwicklung von Zahlungen beim Kauf von Punkten (Kreditkartendaten werden nicht auf unseren Servern gespeichert)"
         },
         {
           "label": "Analysetools:",
@@ -93,47 +93,47 @@
         },
         {
           "label": "KI-Basismodelle:",
-          "text": "Für die Erstellung von Antworten können externe KI-APIs (z. B. von OpenAI oder Anthropic) genutzt werden. In diesem Fall können Gesprächsinhalte an die API des jeweiligen Dienstes übermittelt werden."
+          "text": "Für die Generierung von Antworten können externe KI-APIs (z. B. von OpenAI oder Anthropic) genutzt werden. Dabei können Gesprächsinhalte an die APIs dieser Dienste übermittelt werden."
         }
       ]
     },
     {
       "title": "Artikel 7: Verwendung von Cookies",
       "items": [
-        "Dieser Dienst verwendet Cookies, um Ihren Anmeldestatus aufrechtzuerhalten und den Dienst zu verbessern. Sie können Cookies in den Browsereinstellungen deaktivieren. In diesem Fall sind jedoch möglicherweise einige Funktionen nicht verfügbar."
+        "Dieser Dienst verwendet Cookies, um Ihren Anmeldestatus aufrechtzuerhalten und den Dienst zu verbessern. Sie können Cookies in Ihren Browsereinstellungen deaktivieren. In diesem Fall stehen Ihnen jedoch möglicherweise einige Funktionen nicht zur Verfügung."
       ]
     },
     {
       "title": "Artikel 8: Speicherung und Verwaltung personenbezogener Daten",
       "items": [
         "Wir ergreifen angemessene Sicherheitsmaßnahmen, um die Offenlegung, den Verlust oder die Beschädigung personenbezogener Daten zu verhindern.",
-        "Personenbezogene Daten werden so lange gespeichert, wie es zur Erfüllung des Verwendungszwecks erforderlich ist. Sobald sie nicht mehr benötigt werden, werden sie ordnungsgemäß gelöscht.",
-        "Auch nach der Kündigung des Kontos können Informationen, für die eine gesetzliche Aufbewahrungspflicht besteht oder die zur Verhinderung einer missbräuchlichen Nutzung erforderlich sind, für einen bestimmten Zeitraum gespeichert werden."
+        "Personenbezogene Daten werden so lange gespeichert, wie es zur Erreichung des Verwendungszwecks erforderlich ist. Sobald sie nicht mehr benötigt werden, werden sie auf geeignete Weise gelöscht.",
+        "Auch nach der Löschung des Kontos können Informationen, für die gesetzliche Aufbewahrungspflichten gelten oder die zur Verhinderung einer missbräuchlichen Nutzung erforderlich sind, für einen bestimmten Zeitraum gespeichert werden."
       ]
     },
     {
-      "title": "Artikel 9 – Personenbezogene Daten Minderjähriger",
+      "title": "Artikel 9: Personenbezogene Daten Minderjähriger",
       "items": [
-        "Dieser Dienst richtet sich an Personen ab 18 Jahren (ausgenommen Schülerinnen und Schüler der Oberstufe). Wird festgestellt, dass ein Nutzer unter 18 Jahre alt ist, löschen wir das Konto und die Daten des betreffenden Nutzers."
+        "Dieser Dienst richtet sich an Personen ab 18 Jahren (ausgenommen Schülerinnen und Schüler an weiterführenden Schulen). Sollte sich herausstellen, dass ein Nutzer unter 18 Jahre alt ist, löschen wir dessen Konto und Daten."
       ]
     },
     {
       "title": "Artikel 10: Anträge auf Auskunft, Berichtigung und Löschung",
       "items": [
-        "Nutzer können Auskunft über die von uns gespeicherten personenbezogenen Daten zu ihrer Person sowie deren Berichtigung, Löschung oder Einschränkung der Nutzung beantragen. Bitte wenden Sie sich dazu an unsere Kontaktstelle (info@aikano.chat). Nach einer Identitätsprüfung bearbeiten wir Ihren Antrag gemäß den geltenden Gesetzen."
+        "Nutzer können Auskunft über ihre bei uns gespeicherten personenbezogenen Daten sowie deren Berichtigung oder Löschung und die Einstellung ihrer Nutzung verlangen. Bitte richten Sie Ihren Antrag an unsere Kontaktstelle (info@aikano.chat). Nach Überprüfung Ihrer Identität bearbeiten wir Ihren Antrag gemäß den geltenden Gesetzen."
       ]
     },
     {
-      "title": "Artikel 11 Änderungen der Datenschutzerklärung",
+      "title": "Artikel 11 Änderungen der Datenschutzrichtlinie",
       "items": [
-        "Wir können diese Datenschutzerklärung bei Bedarf ändern. Über wesentliche Änderungen informieren wir innerhalb dieses Dienstes. Die geänderte Datenschutzerklärung tritt mit ihrer Veröffentlichung in Kraft."
+        "Wir können diese Datenschutzrichtlinie bei Bedarf ändern. Über wesentliche Änderungen informieren wir innerhalb dieses Dienstes. Die geänderte Richtlinie tritt mit ihrer Veröffentlichung in Kraft."
       ]
     },
     {
       "title": "Artikel 12: Kontakt",
-      "preamble": "Bei Fragen zur Verarbeitung personenbezogener Daten kontaktieren Sie uns bitte unter den folgenden Kontaktdaten.",
+      "preamble": "Bei Fragen zur Verarbeitung personenbezogener Daten wenden Sie sich bitte an folgende Stelle:",
       "contact": [
-        "AiKano-Kundenservice",
+        "AiKano-Team",
         "E-Mail-Adresse: info@aikano.chat"
       ]
     }

@@ -14,6 +14,7 @@ import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { resolveVariables } from '@/lib/message-variables'
 import { sendNotificationEmail } from '@/lib/send-notification-email'
+import { attachMessageMedia } from '@/lib/paid-media'
 
 function adminSupabase() {
   return createAdminClient(
@@ -63,19 +64,12 @@ export async function POST(req: NextRequest) {
   }
 
   // メッセージをDBに保存
-  const { data: msg, error: insertErr } = await admin
-    .from('messages')
-    .insert({
-      conversation_id: conversationId,
-      sender_role: 'character',
-      content: resolvedContent,
-      points_used: 0,
-      is_read: false,
-      ...(imageUrl ? { metadata: { image_url: imageUrl } } : {}),
-      ...(videoUrl ? { metadata: { video_url: videoUrl, locked: true } } : {}),
-    })
-    .select()
-    .single()
+  // 画像・動画は有料（URL は message_media に置く）
+  const baseMsg = { conversation_id: conversationId, content: resolvedContent, points_used: 0, is_read: false }
+  const mediaUrl: string | null = videoUrl || imageUrl || null
+  const { data: msg, error: insertErr } = mediaUrl
+    ? await attachMessageMedia(admin, baseMsg, { url: mediaUrl, kind: videoUrl ? 'video' : 'image' }).then(r => ({ data: r.msg, error: r.error }))
+    : await admin.from('messages').insert({ ...baseMsg, sender_role: 'character' }).select().single()
 
   if (insertErr || !msg) {
     return NextResponse.json({ error: 'Failed to save message' }, { status: 500 })

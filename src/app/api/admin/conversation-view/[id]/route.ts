@@ -10,7 +10,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
   const before = req.nextUrl.searchParams.get('before')
   let mq = db.from('messages')
-    .select('id, sender_role, content, metadata, points_used, is_deleted, created_at')
+    .select('id, sender_role, content, metadata, points_used, is_deleted, created_at, message_media(url, kind)')
     .eq('conversation_id', params.id)
     .order('created_at', { ascending: false })
     .limit(300)
@@ -33,7 +33,11 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
   return NextResponse.json({
     conversation: conv,
-    messages: (msgs ?? []).reverse(),
+    // 有料メディアの URL は message_media にあるので、管理画面向けに metadata に戻す
+    messages: (msgs ?? []).reverse().map(({ message_media, ...m }) => {
+      const media = (Array.isArray(message_media) ? message_media[0] : message_media) as { url: string; kind: string } | null | undefined
+      return media ? { ...m, metadata: { ...(m.metadata ?? {}), [media.kind === 'video' ? 'video_url' : 'image_url']: media.url } } : m
+    }),
     hasMore: (msgs?.length ?? 0) === 300,
     affection,
     memory,

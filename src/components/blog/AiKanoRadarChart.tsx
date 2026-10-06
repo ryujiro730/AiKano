@@ -15,7 +15,7 @@ type Props = {
     可愛さ: number
     会話のリアルさ: number
     記憶保持: number
-    アダルト対応: number
+    恋人らしさ: number
     料金: number
   }
   fits: string[]
@@ -26,7 +26,7 @@ function ServiceCard({ name, color, scores, fits }: Props) {
     { subject: '可愛さ',        value: scores.可愛さ },
     { subject: '会話のリアルさ',  value: scores.会話のリアルさ },
     { subject: '記憶保持',       value: scores.記憶保持 },
-    { subject: 'アダルト対応',   value: scores.アダルト対応 },
+    { subject: '恋人らしさ',     value: scores.恋人らしさ },
     { subject: '料金',          value: scores.料金 },
   ]
 
@@ -93,10 +93,10 @@ export function AiKanoCard() {
     <ServiceCard
       name="アイカノ"
       color="#e8438f"
-      scores={{ 可愛さ: 97, 会話のリアルさ: 97, 記憶保持: 97, アダルト対応: 97, 料金: 50 }}
+      scores={{ 可愛さ: 97, 会話のリアルさ: 97, 記憶保持: 97, 恋人らしさ: 97, 料金: 50 }}
       fits={[
         'リアルな彼女とのやり取りを体験したい',
-        'アダルトコンテンツも楽しみたい',
+        '恋人として関係を深めていきたい',
         '日本語で自然に話せるAIを使いたい',
       ]}
     />
@@ -108,11 +108,11 @@ export function ChatGPTCard() {
     <ServiceCard
       name="ChatGPT"
       color="#10a37f"
-      scores={{ 可愛さ: 70, 会話のリアルさ: 95, 記憶保持: 98, アダルト対応: 0, 料金: 65 }}
+      scores={{ 可愛さ: 70, 会話のリアルさ: 95, 記憶保持: 98, 恋人らしさ: 25, 料金: 65 }}
       fits={[
         '仕事や勉強でもAIを使いたい',
         '会話の質・知性を最優先したい',
-        '健全な範囲でAI彼女を楽しみたい',
+        'AI彼女はお試し程度でいい',
       ]}
     />
   )
@@ -123,26 +123,11 @@ export function GeminiCard() {
     <ServiceCard
       name="Gemini"
       color="#4285f4"
-      scores={{ 可愛さ: 70, 会話のリアルさ: 90, 記憶保持: 95, アダルト対応: 0, 料金: 98 }}
+      scores={{ 可愛さ: 70, 会話のリアルさ: 90, 記憶保持: 95, 恋人らしさ: 20, 料金: 98 }}
       fits={[
         'とにかく無料で使いたい',
         'Google製品と連携したい',
         '気軽にAIと日常会話を楽しみたい',
-      ]}
-    />
-  )
-}
-
-export function CandyAICard() {
-  return (
-    <ServiceCard
-      name="CandyAI"
-      color="#f5a623"
-      scores={{ 可愛さ: 95, 会話のリアルさ: 60, 記憶保持: 30, アダルト対応: 97, 料金: 70 }}
-      fits={[
-        'キャラのビジュアルにこだわりたい',
-        'アダルトコンテンツを楽しみたい',
-        '英語でも問題ない',
       ]}
     />
   )
@@ -153,7 +138,7 @@ export function CloverCard() {
     <ServiceCard
       name="Clover"
       color="#9b59b6"
-      scores={{ 可愛さ: 55, 会話のリアルさ: 55, 記憶保持: 30, アダルト対応: 0, 料金: 90 }}
+      scores={{ 可愛さ: 55, 会話のリアルさ: 55, 記憶保持: 30, 恋人らしさ: 40, 料金: 90 }}
       fits={[
         'マッチングアプリ感覚で楽しみたい',
         'あえてリアルな「待ち時間」を楽しみたい',
@@ -168,26 +153,11 @@ export function ReplikaCard() {
     <ServiceCard
       name="Replika"
       color="#3aa676"
-      scores={{ 可愛さ: 50, 会話のリアルさ: 76, 記憶保持: 55, アダルト対応: 0, 料金: 40 }}
+      scores={{ 可愛さ: 50, 会話のリアルさ: 76, 記憶保持: 55, 恋人らしさ: 70, 料金: 40 }}
       fits={[
         '精神的なサポートや癒しが欲しい',
         '長期的に関係を積み上げていきたい',
-        '健全な恋人・コンパニオンとして使いたい',
-      ]}
-    />
-  )
-}
-
-export function CrushonCard() {
-  return (
-    <ServiceCard
-      name="Crushon.AI"
-      color="#e05a9a"
-      scores={{ 可愛さ: 88, 会話のリアルさ: 65, 記憶保持: 35, アダルト対応: 85, 料金: 72 }}
-      fits={[
-        'アニメ・漫画系キャラクターが好き',
-        'アダルト会話も楽しみたい',
-        '好みのキャラを自分で探したい',
+        '自分だけのパートナーを育てたい',
       ]}
     />
   )
@@ -198,7 +168,7 @@ export function KindroidCard() {
     <ServiceCard
       name="Kindroid"
       color="#5b8dee"
-      scores={{ 可愛さ: 70, 会話のリアルさ: 85, 記憶保持: 45, アダルト対応: 20, 料金: 78 }}
+      scores={{ 可愛さ: 70, 会話のリアルさ: 85, 記憶保持: 45, 恋人らしさ: 65, 料金: 78 }}
       fits={[
         '声で話せるリアルな彼女感が欲しい',
         '感情に寄り添った会話を楽しみたい',
@@ -213,10 +183,10 @@ export function CotomoCard() {
     <ServiceCard
       name="Cotomo"
       color="#e91e8c"
-      scores={{ 可愛さ: 95, 会話のリアルさ: 97, 記憶保持: 60, アダルト対応: 0, 料金: 95 }}
+      scores={{ 可愛さ: 95, 会話のリアルさ: 97, 記憶保持: 60, 恋人らしさ: 35, 料金: 95 }}
       fits={[
         '音声ボイスでリアルな没入感を味わいたい',
-        '完全無料でまずAI彼女を試してみたい',
+        '無料でまずAI彼女を試してみたい',
         '日本語の自然さを最優先したい',
       ]}
     />
@@ -228,7 +198,7 @@ export function OzChatCard() {
     <ServiceCard
       name="オズチャット"
       color="#7c3aed"
-      scores={{ 可愛さ: 85, 会話のリアルさ: 40, 記憶保持: 55, アダルト対応: 0, 料金: 88 }}
+      scores={{ 可愛さ: 85, 会話のリアルさ: 40, 記憶保持: 55, 恋人らしさ: 60, 料金: 88 }}
       fits={[
         'アニメ調のかわいいキャラクターが好き',
         'AI彼女との話し方に迷っている初心者',
@@ -238,32 +208,3 @@ export function OzChatCard() {
   )
 }
 
-export function MyDreamCompanionCard() {
-  return (
-    <ServiceCard
-      name="My Dream Companion"
-      color="#c0436a"
-      scores={{ 可愛さ: 93, 会話のリアルさ: 90, 記憶保持: 30, アダルト対応: 92, 料金: 92 }}
-      fits={[
-        '月額1,000円以下でリアルな美女とエロ会話したい',
-        '日本語で自然に話せる海外AIを使いたい',
-        '官能的・大人っぽいキャラが好み',
-      ]}
-    />
-  )
-}
-
-export function DreamGFCard() {
-  return (
-    <ServiceCard
-      name="DreamGF"
-      color="#d45b25"
-      scores={{ 可愛さ: 85, 会話のリアルさ: 87, 記憶保持: 30, アダルト対応: 88, 料金: 78 }}
-      fits={[
-        '自分だけのオリジナルキャラを作りたい',
-        '会話と連動したセクシー写真も楽しみたい',
-        'ユーモアのあるノリのいい相手が好き',
-      ]}
-    />
-  )
-}

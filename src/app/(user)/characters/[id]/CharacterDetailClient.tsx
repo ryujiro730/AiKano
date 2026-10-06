@@ -10,6 +10,7 @@ import { SpiderChart } from '@/components/SpiderChart'
 import { AffectionMeter } from '@/components/AffectionMeter'
 import { AffectionIcon } from '@/components/AffectionIcon'
 import { LockedPhotoTile } from '@/components/LockedPhotoTile'
+import { LevelLockedCover, UnownedPhotoCover, GachaButton } from '@/components/PaidMedia'
 import type { Character, CharacterPhoto } from '@/types'
 import { useI18n } from '@/i18n/client'
 import { fmt } from '@/i18n/fmt'
@@ -31,14 +32,18 @@ interface Props {
   photos: CharacterPhoto[]
   userChar: UserCharData | null
   achievements: Achievement[]
+  /** 写真ガチャが使えるか（公開前は管理者だけ）。使えない間は持っている写真だけ見せる */
+  gachaEnabled: boolean
 }
 
-export function CharacterDetailClient({ character, photos, userChar, achievements }: Props) {
+export function CharacterDetailClient({ character, photos: initialPhotos, userChar, achievements, gachaEnabled }: Props) {
   const { m } = useI18n()
   const router = useRouter()
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
-
-  const unlockedPhotos = photos.filter(p => !p.locked)
+  const photos = gachaEnabled ? initialPhotos : initialPhotos.filter(p => !p.locked && !p.paywalled && !p.levelLocked)
+  const unlockedPhotos = photos.filter(p => !p.locked && !p.paywalled && !p.levelLocked)
+  const levelLockedPhotos = photos.filter(p => !p.locked && p.levelLocked)
+  const paywalledPhotos = photos.filter(p => !p.locked && p.paywalled)
   const lockedPhotos = photos.filter(p => p.locked)
   const allPhotos = [character.avatar_url, ...unlockedPhotos.map(p => p.url)]
   const stats = (character as any).stats ?? null
@@ -174,10 +179,23 @@ export function CharacterDetailClient({ character, photos, userChar, achievement
                 <Image src={photo.url} alt="" fill className="object-cover hover:scale-105 transition-transform duration-300" sizes="33vw" />
               </div>
             ))}
+            {paywalledPhotos.map(photo => (
+              <div key={photo.id} className="relative overflow-hidden rounded-xl" style={{ aspectRatio: '1' }}>
+                <Link href={`/gacha/${character.id}`} prefetch={false} className="absolute inset-0">
+                  <UnownedPhotoCover previewSrc={`/api/media/preview?p=${photo.id}`} />
+                </Link>
+              </div>
+            ))}
+            {levelLockedPhotos.map(photo => (
+              <div key={photo.id} className="relative overflow-hidden rounded-xl" style={{ aspectRatio: '1' }}>
+                <LevelLockedCover previewSrc={`/api/media/preview?p=${photo.id}`} level={photo.required_level ?? 0} />
+              </div>
+            ))}
             {lockedPhotos.map(photo => (
               <LockedPhotoTile key={photo.id} className="rounded-xl" />
             ))}
           </div>
+          <GachaButton characterId={character.id} remaining={paywalledPhotos.length} />
         </div>
       )}
 

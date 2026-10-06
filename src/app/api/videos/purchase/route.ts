@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { logUserAction } from '@/lib/user-action-log'
+import { spendPoints, refundPoints } from '@/lib/points'
 import { getMessages } from '@/i18n/server'
 
 // POST /api/videos/purchase - 動画購入（ポイント消費）
@@ -37,66 +38,30 @@ export async function POST(req: NextRequest) {
     .single()
   if (existing) return NextResponse.json({ error: 'already_purchased' }, { status: 409 })
 
-  // ユーザーのポイント確認
-  const { data: profile } = await adminDb
-    .from('profiles')
-    .select('points, bonus_points, bonus_points_expires_at')
-    .eq('id', user.id)
-    .single()
-  if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
-
-  const now = new Date()
-  const bonusAvailable =
-    profile.bonus_points_expires_at && new Date(profile.bonus_points_expires_at) > now
-      ? (profile.bonus_points ?? 0)
-      : 0
-  const totalPoints = profile.points + bonusAvailable
-  if (totalPoints < video.price_points) {
-    await logUserAction(adminDb, user.id, 'points_shortage', { context: 'video', title: video.title, current: totalPoints, required: video.price_points })
-    return NextResponse.json(
-      { error: 'insufficient_points', current: totalPoints, required: video.price_points },
-      { status: 402 }
-    )
+  // ポイント消費（ボーナス優先・競合に強い共通処理）
+  const spend = await spendPoints(adminDb, user.id, video.price_points, `動画購入: ${video.title}`)
+  if (!spend.ok) {
+    if (spend.status === 402) {
+      await logUserAction(adminDb, user.id, 'points_shortage', { context: 'video', title: video.title, current: spend.body.current, required: spend.body.required })
+    }
+    return NextResponse.json(spend.body, { status: spend.status })
   }
 
-  // ボーナスptから先に消費
-  const bonusDeduct = Math.min(bonusAvailable, video.price_points)
-  const regularDeduct = video.price_points - bonusDeduct
-  const newBonusPoints = bonusAvailable - bonusDeduct
-  const newPoints = profile.points - regularDeduct
-  const updatePayload: Record<string, number> = { points: newPoints }
-  if (bonusDeduct > 0) updatePayload.bonus_points = newBonusPoints
-
-  // ポイント更新
-  const { error: pointsError } = await adminDb
-    .from('profiles')
-    .update(updatePayload)
-    .eq('id', user.id)
-  if (pointsError) return NextResponse.json({ error: getMessages().api.updateFailed }, { status: 500 })
-
-  // 購入レコード追加
+  // 購入レコード追加（失敗したらポイントを戻す）
   const { error: purchaseError } = await adminDb
     .from('video_item_purchases')
     .insert({ user_id: user.id, video_item_id: videoItemId })
   if (purchaseError) {
-    // ロールバック（ポイント戻す）
-    await adminDb.from('profiles').update({ points: profile.points, bonus_points: profile.bonus_points ?? 0 }).eq('id', user.id)
+    await refundPoints(adminDb, user.id, spend, `動画購入失敗による返却: ${video.title}`)
     return NextResponse.json({ error: getMessages().api.purchaseRecordFailed }, { status: 500 })
   }
-
-  // ポイント取引履歴
-  await adminDb.from('point_transactions').insert({
-    user_id: user.id,
-    amount: -video.price_points,
-    type: 'spend',
-    description: `動画購入: ${video.title}`,
-  })
 
   await logUserAction(adminDb, user.id, 'video_purchase', { title: video.title, cost: video.price_points })
 
   return NextResponse.json({
     ok: true,
-    newPoints: newPoints + (bonusDeduct > 0 ? newBonusPoints : bonusAvailable),
+    newPoints: spend.points + spend.bonus_points,
     videoUrl: video.video_url,
+    thumbnailUrl: video.thumbnail_url,
   })
 }

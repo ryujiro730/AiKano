@@ -5,28 +5,15 @@ import { createClient } from '@/lib/supabase/client'
 import { Plus, Edit2, Trash2, Loader2, Check, X, Upload, Images, Megaphone, Calendar, Users, Send, Timer, ChevronDown, ChevronUp, Power, BookOpen, ArrowUp, ArrowDown, BarChart2 } from 'lucide-react'
 import type { Character, CharacterPhoto } from '@/types'
 import { PromptTestChat } from '@/components/admin/PromptTestChat'
+import { AFFECTION_LEVELS } from '@/lib/affection'
+import { compressImage as compressLib, isHeic, heicToBlob } from '@/lib/compress-image'
 
 type Template = { id: string; title: string; content: string; sort_order: number }
 
-async function compressImage(file: File, maxSize = 1200, quality = 0.8): Promise<Blob> {
-  return new Promise((resolve) => {
-    const img = new Image()
-    const url = URL.createObjectURL(file)
-    img.onload = () => {
-      URL.revokeObjectURL(url)
-      let { width, height } = img
-      if (width > maxSize || height > maxSize) {
-        if (width > height) { height = Math.round(height * maxSize / width); width = maxSize }
-        else { width = Math.round(width * maxSize / height); height = maxSize }
-      }
-      const canvas = document.createElement('canvas')
-      canvas.width = width
-      canvas.height = height
-      canvas.getContext('2d')!.drawImage(img, 0, 0, width, height)
-      canvas.toBlob((blob) => resolve(blob ?? file), 'image/webp', quality)
-    }
-    img.src = url
-  })
+/** 画像を WebP（長辺1200px）に圧縮する。iPhone の HEIC も変換する */
+async function compressImage(file: File): Promise<Blob> {
+  const src = isHeic(file) ? new File([await heicToBlob(file)], 'photo.jpg', { type: 'image/jpeg' }) : file
+  return (await compressLib(src, 1200, 0.82)).blob
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -191,8 +178,13 @@ export default function AdminCharactersPage() {
   }
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? [])
-    if (files.length === 0 || !selectedCharId) return
+    await uploadPhotoFiles(Array.from(e.target.files ?? []))
+  }
+
+  // フォトの追加（ファイル選択・貼り付け・ドラッグ＆ドロップ共通）
+  const uploadPhotoFiles = async (input: File[]) => {
+    const files = input.filter(f => f.type.startsWith('image/') || isHeic(f))
+    if (files.length === 0 || !selectedCharId || photoUploading) return
 
     setPhotoUploading(true)
     const newPhotos: CharacterPhoto[] = []
@@ -200,7 +192,7 @@ export default function AdminCharactersPage() {
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
       const compressed = await compressImage(file)
-      const fileName = `${Date.now()}-${i}.webp`
+      const fileName = `${Date.now()}-${i}-${Math.random().toString(36).slice(2, 6)}.webp`
 
       const { error } = await supabase.storage
         .from('avatars')
@@ -229,10 +221,33 @@ export default function AdminCharactersPage() {
     if (photoInputRef.current) photoInputRef.current.value = ''
   }
 
+  // フォトパネルを開いている間は、コピーした画像を Ctrl+V / ⌘V でそのまま追加できる
+  const uploadRef = useRef(uploadPhotoFiles)
+  uploadRef.current = uploadPhotoFiles
+  useEffect(() => {
+    if (!selectedCharId) return
+    const onPaste = (e: ClipboardEvent) => {
+      const files = Array.from(e.clipboardData?.files ?? []).filter(f => f.type.startsWith('image/'))
+      if (files.length === 0) return
+      e.preventDefault()
+      uploadRef.current(files)
+    }
+    window.addEventListener('paste', onPaste)
+    return () => window.removeEventListener('paste', onPaste)
+  }, [selectedCharId])
+  const [photoDragOver, setPhotoDragOver] = useState(false)
+
   const toggleMembersOnly = async (photoId: string, membersOnly: boolean) => {
     const { error } = await supabase.from('character_photos').update({ members_only: membersOnly }).eq('id', photoId)
     if (error) { alert('更新に失敗しました: ' + error.message); return }
     setPhotos(prev => prev.map(p => p.id === photoId ? { ...p, members_only: membersOnly } : p))
+  }
+
+  // 好感度レベル限定（そのレベルに達したユーザーは無料で見られる。なしなら1枚ずつ有料）
+  const setRequiredLevel = async (photoId: string, level: number | null) => {
+    const { error } = await supabase.from('character_photos').update({ required_level: level }).eq('id', photoId)
+    if (error) { alert('更新に失敗しました: ' + error.message); return }
+    setPhotos(prev => prev.map(p => p.id === photoId ? { ...p, required_level: level } : p))
   }
 
   const deletePhoto = async (photoId: string) => {
@@ -835,7 +850,11 @@ export default function AdminCharactersPage() {
 
             {/* フォト管理パネル */}
             {selectedCharId === char.id && (
-              <div className="mt-1 glass rounded-2xl p-5">
+              <div className="mt-1 glass rounded-2xl p-5 transition-colors"
+                onDragOver={e => { e.preventDefault(); setPhotoDragOver(true) }}
+                onDragLeave={() => setPhotoDragOver(false)}
+                onDrop={e => { e.preventDefault(); setPhotoDragOver(false); uploadPhotoFiles(Array.from(e.dataTransfer.files)) }}
+                style={photoDragOver ? { outline: '2px dashed var(--color-primary)', outlineOffset: -2 } : undefined}>
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-semibold flex items-center gap-1.5">
                     <Images size={14} />
@@ -864,6 +883,12 @@ export default function AdminCharactersPage() {
                   </div>
                 </div>
 
+                <p className="text-[11px] text-[var(--color-text-muted)] mb-3 leading-relaxed">
+                  画像をコピーして <b>Ctrl+V（Macは⌘V）で貼り付け</b>、またはこの枠に<b>ドラッグ＆ドロップ</b>でも追加できます。
+                  ここに入れた写真がそのままこのキャラの写真ガチャの中身になります（タイトル不要・まとめて選択OK）。
+                  ユーザーはまだ持っていない写真だけを引けます。150pt以上のプレゼントを贈ったときのお礼写真もここからランダムに出ます。
+                  左上で「Lv.○で解放」にした写真はガチャに入らず、そのレベルに達したユーザーが無料で見られます。
+                </p>
                 {photosLoading ? (
                   <div className="flex justify-center py-4">
                     <Loader2 size={20} className="animate-spin text-[var(--color-text-muted)]" />
@@ -893,6 +918,18 @@ export default function AdminCharactersPage() {
                         >
                           {photo.members_only ? '会員限定' : '全員に公開'}
                         </button>
+                        <select
+                          value={photo.required_level ?? ''}
+                          onChange={e => setRequiredLevel(photo.id, e.target.value ? Number(e.target.value) : null)}
+                          className="absolute top-1 left-1 text-[10px] font-bold rounded-md px-1 py-0.5 text-white"
+                          style={{ background: photo.required_level ? 'rgba(124,58,237,0.92)' : 'rgba(0,0,0,0.55)' }}
+                          title="好感度レベル限定（達したら無料）"
+                        >
+                          <option value="">ガチャに入れる</option>
+                          {AFFECTION_LEVELS.slice(1).map(l => (
+                            <option key={l.level} value={l.level}>Lv.{l.level}で解放</option>
+                          ))}
+                        </select>
                       </div>
                     ))}
                   </div>

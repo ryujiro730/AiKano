@@ -213,8 +213,8 @@ function ItemCard({ item, qty, buying, bought, points, onBuy }: {
   return (
     <div className="glass rounded-2xl overflow-hidden flex flex-col">
       {item.image_url ? (
-        <div className="relative w-full" style={{ aspectRatio: '1' }}>
-          <Image src={item.image_url} alt={item.name} fill className="object-cover" sizes="50vw" />
+        <div className="relative w-full" style={{ aspectRatio: '1', background: 'radial-gradient(circle at 50% 45%, #fff 0%, var(--color-primary-soft) 75%)' }}>
+          <Image src={item.image_url} alt={item.name} fill className="object-contain p-4" sizes="50vw" />
         </div>
       ) : (
         <div className="w-full flex items-center justify-center bg-[var(--color-surface-2)]" style={{ aspectRatio: '1' }}>
@@ -226,6 +226,9 @@ function ItemCard({ item, qty, buying, bought, points, onBuy }: {
           <p className="font-semibold text-sm">{item.name}</p>
           {item.description && (
             <p className="text-xs text-[var(--color-text-muted)] mt-0.5 line-clamp-2">{item.description}</p>
+          )}
+          {item.affection_points > 0 && (
+            <p className="text-[11px] font-bold mt-1" style={{ color: 'var(--color-primary)' }}>♥ {fmt(m.gift.affectionValue, { n: item.affection_points })}</p>
           )}
         </div>
         <div className="flex items-center justify-between mt-auto">

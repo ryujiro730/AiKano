@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Sparkles } from 'lucide-react'
 import { TOKEN_PACKAGES } from '@/types'
 import { logAction } from '@/lib/action-log'
-import { pointsForPackage, isCampaignTarget, type PurchaseCampaign } from '@/lib/point-packages'
+import { pointsForPackage, isCampaignTarget, type PurchaseCampaign, toPurchaseCampaign, campaignRateFor, campaignMaxRate } from '@/lib/point-packages'
 import { useI18n } from '@/i18n/client'
 import { fmt } from '@/i18n/fmt'
 
@@ -24,7 +24,7 @@ export function PointPackageList({ shortage = 0 }: { shortage?: number }) {
       .then(d => {
         const c = d?.campaign
         if (!c) return
-        setCampaign({ id: c.id, bonus_rate: Number(c.bonus_rate) || 1, min_price_yen: c.min_price_yen ?? null, max_price_yen: c.max_price_yen ?? null })
+        setCampaign(toPurchaseCampaign(c))
       })
       .catch(() => {})
   }, [])
@@ -62,12 +62,14 @@ export function PointPackageList({ shortage = 0 }: { shortage?: number }) {
 
   return (
     <div className="flex flex-col gap-2.5">
-      {campaign && campaign.bonus_rate > 1 && (
+      {campaign && campaignMaxRate(campaign) > 1 && (
         <div className="rounded-xl px-4 py-2.5 flex items-center gap-2 mb-1"
           style={{ background: 'var(--color-primary-soft)', border: '1px solid var(--color-primary-border)' }}>
           <Sparkles size={14} style={{ color: 'var(--color-primary)', flexShrink: 0 }} />
           <p className="text-xs font-bold" style={{ color: 'var(--color-primary)' }}>
-            {fmt(m.packages.campaign, { rate: campaign.bonus_rate })}
+            {campaignMaxRate(campaign) > campaign.bonus_rate
+              ? fmt(m.packages.campaignUpTo, { rate: campaignMaxRate(campaign) })
+              : fmt(m.packages.campaign, { rate: campaign.bonus_rate })}
           </p>
         </div>
       )}
@@ -101,7 +103,7 @@ export function PointPackageList({ shortage = 0 }: { shortage?: number }) {
                     <span className="text-xs line-through" style={{ color: 'var(--color-text-muted)' }}>{pkg.tokens.toLocaleString()}pt</span>
                     <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md flex items-center gap-0.5"
                       style={{ background: 'var(--color-primary-soft)', color: 'var(--color-primary)' }}>
-                      <Sparkles size={9} />{fmt(m.packages.rate, { rate: campaign!.bonus_rate })}
+                      <Sparkles size={9} />{fmt(m.packages.rate, { rate: campaignRateFor(pkg, campaign) })}
                     </span>
                   </>
                 ) : pkg.bonus_points > 0 && (

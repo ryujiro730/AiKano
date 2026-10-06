@@ -11,7 +11,7 @@ const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!
 const H = { apikey: KEY, Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json' }
 const MODEL = process.env.OPENAI_MODEL || 'gpt-6-luna'
 
-type Text = { name: string; personality: string; description: string }
+type Text = { name: string; personality: string; description: string; welcome_message: string }
 
 async function translate(src: Text, locale: Locale): Promise<Text> {
   for (let attempt = 1; attempt <= 3; attempt++) {
@@ -26,7 +26,8 @@ async function translate(src: Text, locale: Locale): Promise<Text> {
             role: 'system',
             content: [
               'You localize profiles of Japanese AI girlfriend characters for a chat app.',
-              'Return JSON {"name","personality","description"}.',
+              'Return JSON {"name","personality","description","welcome_message"}.',
+              '- welcome_message: the first chat message the character sends. Translate it as natural casual chat in her voice. Keep placeholders like {name} unchanged.',
               '- name: romanize Japanese names (e.g. もも → Momo, 岸本絵理 → Eri Kishimoto with given name first). Already-romanized names stay. Translate any extra label in brackets naturally.',
               '- personality: short trait tags separated by ", " (the source uses "・").',
               '- description: natural, appealing profile text. Keep facts (age, job, hobbies). The characters are Japanese women living in Japan.',
@@ -40,7 +41,7 @@ async function translate(src: Text, locale: Locale): Promise<Text> {
     if (!res.ok) continue
     try {
       const out = JSON.parse((await res.json()).choices[0].message.content) as Text
-      if (out.name?.trim() && (!src.personality || out.personality?.trim()) && (!src.description || out.description?.trim())) return out
+      if (out.name?.trim() && (!src.personality || out.personality?.trim()) && (!src.description || out.description?.trim()) && (!src.welcome_message || out.welcome_message?.trim())) return out
     } catch { /* retry */ }
   }
   throw new Error(`failed: ${src.name} (${locale})`)
@@ -50,14 +51,14 @@ async function main() {
   if (!process.env.OPENAI_API_KEY) throw new Error('OPENAI_API_KEY is not set')
   const force = process.argv.includes('--force')
   const chars: (Text & { id: string; i18n: Record<string, Text> | null })[] =
-    await (await fetch(`${URL}/rest/v1/characters?select=id,name,personality,description,i18n`, { headers: H })).json()
+    await (await fetch(`${URL}/rest/v1/characters?select=id,name,personality,description,welcome_message,i18n`, { headers: H })).json()
   if (!Array.isArray(chars)) throw new Error(JSON.stringify(chars))
 
   for (const c of chars) {
     const i18n = { ...(c.i18n ?? {}) }
-    const targets = LOCALES.filter(l => l !== 'ja' && (force || !i18n[l]))
+    const targets = LOCALES.filter(l => l !== 'ja' && (force || !i18n[l] || (!!c.welcome_message && !i18n[l].welcome_message)))
     if (targets.length === 0) continue
-    const src = { name: c.name, personality: c.personality ?? '', description: c.description ?? '' }
+    const src = { name: c.name, personality: c.personality ?? '', description: c.description ?? '', welcome_message: c.welcome_message ?? '' }
     const results = await Promise.all(targets.map(async l => [l, await translate(src, l)] as const))
     for (const [l, t] of results) i18n[l] = t
     const res = await fetch(`${URL}/rest/v1/characters?id=eq.${c.id}`, { method: 'PATCH', headers: H, body: JSON.stringify({ i18n }) })

@@ -1,17 +1,17 @@
 {
   "title": "Privacy Policy",
   "updated": "Last updated: June 2026",
-  "footer": "AiKano Operations Office",
+  "footer": "AiKano Operations Team",
   "sections": [
     {
       "title": "Article 1: Basic Policy",
       "items": [
-        "The AiKano Operations Office (hereinafter referred to as “the Company”) recognizes the protection of users’ personal information as an important responsibility and complies with the Act on the Protection of Personal Information and other applicable laws and regulations."
+        "AiKano’s operating team (hereinafter, the “Company”) recognizes the protection of users’ personal information as an important responsibility and complies with the Act on the Protection of Personal Information and other applicable laws and regulations."
       ]
     },
     {
       "title": "Article 2: Information We Collect",
-      "preamble": "We collect the following information to provide this service.",
+      "preamble": "We collect the following information in providing this service.",
       "groups": [
         {
           "heading": "Information Provided Directly by Users",
@@ -22,11 +22,11 @@
           ]
         },
         {
-          "heading": "Information Collected Automatically When Using the Service",
+          "heading": "Information Automatically Collected Through Use of the Service",
           "items": [
             "IP address and access logs",
             "Device and browser information",
-            "Usage history on this service (such as login dates and times, billing history, and characters used)",
+            "Usage history on this service (such as login dates and times, payment history, and characters used)",
             "Chat content between users and AI characters"
           ]
         }
@@ -41,7 +41,7 @@
         "Billing and point management",
         "Improving the quality of AI responses and training and improving our AI models",
         "Detecting and addressing unauthorized use and violations of the Terms",
-        "Responding to legal requirements (including inquiries from law enforcement agencies)",
+        "Responding as required by law (including inquiries from law enforcement agencies)",
         "Responding to inquiries"
       ]
     },
@@ -50,37 +50,37 @@
       "preamble": "Given the nature of this service, chat content is handled as follows.",
       "items": [
         {
-          "label": "Staff review:",
-          "text": "Our staff may review chats between users and characters to maintain and improve response quality, detect misuse, and improve the training of our AI models."
+          "label": "Review by staff:",
+          "text": "Chats between users and characters may be reviewed by our staff to maintain and improve response quality, detect misuse, and improve the training of AI models."
         },
         {
           "label": "Use for AI training:",
-          "text": "Chat content may be processed to remove personally identifiable information and used as training data for our AI models."
+          "text": "Chat content may be processed so that individuals cannot be identified and then used as training data for our AI models."
         },
         {
           "label": "No sharing with third parties:",
-          "text": "We will not provide or sell chat content to third parties, such as advertisers or other companies, except as required by law."
+          "text": "We will not provide or sell chat content to third parties (such as advertisers or other companies), except as required by law."
         },
         {
-          "label": "Legal compliance:",
-          "text": "If illegal activity, such as requests involving child sexual abuse material or the encouragement of criminal activity, is detected, we may preserve the relevant chat logs as evidence and provide them to law enforcement authorities as necessary."
+          "label": "Compliance with laws:",
+          "text": "If illegal activity is detected, such as requests involving child sexual abuse material or the promotion of crime, we may preserve the relevant chat logs as evidence and provide them to law enforcement authorities as necessary."
         }
       ],
       "note": "By registering for this service, users agree to the handling of chat content described above."
     },
     {
-      "title": "Article 5: Provision to Third Parties",
+      "title": "Article 5: Provision of Personal Information to Third Parties",
       "preamble": "We will not provide the personal information we collect to third parties except in the following cases:",
       "items": [
         "When the user has given prior consent",
-        "When required by applicable laws and regulations (such as inquiries from courts or investigative authorities)",
+        "When required by law (such as inquiries from courts or law enforcement agencies)",
         "When necessary to protect a person's life, physical safety, or property",
-        "When providing information to contractors necessary for operating the Service (only if a confidentiality agreement has been signed)"
+        "When providing information to service providers entrusted with tasks necessary to operate this service (only when a confidentiality agreement has been signed)"
       ]
     },
     {
       "title": "Article 6: Use of External Services",
-      "preamble": "This service uses the following external services, each of which may be subject to its own privacy policy.",
+      "preamble": "This service uses the external services listed below, and their respective privacy policies may apply.",
       "bullet": true,
       "items": [
         {
@@ -89,49 +89,49 @@
         },
         {
           "label": "Analytics tools:",
-          "text": "Usage analytics to improve the service (such as Google Analytics)"
+          "text": "Access analytics to improve the service (such as Google Analytics)"
         },
         {
           "label": "AI foundation models:",
-          "text": "We may use external AI APIs (such as OpenAI and Anthropic) to generate responses. In such cases, conversation content may be sent to the API of the relevant service."
+          "text": "We may use external AI APIs (such as OpenAI and Anthropic) to generate responses. In such cases, conversation content may be sent to the APIs of those services."
         }
       ]
     },
     {
       "title": "Article 7: Use of Cookies",
       "items": [
-        "This service uses cookies to maintain your login status and improve the service. You can disable cookies in your browser settings, but some features may become unavailable."
+        "This service uses cookies to keep you logged in and improve the service. You can disable cookies in your browser settings, but some features may become unavailable."
       ]
     },
     {
       "title": "Article 8: Storage and Management of Personal Information",
       "items": [
-        "We will implement appropriate security measures to prevent the leakage, loss, or damage of personal information.",
-        "We will retain personal information for as long as necessary to achieve the purposes for which it is used, and securely dispose of it when it is no longer needed.",
-        "Even after you close your account, we may retain certain information for a specified period if required by law or necessary to prevent unauthorized use."
+        "We take appropriate security measures to prevent the leakage, loss, or damage of personal information.",
+        "We retain personal information for as long as necessary to fulfill the purposes for which it was collected, and dispose of it appropriately when it is no longer needed.",
+        "Even after you close your account, we may retain certain information for a limited period if required by law or necessary to prevent misuse."
       ]
     },
     {
       "title": "Article 9: Personal Information of Minors",
       "items": [
-        "This service is intended for users aged 18 and older, excluding high school students. If we discover that a user is under 18, we will delete their account and data."
+        "This service is intended for people aged 18 or older (excluding high school students). If we determine that a user is under 18, we will delete their account and data."
       ]
     },
     {
       "title": "Article 10: Requests for Disclosure, Correction, and Deletion",
       "items": [
-        "Users may request disclosure, correction, deletion, or suspension of the use of their personal information held by us. To submit a request, please contact our inquiry desk at info@aikano.chat. After verifying your identity, we will respond in accordance with applicable laws and regulations."
+        "Users may request access to, correction or deletion of, or suspension of the use of their personal information held by us. To make a request, please contact us at info@aikano.chat. After verifying your identity, we will respond in accordance with applicable laws."
       ]
     },
     {
       "title": "Article 11: Changes to the Privacy Policy",
       "items": [
-        "We may change this Privacy Policy as necessary. If we make any material changes, we will notify you through the Service. The revised Policy will take effect when it is posted."
+        "We may change this Privacy Policy as necessary. If we make any significant changes, we will notify you through the Service. The revised policy will take effect when it is posted."
       ]
     },
     {
-      "title": "Article 12: Contact Us",
-      "preamble": "For inquiries about how we handle personal information, please contact us at:",
+      "title": "Article 12: Contact",
+      "preamble": "For inquiries regarding the handling of personal information, please contact us at:",
       "contact": [
         "AiKano Support Team",
         "Email: info@aikano.chat"

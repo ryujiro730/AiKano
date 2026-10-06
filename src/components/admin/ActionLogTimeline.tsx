@@ -41,6 +41,8 @@ const ACTIONS: Record<string, { label: string; cat: Category; color: string }> =
   subscription_cancel:         { label: 'サブスク解約',           cat: 'money',   color: '#6b7280' },
   subscription_payment_failed: { label: 'サブスク支払い失敗',     cat: 'money',   color: '#ef4444' },
   video_purchase:              { label: '動画を購入',             cat: 'money',   color: '#7c3aed' },
+  media_unlock:                { label: '写真・動画を解錠',       cat: 'money',   color: '#7c3aed' },
+  gacha_draw:                  { label: '写真ガチャ',             cat: 'money',   color: '#7c3aed' },
   item_purchase:               { label: 'アイテムを購入',         cat: 'money',   color: '#06b6d4' },
   character_search:            { label: 'ホームを閲覧',           cat: 'view',    color: '#3b82f6' },
   conversations_view:          { label: 'メッセージ一覧を閲覧',   cat: 'view',    color: '#3b82f6' },

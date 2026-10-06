@@ -4,6 +4,8 @@ import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { INTERNAL_EMAILS } from '@/lib/internal-accounts'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { findEligibleCampaign } from '@/lib/campaigns'
+import { localizedText } from '@/lib/content-i18n'
+import { getLocale } from '@/i18n/server'
 
 function admin() {
   return createAdminClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
@@ -18,8 +20,9 @@ export async function GET(req: Request) {
     return NextResponse.json({ campaign: null })
   }
 
-  const campaign = await findEligibleCampaign(admin(), user.id, { purchaseContext: isPurchaseContext })
-  if (!campaign) return NextResponse.json({ campaign: null })
+  const found = await findEligibleCampaign(admin(), user.id, { purchaseContext: isPurchaseContext })
+  if (!found) return NextResponse.json({ campaign: null })
+  const campaign = localizedText(found, getLocale(), ['catchphrase', 'description', 'cta_text'])
 
   return NextResponse.json({
     campaign: {
@@ -34,6 +37,7 @@ export async function GET(req: Request) {
       bonus_rate: campaign.bonus_rate ?? 1.0,
       min_price_yen: campaign.min_price_yen ?? null,
       max_price_yen: campaign.max_price_yen ?? null,
+      rate_tiers: campaign.rate_tiers ?? [],
     }
   })
 }

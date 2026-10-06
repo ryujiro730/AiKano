@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Plus, Edit2, Trash2, Loader2, Check, X, Upload, Video } from 'lucide-react'
 import { compressImage } from '@/lib/compress-image'
+import { VIDEO_UNLOCK_POINTS } from '@/lib/pricing'
 
 interface Character {
   id: string
@@ -38,7 +39,7 @@ interface FormState {
 const defaultForm: FormState = {
   title: '',
   description: '',
-  price_points: 100,
+  price_points: VIDEO_UNLOCK_POINTS,
   video_url: '',
   thumbnail_url: '',
   character_id: '',

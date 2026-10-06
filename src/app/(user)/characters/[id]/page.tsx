@@ -5,13 +5,14 @@ import { CharacterDetailClient } from './CharacterDetailClient'
 import { getLocale } from '@/i18n/server'
 import { localizedCharacter } from '@/lib/character-i18n'
 import { getCharacterPhotosForUser } from '@/lib/character-photos'
+import { canUseGacha } from '@/lib/features'
 
 export default async function CharacterDetailPage({ params }: { params: { id: string } }) {
   const [user, admin] = [await getAuthUser(), createAdminClientStatic()]
   const userId = user?.id
 
   // 全クエリ並列（キャラ情報 + ユーザー固有データ 1ウォーターフォール）
-  const [charRes, photosRes, ucRes, achRes] = await Promise.all([
+  const [charRes, photosRes, ucRes, achRes, meRes] = await Promise.all([
     admin.from('characters').select('*').eq('id', params.id).single(),
     getCharacterPhotosForUser(admin, params.id, userId),
     userId
@@ -25,6 +26,7 @@ export default async function CharacterDetailPage({ params }: { params: { id: st
           .eq('user_id', userId).eq('character_id', params.id)
           .order('unlocked_at', { ascending: true })
       : Promise.resolve({ data: [] }),
+    userId ? admin.from('profiles').select('role').eq('id', userId).single() : Promise.resolve({ data: null }),
   ])
 
   if (!charRes.data) redirect('/characters')
@@ -35,6 +37,7 @@ export default async function CharacterDetailPage({ params }: { params: { id: st
       photos={photosRes}
       userChar={(ucRes.data ?? null) as any}
       achievements={(achRes.data ?? []) as any}
+      gachaEnabled={canUseGacha((meRes.data as { role?: string } | null)?.role)}
     />
   )
 }

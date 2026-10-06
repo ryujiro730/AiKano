@@ -1,12 +1,12 @@
 {
   "title": "Politique de confidentialité",
   "updated": "Dernière mise à jour : juin 2026",
-  "footer": "Équipe de gestion AiKano",
+  "footer": "Équipe de gestion d’AiKano",
   "sections": [
     {
-      "title": "Article 1　Politique fondamentale",
+      "title": "Article 1 — Principes fondamentaux",
       "items": [
-        "L’équipe en charge de l’exploitation d’AiKano (ci-après « la Société ») considère la protection des données personnelles des utilisateurs comme une responsabilité essentielle et respecte la loi relative à la protection des données personnelles ainsi que les autres lois et réglementations applicables."
+        "L’équipe d’exploitation d’AiKano (ci-après « la Société ») reconnaît que la protection des données personnelles des utilisateurs constitue une responsabilité importante et respecte la loi relative à la protection des données personnelles (ci-après la « Loi sur la protection des données personnelles »), ainsi que les autres lois et réglementations applicables."
       ]
     },
     {
@@ -18,7 +18,7 @@
           "items": [
             "Adresse e-mail (lors de l’inscription)",
             "Mot de passe (lors de l’inscription, stocké sous forme hachée)",
-            "Informations que l’utilisateur choisit de saisir au cours d’une conversation (nom, adresse, numéro de téléphone, etc.)"
+            "Informations que l’utilisateur saisit spontanément au cours d’une conversation (par exemple, son nom, son adresse ou son numéro de téléphone)"
           ]
         },
         {
@@ -33,49 +33,49 @@
       ]
     },
     {
-      "title": "Article 3 – Finalités de l’utilisation des informations",
-      "preamble": "Les informations recueillies sont utilisées uniquement aux fins suivantes :",
+      "title": "Article 3　Finalités de l’utilisation des informations",
+      "preamble": "Les informations collectées sont utilisées uniquement aux fins suivantes :",
       "items": [
         "Fourniture, exploitation et amélioration du Service",
         "Authentification des utilisateurs et gestion des comptes",
-        "Facturation et gestion des points",
-        "Amélioration de la qualité des réponses de l’IA ainsi qu’entraînement et amélioration de nos modèles d’IA",
+        "Gestion de la facturation et des points",
+        "Amélioration de la qualité des réponses de l’IA, ainsi qu’entraînement et amélioration de nos modèles d’IA",
         "Détection et traitement des utilisations frauduleuses et des violations des conditions d’utilisation",
-        "Réponse aux obligations légales (notamment aux demandes des autorités chargées des enquêtes)",
-        "Traitement des demandes de renseignements"
+        "Mesures prises conformément aux lois et règlements (notamment en réponse aux demandes des autorités chargées des enquêtes)",
+        "Réponse aux demandes de renseignements"
       ]
     },
     {
-      "title": "Article 4 — Traitement du contenu des conversations (important)",
-      "preamble": "Compte tenu de la nature du Service, le traitement du contenu des conversations est défini comme suit.",
+      "title": "Article 4　Traitement des conversations (important)",
+      "preamble": "Compte tenu de la nature du présent service, le traitement des conversations est défini comme suit.",
       "items": [
         {
-          "label": "Vérification par notre équipe :",
-          "text": "Le contenu des conversations entre les utilisateurs et les personnages peut être consulté par les membres de notre équipe afin de maintenir et d’améliorer la qualité des réponses, de détecter les utilisations abusives et d’améliorer l’entraînement de nos modèles d’IA."
+          "label": "Examen par notre équipe :",
+          "text": "Notre équipe peut examiner les conversations entre les utilisateurs et les personnages afin de maintenir et d’améliorer la qualité des réponses, de détecter les utilisations abusives et d’améliorer l’apprentissage des modèles d’IA."
         },
         {
-          "label": "Utilisation pour l’entraînement de l’IA :",
-          "text": "Après avoir été modifié de manière à empêcher l’identification des personnes, le contenu des conversations peut être utilisé comme données d’entraînement pour nos modèles d’IA."
+          "label": "Utilisation pour l’apprentissage de l’IA :",
+          "text": "Les conversations peuvent être utilisées comme données d’apprentissage pour nos modèles d’IA, après avoir été modifiées de manière à empêcher l’identification des personnes."
         },
         {
-          "label": "Interdiction de communiquer ces données à des tiers :",
-          "text": "Nous ne communiquerons ni ne vendrons le contenu des conversations à des tiers (annonceurs, autres entreprises, etc.), sauf lorsque la loi l’exige."
+          "label": "Interdiction de communication à des tiers :",
+          "text": "Nous ne communiquons ni ne vendons les conversations à des tiers (annonceurs, autres entreprises, etc.), sauf lorsque la loi l’exige."
         },
         {
           "label": "Respect de la loi :",
-          "text": "Si des actes illégaux, tels que des demandes de pédopornographie ou l’incitation à commettre des infractions, sont détectés, nous pouvons conserver les journaux de conversation concernés à titre de preuve et, si nécessaire, les communiquer aux autorités chargées des enquêtes."
+          "text": "Si des actes illégaux, tels que des demandes de pornographie mettant en scène des mineurs ou l’incitation à commettre des infractions, sont détectés, nous pouvons conserver les journaux de conversation concernés à titre de preuve et, si nécessaire, les communiquer aux autorités chargées des enquêtes."
         }
       ],
-      "note": "En s’inscrivant au Service, l’utilisateur est réputé accepter le traitement du contenu des conversations décrit ci-dessus."
+      "note": "En s’inscrivant au présent service, l’utilisateur est réputé accepter le traitement des conversations décrit ci-dessus."
     },
     {
       "title": "Article 5 — Communication à des tiers",
-      "preamble": "Nous ne communiquons pas les données à caractère personnel collectées à des tiers, sauf dans les cas suivants :",
+      "preamble": "Nous ne communiquons pas les données personnelles collectées à des tiers, sauf dans les cas suivants :",
       "items": [
-        "Lorsque l’utilisateur y a préalablement consenti",
-        "Lorsque la loi l’exige (notamment à la suite d’une demande d’un tribunal ou d’une autorité d’enquête)",
+        "Avec le consentement préalable de l’utilisateur",
+        "Lorsque la loi l’exige (notamment à la demande d’un tribunal ou d’une autorité d’enquête)",
         "Lorsque cela est nécessaire pour protéger la vie, l’intégrité physique ou les biens d’une personne",
-        "Lorsque les données sont communiquées à des prestataires auxquels nous confions des tâches nécessaires au fonctionnement du service (uniquement si un accord de confidentialité a été conclu)"
+        "Lorsque cela est nécessaire au fonctionnement du présent service, à des prestataires chargés de certaines tâches (uniquement si un accord de confidentialité a été conclu)"
       ]
     },
     {
@@ -85,56 +85,56 @@
       "items": [
         {
           "label": "Services de paiement :",
-          "text": "Traitement des paiements lors de l’achat de points (les informations relatives aux cartes bancaires ne sont pas stockées sur nos serveurs)"
+          "text": "Traitement des paiements lors de l’achat de points (les informations relatives aux cartes de crédit ne sont pas enregistrées sur nos serveurs)"
         },
         {
           "label": "Outils d’analyse :",
-          "text": "Analyse du trafic afin d’améliorer le service (Google Analytics, entre autres)"
+          "text": "Analyse de l’accès au service afin de l’améliorer (Google Analytics, etc.)"
         },
         {
           "label": "Modèles d’IA :",
-          "text": "Nous pouvons utiliser des API d’IA externes (OpenAI, Anthropic, entre autres) pour générer des réponses. Dans ce cas, le contenu des conversations peut être transmis aux API de ces services."
+          "text": "Nous pouvons utiliser des API d’IA externes (OpenAI, Anthropic, etc.) pour générer les réponses. Dans ce cas, le contenu des conversations peut être transmis aux API de ces services."
         }
       ]
     },
     {
-      "title": "Article 7 — Utilisation des cookies",
+      "title": "Article 7 – Utilisation des cookies",
       "items": [
-        "Ce service utilise des cookies pour maintenir votre session et améliorer le service. Vous pouvez désactiver les cookies dans les paramètres de votre navigateur, mais certaines fonctionnalités pourraient alors ne plus être disponibles."
+        "Le Service utilise des cookies afin de maintenir votre session et d’améliorer le Service. Vous pouvez désactiver les cookies dans les paramètres de votre navigateur, mais certaines fonctionnalités pourraient alors ne plus être disponibles."
       ]
     },
     {
-      "title": "Article 8 — Conservation et gestion des données personnelles",
+      "title": "Article 8 : Conservation et gestion des données personnelles",
       "items": [
-        "Nous mettons en œuvre des mesures de sécurité appropriées afin de prévenir toute fuite, perte ou détérioration des données personnelles.",
+        "Nous mettons en œuvre des mesures de sécurité appropriées afin de prévenir toute fuite, perte ou altération des données personnelles.",
         "Les données personnelles sont conservées pendant la durée nécessaire à la réalisation des finalités de leur utilisation, puis détruites de manière appropriée lorsqu’elles ne sont plus nécessaires.",
-        "Après la suppression du compte, certaines informations peuvent être conservées pendant une durée déterminée si la loi l’exige ou si elles sont nécessaires à la prévention des utilisations frauduleuses."
+        "Après la fermeture de votre compte, certaines données peuvent être conservées pendant une durée déterminée si la loi l’exige ou si elles sont nécessaires à la prévention des utilisations frauduleuses."
       ]
     },
     {
-      "title": "Article 9 — Données personnelles des mineurs",
+      "title": "Article 9 : Données personnelles des mineurs",
       "items": [
-        "Le présent service est destiné aux personnes âgées de 18 ans ou plus, à l’exclusion des élèves du lycée. S’il est établi qu’un utilisateur a moins de 18 ans, nous supprimerons son compte et ses données."
+        "Le présent service est réservé aux personnes âgées de 18 ans ou plus, à l’exception des lycéens. S’il s’avère qu’un utilisateur a moins de 18 ans, nous supprimerons son compte et ses données."
       ]
     },
     {
-      "title": "Article 10 — Demandes d’accès, de rectification et de suppression",
+      "title": "Article 10　Demandes d’accès, de rectification et de suppression",
       "items": [
-        "Les utilisateurs peuvent demander l’accès aux données personnelles les concernant que nous détenons, leur rectification ou leur suppression, ainsi que la suspension de leur utilisation. Pour cela, veuillez contacter notre service dédié à l’adresse info@aikano.chat. Après vérification de votre identité, nous donnerons suite à votre demande conformément à la loi."
+        "Les utilisateurs peuvent demander l’accès à leurs données personnelles détenues par notre société, leur rectification ou leur suppression, ainsi que la suspension de leur utilisation. Pour toute demande, veuillez contacter notre service client à l’adresse info@aikano.chat. Après vérification de votre identité, nous traiterons votre demande conformément à la législation applicable."
       ]
     },
     {
-      "title": "Article 11 — Modification de la politique de confidentialité",
+      "title": "Article 11 Modification de la politique de confidentialité",
       "items": [
         "Nous pouvons modifier la présente politique de confidentialité si nécessaire. En cas de modification importante, nous vous en informerons sur le présent service. La politique modifiée prendra effet dès sa publication."
       ]
     },
     {
-      "title": "Article 12 — Nous contacter",
-      "preamble": "Pour toute question concernant le traitement de vos données personnelles, veuillez nous contacter à l’adresse suivante.",
+      "title": "Article 12 : Nous contacter",
+      "preamble": "Pour toute question concernant le traitement de vos données personnelles, veuillez nous contacter à l’adresse suivante :",
       "contact": [
         "Équipe AiKano",
-        "Adresse e-mail : info@aikano.chat"
+        "Adresse e-mail : info@aikano.chat"
       ]
     }
   ]

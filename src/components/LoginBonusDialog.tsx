@@ -15,7 +15,7 @@ interface BonusResult {
 }
 
 export function LoginBonusDialog() {
-  const { m } = useI18n()
+  const { m, locale } = useI18n()
   const [result, setResult] = useState<BonusResult | null>(null)
   const [visible, setVisible] = useState(false)
 
@@ -40,7 +40,7 @@ export function LoginBonusDialog() {
   if (!visible || !result) return null
 
   const expiresDate = result.expires_at
-    ? new Date(result.expires_at).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' })
+    ? new Date(result.expires_at).toLocaleString(locale === 'ja' ? 'ja-JP' : locale, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
     : ''
 
   return (

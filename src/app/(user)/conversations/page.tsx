@@ -90,9 +90,9 @@ async function ConversationList({ userId, sort }: { userId: string; sort: 'asc' 
         const unread = unreadMap.get(conv.id) ?? 0
         const preview = lastMsg?.content?.trim()
           ? lastMsg.content
-          : lastMsg?.metadata?.video_url
+          : lastMsg?.metadata?.video_url || lastMsg?.metadata?.media === 'video'
             ? m.conversations.videoSent
-            : lastMsg?.metadata?.image_url
+            : lastMsg?.metadata?.image_url || lastMsg?.metadata?.media === 'image'
               ? m.conversations.imageSent
               : ''
 

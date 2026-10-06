@@ -5,6 +5,7 @@ import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { PLANS, type PlanId } from '@/lib/plans'
 import { POINTS_PER_MESSAGE } from '@/lib/pricing'
 import { logUserAction } from '@/lib/user-action-log'
+import { spendPoints, refundPoints, usablePoints } from '@/lib/points'
 import { getMessages } from '@/i18n/server'
 import { fmt } from '@/i18n/fmt'
 
@@ -12,11 +13,9 @@ import { fmt } from '@/i18n/fmt'
 // AI返信は ai-reply 側でポイント残高に関係なく返す。
 const DEFAULT_POINTS_PER_MESSAGE = POINTS_PER_MESSAGE
 const MAX_CONTENT_LENGTH = 300
-const MAX_RETRY = 3
 
 type Db = ReturnType<typeof adminDb>
 type SubResult = { ok: boolean; reason?: string; model?: string; used?: number; limit?: number }
-type PointsRow = { points: number | null; bonus_points: number | null; bonus_points_expires_at: string | null }
 
 function adminDb() {
   return createAdminClient(
@@ -107,47 +106,13 @@ async function chargeForMessage(db: Db, userId: string): Promise<Charge> {
   }
 
   const cost = sub?.reason === 'over_limit' ? overageCost : DEFAULT_POINTS_PER_MESSAGE
-
-  // ボーナス（有効期限内）→ 通常ポイントの順で消費。
-  // 読み取った値を条件にした compare-and-swap 更新で二重送信時の競合を防ぐ。
-  for (let i = 0; i < MAX_RETRY; i++) {
-    const { data: p } = await db
-      .from('profiles')
-      .select('points, bonus_points, bonus_points_expires_at')
-      .eq('id', userId)
-      .single()
-    if (!p) return { ok: false, status: 404, body: { error: 'Profile not found' } }
-
-    const usable = usablePoints(p)
-    if (usable.total < cost) {
-      return { ok: false, status: 402, body: { error: 'insufficient_points', current: usable.total, required: cost } }
-    }
-
-    const bonusDeducted = Math.min(usable.bonus, cost)
-    const newPoints = (p.points ?? 0) - (cost - bonusDeducted)
-    // 期限切れボーナスは 0 に落とす
-    const newBonus = usable.bonus - bonusDeducted
-
-    let q = db.from('profiles')
-      .update({ points: newPoints, bonus_points: newBonus })
-      .eq('id', userId)
-      .eq('points', p.points ?? 0)
-    q = p.bonus_points == null ? q.is('bonus_points', null) : q.eq('bonus_points', p.bonus_points)
-    const { data: updated } = await q.select('id')
-    if (!updated || updated.length === 0) continue // 競合 → 再読込してやり直し
-
-    await db.from('point_transactions').insert({
-      user_id: userId, amount: -cost, type: 'spend', description: 'メッセージ送信',
-    })
-
-    return {
-      ok: true, deducted: cost, bonusDeducted, usedSubscription: false,
-      points: newPoints, bonus_points: newBonus,
-      canSendNext: newPoints + newBonus >= cost,
-    }
+  const spend = await spendPoints(db, userId, cost, 'メッセージ送信')
+  if (!spend.ok) return spend
+  return {
+    ok: true, deducted: spend.deducted, bonusDeducted: spend.bonusDeducted, usedSubscription: false,
+    points: spend.points, bonus_points: spend.bonus_points,
+    canSendNext: spend.points + spend.bonus_points >= cost,
   }
-
-  return { ok: false, status: 409, body: { error: 'conflict' } }
 }
 
 async function refund(db: Db, userId: string, charge: Extract<Charge, { ok: true }>) {
@@ -158,21 +123,5 @@ async function refund(db: Db, userId: string, charge: Extract<Charge, { ok: true
       .eq('id', userId)
     return
   }
-  if (charge.deducted === 0) return
-  // 通常分は add_points でアトミックに戻す。ボーナス分は直後なので現在値に加算。
-  const regular = charge.deducted - charge.bonusDeducted
-  if (regular > 0) await db.rpc('add_points', { p_user_id: userId, p_amount: regular })
-  if (charge.bonusDeducted > 0) {
-    const { data: p } = await db.from('profiles').select('bonus_points').eq('id', userId).single()
-    await db.from('profiles').update({ bonus_points: (p?.bonus_points ?? 0) + charge.bonusDeducted }).eq('id', userId)
-  }
-  await db.from('point_transactions').insert({
-    user_id: userId, amount: charge.deducted, type: 'admin_adjust', description: 'メッセージ送信失敗による返却',
-  })
-}
-
-function usablePoints(p: PointsRow | null) {
-  const bonusValid = !!p?.bonus_points_expires_at && new Date(p.bonus_points_expires_at) > new Date()
-  const bonus = bonusValid ? (p?.bonus_points ?? 0) : 0
-  return { bonus, total: (p?.points ?? 0) + bonus }
+  await refundPoints(db, userId, charge, 'メッセージ送信失敗による返却')
 }

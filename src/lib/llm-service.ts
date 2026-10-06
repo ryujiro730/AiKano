@@ -43,6 +43,8 @@ export interface LLMUserProfile {
   gender?: string | null
   /** このキャラとの好感度レベル（1〜7）。会話の距離感を変える */
   affectionLevel?: number | null
+  /** 今回の返信だけに効く状況（プレゼントが届いた・写真を送る等）。ユーザーの発言には混ぜない */
+  situation?: string | null
 }
 
 /**
@@ -164,6 +166,8 @@ function buildCharacterInstructions(
   parts.push(`${INTIMACY_RULES}\n- 今の関係では: ${INTIMACY_BY_STAGE[level]}`)
 
   parts.push(`【このユーザーについての記憶】\n${memoryText?.trim() || '（まだ何も知らない）'}`)
+
+  if (user?.situation) parts.push(`【今回の状況（最優先）】\n${user.situation}`)
 
   parts.push('【返信の言語】\n- ユーザーの最新のメッセージと同じ言語で返信する（英語なら英語、スペイン語ならスペイン語、日本語なら日本語）。途中で言語が変わったら、それに合わせる。\n- 日本語以外で話すときも、名前・性格・関係の距離感はそのまま。日本語特有の語尾や一人称は、その言語で自然な話し方に置き換える。')
 

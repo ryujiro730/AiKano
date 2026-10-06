@@ -38,6 +38,7 @@ export default function AdminItemsPage() {
     description: '',
     image_url: '',
     price_points: 10,
+    affection_points: 10,
     sort_order: 0,
     is_active: true,
     category_id: '',
@@ -49,6 +50,7 @@ export default function AdminItemsPage() {
   const [editingCat, setEditingCat] = useState<ItemCategory | null>(null)
   const [editCatName, setEditCatName] = useState('')
 
+  const [translating, setTranslating] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
 
@@ -64,6 +66,16 @@ export default function AdminItemsPage() {
     setLoading(false)
   }
 
+  // 保存した日本語を各言語に自動翻訳（ユーザー画面は表示言語で出す）
+  const translate = async (table: 'items' | 'item_categories', id: string, label: string) => {
+    setTranslating(label)
+    const res = await fetch('/api/admin/content-translate', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table, id }),
+    }).catch(() => null)
+    setTranslating(null)
+    if (!res?.ok) alert(`「${label}」の翻訳に失敗しました（日本語のまま表示されます）`)
+  }
+
   // --- カテゴリーCRUD ---
   const addCategory = async () => {
     if (!newCatName.trim()) return
@@ -74,6 +86,7 @@ export default function AdminItemsPage() {
       .select().single()
     if (data) setCategories(prev => [...prev, data])
     setNewCatName('')
+    if (data) translate('item_categories', data.id, data.name)
     setAddingCat(false)
   }
 
@@ -86,6 +99,7 @@ export default function AdminItemsPage() {
       .select().single()
     if (data) setCategories(prev => prev.map(c => c.id === data.id ? data : c))
     setEditingCat(null)
+    if (data) translate('item_categories', data.id, data.name)
   }
 
   const deleteCategory = async (id: string) => {
@@ -113,7 +127,7 @@ export default function AdminItemsPage() {
 
   const startNew = () => {
     setIsNew(true); setEditing(null)
-    setForm({ name: '', description: '', image_url: '', price_points: 10, sort_order: 0, is_active: true, category_id: '' })
+    setForm({ name: '', description: '', image_url: '', price_points: 10, affection_points: 10, sort_order: 0, is_active: true, category_id: '' })
   }
 
   const startEdit = (item: Item) => {
@@ -123,6 +137,7 @@ export default function AdminItemsPage() {
       description: item.description ?? '',
       image_url: item.image_url ?? '',
       price_points: item.price_points,
+      affection_points: item.affection_points ?? 0,
       sort_order: item.sort_order,
       is_active: item.is_active,
       category_id: item.category_id ?? '',
@@ -139,20 +154,25 @@ export default function AdminItemsPage() {
       description: form.description.trim() || null,
       image_url: form.image_url || null,
       price_points: form.price_points,
+      affection_points: form.affection_points,
       sort_order: form.sort_order,
       is_active: form.is_active,
       category_id: form.category_id || null,
     }
+    let savedId: string | null = null
     if (isNew) {
       const { data, error } = await supabase.from('items').insert(payload).select('*, category:item_categories(*)').single()
       if (error) { alert('保存失敗: ' + error.message); setSaving(false); return }
-      if (data) setItems(prev => [...prev, data])
+      if (data) { setItems(prev => [...prev, data]); savedId = data.id }
     } else if (editing) {
       const { data, error } = await supabase.from('items').update(payload).eq('id', editing.id).select('*, category:item_categories(*)').single()
       if (error) { alert('保存失敗: ' + error.message); setSaving(false); return }
-      if (data) setItems(prev => prev.map(i => i.id === data.id ? data : i))
+      if (data) { setItems(prev => prev.map(i => i.id === data.id ? data : i)); savedId = data.id }
     }
     setEditing(null); setIsNew(false); setSaving(false)
+    // 名前・説明が変わったときだけ訳し直す
+    const changed = isNew || editing?.name !== payload.name || (editing?.description ?? null) !== payload.description
+    if (savedId && changed) translate('items', savedId, payload.name)
   }
 
   const deleteItem = async (id: string) => {
@@ -173,9 +193,16 @@ export default function AdminItemsPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">アイテム管理</h1>
-        <button onClick={startNew} className="btn-primary px-4 py-2 text-sm flex items-center gap-1.5">
-          <Plus size={16} />追加
-        </button>
+        <div className="flex items-center gap-2">
+          {translating && (
+            <span className="text-xs text-[var(--color-text-muted)] flex items-center gap-1">
+              <Loader2 size={12} className="animate-spin" />「{translating}」を翻訳中…
+            </span>
+          )}
+          <button onClick={startNew} className="btn-primary px-4 py-2 text-sm flex items-center gap-1.5">
+            <Plus size={16} />追加
+          </button>
+        </div>
       </div>
 
       {/* ジャンル管理 */}
@@ -270,6 +297,21 @@ export default function AdminItemsPage() {
                   min={1}
                   className="w-full bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[var(--color-primary)]"
                 />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs text-[var(--color-text-muted)] mb-1 block">贈ったときに上がる好感度（会員は倍率がかかる）</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  value={form.affection_points}
+                  onChange={e => setForm(f => ({ ...f, affection_points: parseInt(e.target.value) || 0 }))}
+                  min={0}
+                  className="flex-1 bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-[var(--color-primary)]"
+                />
+                <button type="button" onClick={() => setForm(f => ({ ...f, affection_points: f.price_points }))}
+                  className="btn-ghost px-3 py-2 text-xs whitespace-nowrap">価格と同じにする</button>
               </div>
             </div>
 
@@ -376,7 +418,7 @@ export default function AdminItemsPage() {
               <div className="relative" style={{ aspectRatio: '1' }}>
                 {item.image_url
                   // eslint-disable-next-line @next/next/no-img-element
-                  ? <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
+                  ? <img src={item.image_url} alt={item.name} className="w-full h-full object-contain p-3" />
                   : (
                     <div className="w-full h-full flex items-center justify-center bg-[var(--color-surface-2)]">
                       <Gift size={32} className="text-[var(--color-text-muted)] opacity-40" />
@@ -402,6 +444,7 @@ export default function AdminItemsPage() {
                   <span className="text-sm font-bold" style={{ color: 'var(--color-primary)' }}>
                     {item.price_points}pt
                   </span>
+                  <span className="text-[11px] text-[var(--color-text-muted)]">好感度+{item.affection_points ?? 0}</span>
                   <div className="flex gap-1">
                     <button
                       onClick={() => startEdit(item)}

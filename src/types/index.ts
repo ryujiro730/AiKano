@@ -60,6 +60,12 @@ export interface CharacterPhoto {
   members_only?: boolean
   /** 非会員に返す会員限定フォト（url は空） */
   locked?: boolean
+  /** 有料フォトで未解錠（url は空。preview のモザイクだけ見せる） */
+  paywalled?: boolean
+  /** 好感度レベル限定（達したら無料） */
+  required_level?: number | null
+  /** レベル不足で見られない（url は空） */
+  levelLocked?: boolean
 }
 
 export interface Conversation {
@@ -83,7 +89,7 @@ export interface Message {
   created_at: string
   is_deleted: boolean
   edited_at?: string | null
-  metadata?: { item_id?: string; item_name?: string; item_image_url?: string; image_url?: string; video_url?: string; locked?: boolean } | null
+  metadata?: { item_id?: string; item_name?: string; item_image_url?: string; image_url?: string; video_url?: string; locked?: boolean; media?: 'image' | 'video'; wish_item_id?: string; wish_item_name?: string; wish_item_image_url?: string | null; wish_item_price?: number } | null
 }
 
 export interface ItemCategory {
@@ -99,6 +105,7 @@ export interface Item {
   description: string | null
   image_url: string | null
   price_points: number
+  affection_points: number
   is_active: boolean
   sort_order: number
   category_id: string | null

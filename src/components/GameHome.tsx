@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import { GiftSheet, type GiftResult } from './GiftSheet'
 import { getAffectionLevel, getAffectionProgress } from '@/lib/affection'
 import { UnlockModal } from './UnlockModal'
 import { AffectionIcon } from './AffectionIcon'
@@ -25,12 +27,17 @@ export function GameHome({
   affectionMap,
   unreadByChar,
   unlockedCharIds,
+  hasVideos,
+  showAlbum,
 }: {
   partnerChar: CharData | null
   allChars: CharData[]
   affectionMap: Record<string, AffData>
   unreadByChar: Record<string, number>
   unlockedCharIds: string[]
+  hasVideos: boolean
+  /** アルバム（写真ガチャ）を出すか。公開前は管理者だけ */
+  showAlbum: boolean
 }) {
   const { m } = useI18n()
   const defaultChar = partnerChar ?? allChars[0] ?? null
@@ -38,6 +45,9 @@ export function GameHome({
   const [unlockTarget, setUnlockTarget] = useState<CharData | null>(null)
   const [localUnlocked, setLocalUnlocked] = useState<Set<string>>(new Set(unlockedCharIds))
   const [showPicker, setShowPicker] = useState(false)
+  const [giftOpen, setGiftOpen] = useState(false)
+  const [affOverride, setAffOverride] = useState<Record<string, AffData>>({})
+  const [giftToast, setGiftToast] = useState<{ charId: string; charName: string; itemName: string; gained: number; replied: boolean } | null>(null)
 
   useEffect(() => {
     document.body.style.overflow = 'hidden'
@@ -49,12 +59,25 @@ export function GameHome({
   const isCharLocked = (char: CharData) =>
     char.requires_unlock && !localUnlocked.has(char.id)
 
-  const aff = affectionMap[activeChar.id]
+  const aff = affOverride[activeChar.id] ?? affectionMap[activeChar.id]
   const affLevel = aff ? getAffectionLevel(aff.points) : null
   const affProgress = aff ? getAffectionProgress(aff.points) : 0
   const unread = unreadByChar[activeChar.id] ?? 0
   const isLocked = isCharLocked(activeChar)
   const otherChars = allChars.filter(c => c.id !== activeChar.id)
+
+  // 贈ったら好感度をその場で反映し、キャラの返事はバックグラウンドで取得して知らせる
+  const handleGifted = (r: GiftResult) => {
+    const char = activeChar
+    setGiftOpen(false)
+    if (r.affection) setAffOverride(prev => ({ ...prev, [char.id]: { points: r.affection!.affection_points, level: r.affection!.affection_level } }))
+    setGiftToast({ charId: char.id, charName: char.name, itemName: r.itemName, gained: r.affectionGained, replied: false })
+    fetch('/api/chat/ai-reply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ conversationId: r.conversationId, characterId: char.id }),
+    }).then(res => res.ok && setGiftToast(t => (t && t.charId === char.id ? { ...t, replied: true } : t))).catch(() => {})
+  }
 
   const handlePickerSelect = (char: CharData) => {
     if (isCharLocked(char)) {
@@ -138,6 +161,33 @@ export function GameHome({
             <MessageCircle size={13} strokeWidth={2.5} />
             {unread > 99 ? '99+' : unread}
           </a>
+        )}
+
+        {/* ゲーム風メニュー（右側） */}
+        {!isLocked && (
+          <div style={{ position: 'absolute', right: 10, top: 58, display: 'flex', flexDirection: 'column', gap: 12, zIndex: 3 }}>
+            <HudButton href="/shop" icon="/game-icons/shop.png" label={m.hud.shop} from="#f472b6" to="#db2777" />
+            <HudButton onClick={() => setGiftOpen(true)} icon="/items/present.webp" label={m.hud.gift} from="#fde68a" to="#f59e0b" big />
+            {showAlbum && <HudButton href="/album" icon="/game-icons/album.png" label={m.hud.album} from="#a5b4fc" to="#6366f1" />}
+            {hasVideos && <HudButton href="/videos" icon="/game-icons/video.png" label={m.hud.videos} from="#67e8f9" to="#0891b2" />}
+          </div>
+        )}
+
+        {/* プレゼント後の演出 */}
+        {giftToast && (
+          <div className="animate-fade-in" style={{
+            position: 'absolute', left: 14, right: 84, top: 58, zIndex: 4,
+            background: 'rgba(13,10,14,0.72)', border: '1px solid rgba(255,255,255,0.18)', backdropFilter: 'blur(10px)',
+            borderRadius: 12, padding: '10px 12px', color: '#fff',
+          }}>
+            <p style={{ fontSize: 13, fontWeight: 700 }}>{fmt(m.gift.sent, { item: giftToast.itemName })}</p>
+            <p style={{ fontSize: 12, color: '#f9a8d4', fontWeight: 700, marginTop: 2 }}>♥ {fmt(m.gift.affectionUp, { n: giftToast.gained })}</p>
+            {giftToast.replied && (
+              <a href={`/chat?character=${giftToast.charId}`} style={{ display: 'inline-block', marginTop: 6, fontSize: 12, fontWeight: 700, color: '#fff', textDecoration: 'underline' }}>
+                {fmt(m.gift.replyArrived, { name: giftToast.charName })} · {m.gift.openChat} →
+              </a>
+            )}
+          </div>
         )}
 
         {/* ボトムパネル */}
@@ -370,6 +420,10 @@ export function GameHome({
       )}
 
       {/* 解放モーダル */}
+      {giftOpen && activeChar && (
+        <GiftSheet characterId={activeChar.id} characterName={activeChar.name} onClose={() => setGiftOpen(false)} onGifted={handleGifted} />
+      )}
+
       {unlockTarget && (
         <UnlockModal
           characterId={unlockTarget.id}
@@ -384,4 +438,28 @@ export function GameHome({
       )}
     </>
   )
+}
+
+/** スマホゲーム風の丸いメニューボタン */
+function HudButton({ href, onClick, icon, label, from, to, big }: {
+  href?: string; onClick?: () => void; icon: string; label: string; from: string; to: string; big?: boolean
+}) {
+  const inner = (
+    <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+      <span className="hud-bob" style={{
+        width: 54, height: 54, borderRadius: '50%',
+        background: `radial-gradient(circle at 32% 28%, rgba(255,255,255,0.55), transparent 42%), linear-gradient(160deg, ${from}, ${to})`,
+        border: '3px solid #fff', boxShadow: '0 4px 0 rgba(0,0,0,0.18), 0 6px 14px rgba(0,0,0,0.35)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={icon} alt="" style={{ width: big ? 44 : 30, height: big ? 44 : 30, objectFit: 'contain', filter: big ? 'drop-shadow(0 2px 2px rgba(0,0,0,0.25))' : 'none' }} />
+      </span>
+      <span style={{ fontSize: 10, fontWeight: 800, color: '#fff', letterSpacing: '0.02em', textShadow: '0 1px 3px rgba(0,0,0,0.8), 0 0 2px rgba(0,0,0,0.6)' }}>{label}</span>
+    </span>
+  )
+  const style: React.CSSProperties = { background: 'none', border: 'none', padding: 0, cursor: 'pointer', textDecoration: 'none' }
+  return href
+    ? <Link href={href} style={style} aria-label={label}>{inner}</Link>
+    : <button type="button" onClick={onClick} style={style} aria-label={label}>{inner}</button>
 }

@@ -40,7 +40,7 @@ export async function middleware(request: NextRequest) {
   )
 
   const path = request.nextUrl.pathname
-  const protectedPaths = ['/characters', '/chat', '/payment', '/conversations', '/settings', '/admin', '/onboarding']
+  const protectedPaths = ['/characters', '/chat', '/payment', '/conversations', '/settings', '/admin', '/onboarding', '/album']
   const isProtected = protectedPaths.some(p => path.startsWith(p))
   const isAuthPage = path.startsWith('/auth')
   const isAdminPath = path.startsWith('/admin')

@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { resolveVariables } from '@/lib/message-variables'
+import { isLocale } from '@/i18n/config'
+import { localizedCharacter } from '@/lib/character-i18n'
 
 function adminSupabase() {
   return createAdminClient(
@@ -14,12 +16,13 @@ function adminSupabase() {
 async function sendWelcomeMessage(admin: ReturnType<typeof adminSupabase>, conversationId: string, characterId: string, userId: string) {
   // キャラとプロフィールを並列取得
   const [{ data: char }, { data: profile }] = await Promise.all([
-    admin.from('characters').select('welcome_message').eq('id', characterId).single(),
-    admin.from('profiles').select('display_name, age, gender').eq('id', userId).single(),
+    admin.from('characters').select('welcome_message, i18n').eq('id', characterId).single(),
+    admin.from('profiles').select('display_name, age, gender, locale').eq('id', userId).single(),
   ])
   if (!char?.welcome_message) return null
 
-  const resolved = resolveVariables(char.welcome_message, profile ?? {})
+  const locale = isLocale(profile?.locale) ? profile.locale : 'ja'
+  const resolved = resolveVariables(localizedCharacter(char, locale).welcome_message ?? char.welcome_message, profile ?? {})
   const { data: msg } = await admin.from('messages').insert({
     conversation_id: conversationId,
     sender_role: 'character',

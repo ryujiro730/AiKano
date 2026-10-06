@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
+import { VIDEO_UNLOCK_POINTS } from '@/lib/pricing'
 
 async function checkAdmin() {
   const supabase = createClient()
@@ -56,7 +57,7 @@ export async function POST(req: NextRequest) {
     .insert({
       title: title.trim(),
       description: description?.trim() || null,
-      price_points: price_points ?? 100,
+      price_points: price_points ?? VIDEO_UNLOCK_POINTS,
       video_url: video_url.trim(),
       thumbnail_url: thumbnail_url || null,
       character_id: character_id || null,

@@ -29,7 +29,11 @@ export async function GET() {
 
   const purchasedIds = (purchases ?? []).map((p: { video_item_id: string }) => p.video_item_id)
 
-  // 購入済みの動画にはvideo_urlを含める
+  // 購入済みの動画にはvideo_urlを含める。未購入のサムネイルは URL を渡さず、モザイク（/api/media/preview?v=）で見せる
+  const purchasedSet = new Set(purchasedIds)
+  videos?.forEach((v: { id: string; thumbnail_url: string | null }) => {
+    if (!purchasedSet.has(v.id)) v.thumbnail_url = null
+  })
   let videosWithUrl: unknown[] = []
   if (purchasedIds.length > 0) {
     const { data: purchasedVideos } = await adminDb

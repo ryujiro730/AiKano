@@ -10,10 +10,12 @@ export function BottomNavLive({
   userId,
   initialUnread = 0,
   initialSupport = 0,
+  showGacha = false,
 }: {
   userId?: string
   initialUnread?: number
   initialSupport?: number
+  showGacha?: boolean
 }) {
   const [counts, setCounts] = useState({ unread: initialUnread, support: initialSupport })
   const { campaign: rawCampaign } = useCampaign()
@@ -60,6 +62,7 @@ export function BottomNavLive({
 
   return (
     <BottomNav
+      showGacha={showGacha}
       unreadCount={counts.unread}
       supportCount={counts.support}
       activeCampaign={activeCampaign}

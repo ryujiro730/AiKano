@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
+import { attachMessageMedia } from '@/lib/paid-media'
 
 function adminSupabase() {
   return createAdminClient(
@@ -69,20 +70,11 @@ export async function POST(req: NextRequest) {
 
   // ログ記録成功後にメッセージ保存
   const isVideo = photo.media_type === 'video'
-  const { data: msg, error: msgErr } = await admin
-    .from('messages')
-    .insert({
-      conversation_id: conversationId,
-      sender_role: 'character',
-      content: '',
-      points_used: 0,
-      is_read: false,
-      metadata: isVideo
-        ? { video_url: photo.image_url }
-        : { image_url: photo.image_url },
-    })
-    .select()
-    .single()
+  const { msg, error: msgErr } = await attachMessageMedia(
+    admin,
+    { conversation_id: conversationId, content: '', points_used: 0, is_read: false },
+    { url: photo.image_url, kind: isVideo ? 'video' : 'image' },
+  )
 
   if (msgErr || !msg) {
     return NextResponse.json({ error: 'Failed to save message' }, { status: 500 })

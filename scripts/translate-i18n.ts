@@ -45,6 +45,11 @@ const HINTS: Record<string, string> = {
   'settings.deleteWord': 'A short phrase the user must type to confirm account deletion (e.g. "DELETE").',
 }
 
+// 機械翻訳のあとに必ず上書きする手直し（言語: { 'セクション.キー': 文言 }）
+const OVERRIDES: Partial<Record<Locale, Record<string, string>>> = {
+  fr: { 'lp.heroLine1': 'Il y a une fille', 'lp.heroLine2': 'qui ne parle', 'lp.heroLine3': 'qu’à vous.' },
+}
+
 function placeholders(s: string) {
   return (s.match(/\{\w+\}/g) ?? []).sort().join(',')
 }
@@ -107,7 +112,11 @@ async function translateMessages(locale: Locale) {
   const entries = await Promise.all(
     Object.entries(ja).map(async ([key, section]) => [key, await translate(section, locale, key)] as const),
   )
-  const out = Object.fromEntries(entries)
+  const out = Object.fromEntries(entries) as Record<string, any>
+  for (const [path, value] of Object.entries(OVERRIDES[locale] ?? {})) {
+    const [section, key] = path.split('.')
+    out[section][key] = value
+  }
   const file = path.join(ROOT, 'src/i18n/messages', `${locale}.ts`)
   writeFileSync(file, `// scripts/translate-i18n.ts で ja.ts から生成。手で直してよい\nimport type { Messages } from './ja'\n\nexport const ${locale}: Messages = ${JSON.stringify(out, null, 2)}\n`)
   console.log(`wrote ${path.relative(ROOT, file)}`)

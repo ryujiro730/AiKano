@@ -25,6 +25,10 @@ import { useI18n } from '@/i18n/client'
 import { fmt, gap } from '@/i18n/fmt'
 import { localizedCharacter } from '@/lib/character-i18n'
 import { POINTS_PER_MESSAGE } from '@/lib/pricing'
+import { GiftSheet, type GiftResult } from '@/components/GiftSheet'
+import { canUseGacha } from '@/lib/features'
+import { MosaicCover, LevelLockedCover, UnownedPhotoCover, GachaButton, useMediaUnlock } from '@/components/PaidMedia'
+import type { MessageMediaView } from '@/lib/paid-media'
 
 const MAX_CACHED_MSGS = 60
 const CHAT_ENABLED = process.env.NEXT_PUBLIC_CHAT_ENABLED !== 'false'
@@ -50,7 +54,7 @@ export default function ChatPage() {
   const [sending, setSending] = useState(false)
   const [loading, setLoading] = useState(true)
   const [isTyping, setIsTyping] = useState(false)
-  const [photos, setPhotos] = useState<CharacterPhoto[]>([])
+  const [allPhotos, setPhotos] = useState<CharacterPhoto[]>([])
   const [showAlbum, setShowAlbum] = useState(false)
   const [lightboxPhotos, setLightboxPhotos] = useState<string[]>([])
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
@@ -60,10 +64,16 @@ export default function ChatPage() {
   const [sendingVideo, setSendingVideo] = useState(false)
   const [pendingMedia, setPendingMedia] = useState<{ file: File; mediaType: 'photo' | 'video'; previewUrl: string } | null>(null)
   const [pointsShortage, setPointsShortage] = useState<{ current: number; required: number } | null>(null)
-  const [unlockedVideos, setUnlockedVideos] = useState<Set<string>>(new Set())
+  // キャラが送った有料メディア（message_id → 解錠状態。未解錠は URL なし）
+  const [media, setMedia] = useState<Record<string, MessageMediaView>>({})
+  const { unlock, dialog: unlockDialog } = useMediaUnlock()
+  // 写真ガチャ公開前は、管理者以外には持っている写真だけを見せる
+  const gachaEnabled = canUseGacha((profile as { role?: string } | null)?.role)
+  const photos = gachaEnabled ? allPhotos : allPhotos.filter(p => !p.locked && !p.paywalled && !p.levelLocked)
   const [subInfo, setSubInfo] = useState<{ plan: string | null; used: number; limit: number } | null>(null)
   const [levelUp, setLevelUp] = useState<{ level: number } | null>(null)
   const [intimacyHint, setIntimacyHint] = useState<IntimacyHint | null>(null)
+  const [giftOpen, setGiftOpen] = useState(false)
   const [affection, setAffection] = useState<{ points: number; level: number; messageCount: number } | null>(null)
 
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -111,6 +121,32 @@ export default function ChatPage() {
       return next
     })
   }, [markRead])
+
+  const loadMedia = useCallback(async (cid: string) => {
+    const res = await fetch(`/api/media/conversation?conversationId=${cid}`).catch(() => null)
+    if (!res?.ok) return
+    const data = await res.json().catch(() => null)
+    if (data?.media && convIdRef.current === cid) setMedia(data.media)
+  }, [])
+
+  // メディア付きのキャラ発言が届いたら解錠状態を取りに行く（message_media は messages の直後に入るので少し待つ）
+  const mediaRequestedRef = useRef<Set<string>>(new Set())
+  useEffect(() => {
+    const cid = conversationId
+    if (!cid) return
+    const missing = messages.filter(x => x.metadata?.media && !media[x.id] && !mediaRequestedRef.current.has(x.id))
+    if (missing.length === 0) return
+    missing.forEach(x => mediaRequestedRef.current.add(x.id))
+    setTimeout(() => loadMedia(cid), 800)
+  }, [messages, media, conversationId, loadMedia])
+
+  const unlockMedia = async (messageId: string) => {
+    const url = await unlock({ messageId })
+    if (!url) return
+    setMedia(prev => ({ ...prev, [messageId]: { ...prev[messageId], unlocked: true, url } }))
+    // 同じ写真が他のメッセージにもあれば一緒に開く
+    if (convIdRef.current) loadMedia(convIdRef.current)
+  }
 
   // チャットを開いたことを記録（キャラ情報が揃った最初の1回）
   const loggedOpenRef = useRef(false)
@@ -293,9 +329,6 @@ export default function ChatPage() {
       setLoading(false)
     }
 
-    // 解錠済み動画を取得
-    const { data: unlocks } = await supabase.from('video_unlocks').select('message_id').eq('user_id', userId)
-    if (unlocks) setUnlockedVideos(new Set(unlocks.map(u => u.message_id)))
 
     // user_characters を retroactively populate（カウント表示の正規化・fire-and-forget）
     if (characterId) {
@@ -374,6 +407,15 @@ export default function ChatPage() {
     setSending(false)
 
     // AI自動返信を非同期でリクエスト（ポイント消費は送信時に完了済み）
+    await requestAiReply()
+    if (showPurchaseAfterReply) {
+      setPointsShortage({ current: sendData.points + sendData.bonus_points, required: SEND_COST })
+    }
+  }
+
+  // キャラの返事を取得する（メッセージ送信後・プレゼント後の共通処理）
+  const requestAiReply = async () => {
+    if (!conversationId || !character) return
     setIsTyping(true)
     try {
       const res = await fetch('/api/chat/ai-reply', {
@@ -387,6 +429,11 @@ export default function ChatPage() {
       if (res.ok) {
         const data = await res.json()
         if (data.message) addMessage(data.message)
+        // 写真のお願いへの返事は、文章のあと少し置いて写真が届く
+        for (const extra of (data.extraMessages ?? []) as Message[]) {
+          await new Promise(r => setTimeout(r, 1200))
+          addMessage(extra)
+        }
 
         // 好感度はサーバー側（ai-reply）で加算済み
         const aff = data.affection
@@ -408,10 +455,34 @@ export default function ChatPage() {
       console.error('[chat] AI返信ネットワークエラー:', err)
     } finally {
       setIsTyping(false)
-      if (showPurchaseAfterReply) {
-        setPointsShortage({ current: sendData.points + sendData.bonus_points, required: SEND_COST })
-      }
     }
+  }
+
+  // キャラのおねだりから、その場で買って贈る（持っていれば持ち物から）
+  const giftWish = async (itemId: string, itemName: string) => {
+    if (!characterId) return
+    const res = await fetch('/api/items/gift', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ itemId, characterId, buy: true }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (res.status === 402) { setPointsShortage({ current: data.current, required: data.required }); return }
+    if (!res.ok) { alert(data.error ?? m.common.error); return }
+    if (typeof data.points === 'number') {
+      window.dispatchEvent(new CustomEvent('pointsUpdated', { detail: { points: data.points } }))
+    }
+    await handleGifted({ ...data, itemName })
+  }
+
+  const handleGifted = async (r: GiftResult) => {
+    setGiftOpen(false)
+    addMessage(r.message as Message)
+    if (r.affection) {
+      setAffection({ points: r.affection.affection_points, level: r.affection.affection_level, messageCount: r.affection.message_count })
+      if (r.affection.leveled_up) setLevelUp({ level: r.affection.affection_level })
+    }
+    await requestAiReply()
   }
 
   const handleEditableInput = (e: React.FormEvent<HTMLDivElement>) => {
@@ -422,8 +493,8 @@ export default function ChatPage() {
   const openAlbumLightbox = async (index: number) => {
     if (!character || !profile) return
 
-    // 会員限定でロック中のフォトはライトボックスに含めない
-    const all = [character.avatar_url, ...photos.filter(p => !p.locked).map(p => p.url)]
+    // 会員限定・未解錠のフォトはライトボックスに含めない
+    const all = [character.avatar_url, ...photos.filter(p => !p.locked && !p.paywalled && !p.levelLocked).map(p => p.url)]
     setLightboxPhotos(all)
     setLightboxIndex(index)
     setShowAlbum(false)
@@ -508,26 +579,6 @@ export default function ChatPage() {
       await sendMedia(file, mediaType)
     } else {
       await sendMessage()
-    }
-  }
-
-  const unlockVideo = async (messageId: string) => {
-    const res = await fetch('/api/chat/unlock-video', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messageId }),
-    })
-    const data = await res.json()
-    if (res.ok) {
-      setUnlockedVideos(prev => { const s = new Set(prev); s.add(messageId); return s })
-      if (data.newPoints !== undefined) {
-        setProfile(prev => prev ? { ...prev, points: data.newPoints } : prev)
-        window.dispatchEvent(new CustomEvent('pointsUpdated', { detail: { points: data.newPoints } }))
-      }
-    } else if (res.status === 402) {
-      setPointsShortage({ current: data.current, required: data.required })
-    } else {
-      alert(m.chat.unlockFailed)
     }
   }
 
@@ -635,8 +686,10 @@ export default function ChatPage() {
             </p>
           </div>
         )}
-        {messages.map((msg) => (
-          <MessageBubble key={msg.id} message={msg} characterName={character.name} characterAvatar={character.avatar_url} onImageClick={setImageLightboxUrl} unlockedVideos={unlockedVideos} onUnlockVideo={unlockVideo} />
+        {messages.map((msg, i) => (
+          <MessageBubble key={msg.id} message={msg} characterName={character.name} characterAvatar={character.avatar_url} onImageClick={setImageLightboxUrl} media={media[msg.id]} onUnlock={unlockMedia}
+            wishFulfilled={!!msg.metadata?.wish_item_id && messages.slice(i + 1).some(x => x.metadata?.item_id === msg.metadata?.wish_item_id)}
+            onGiftWish={giftWish} />
         ))}
         {intimacyHint && !isTyping && (
           <IntimacyHintCard hint={intimacyHint} characterName={character.name} isMember={!!subInfo?.plan} />
@@ -662,6 +715,17 @@ export default function ChatPage() {
         {CHAT_ENABLED ? (
           <div className="flex flex-col gap-2">
             <div className="flex gap-2 items-end">
+              <button
+                type="button"
+                onClick={() => setGiftOpen(true)}
+                disabled={sending}
+                className="flex-shrink-0 flex items-center justify-center rounded-full transition-transform active:scale-90 disabled:opacity-40"
+                style={{ width: 44, height: 44, background: 'linear-gradient(160deg, #fde68a, #f59e0b)', border: '2px solid #fff', boxShadow: '0 2px 6px rgba(0,0,0,0.15)' }}
+                aria-label={m.hud.gift}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/items/present.webp" alt="" style={{ width: 30, height: 30 }} />
+              </button>
               <div className="flex-1 flex flex-col min-w-0">
                 <div
                   ref={editableRef}
@@ -730,7 +794,7 @@ export default function ChatPage() {
               >
                 <Image src={character.avatar_url} alt="" fill className="object-cover hover:scale-105 transition-transform duration-300" sizes="33vw" />
               </div>
-              {photos.filter(p => !p.locked).map((photo, i) => (
+              {photos.filter(p => !p.locked && !p.paywalled && !p.levelLocked).map((photo, i) => (
                 <div
                   key={photo.id}
                   className="relative overflow-hidden rounded-xl cursor-pointer"
@@ -740,10 +804,23 @@ export default function ChatPage() {
                   <Image src={photo.url} alt="" fill className="object-cover hover:scale-105 transition-transform duration-300" sizes="33vw" />
                 </div>
               ))}
+              {photos.filter(p => !p.locked && p.paywalled).map(photo => (
+                <div key={photo.id} className="relative overflow-hidden rounded-xl" style={{ aspectRatio: '1' }}>
+                  <Link href={`/gacha/${character.id}`} prefetch={false} className="absolute inset-0">
+                    <UnownedPhotoCover previewSrc={`/api/media/preview?p=${photo.id}`} />
+                  </Link>
+                </div>
+              ))}
+              {photos.filter(p => !p.locked && p.levelLocked).map(photo => (
+                <div key={photo.id} className="relative overflow-hidden rounded-xl" style={{ aspectRatio: '1' }}>
+                  <LevelLockedCover previewSrc={`/api/media/preview?p=${photo.id}`} level={photo.required_level ?? 0} />
+                </div>
+              ))}
               {photos.filter(p => p.locked).map(photo => (
                 <LockedPhotoTile key={photo.id} className="rounded-xl" />
               ))}
             </div>
+            <GachaButton characterId={character.id} remaining={photos.filter(p => !p.locked && p.paywalled).length} />
           </div>
         </div>
       )}
@@ -794,6 +871,12 @@ export default function ChatPage() {
         }
       `}</style>
 
+      {giftOpen && (
+        <GiftSheet characterId={character.id} characterName={character.name} onClose={() => setGiftOpen(false)} onGifted={handleGifted} />
+      )}
+
+      {unlockDialog}
+
       {/* ポイント不足ダイアログ */}
       {pointsShortage && (
         <PointsShortageDialog
@@ -838,26 +921,23 @@ function IntimacyHintCard({ hint, characterName, isMember }: { hint: IntimacyHin
   )
 }
 
-function MessageBubble({ message, characterName, characterAvatar, onImageClick, unlockedVideos, onUnlockVideo }: {
+function MessageBubble({ message, characterName, characterAvatar, onImageClick, media, onUnlock, wishFulfilled, onGiftWish }: {
   message: Message; characterName: string; characterAvatar: string
   onImageClick?: (url: string) => void
-  unlockedVideos?: Set<string>
-  onUnlockVideo?: (messageId: string) => Promise<void>
+  /** キャラが送った有料メディアの解錠状態（未取得なら undefined） */
+  media?: MessageMediaView
+  onUnlock?: (messageId: string) => Promise<void>
+  /** おねだりされたアイテムをもう贈ったか */
+  wishFulfilled?: boolean
+  onGiftWish?: (itemId: string, itemName: string) => Promise<void>
 }) {
   const { m } = useI18n()
-  const [unlocking, setUnlocking] = useState(false)
   const isUser = message.sender_role === 'user'
   const isItem = !!message.metadata?.item_id
+  const paidKind = !isItem ? message.metadata?.media : undefined
+  // ユーザーが送った写真・動画（URL は metadata にある）
   const hasBroadcastImage = !isItem && !!message.metadata?.image_url
   const hasVideo = !isItem && !!message.metadata?.video_url
-  const isVideoUnlocked = !isUser ? (unlockedVideos?.has(message.id) ?? false) : true
-
-  const handleUnlockVideo = async () => {
-    if (!onUnlockVideo) return
-    setUnlocking(true)
-    await onUnlockVideo(message.id)
-    setUnlocking(false)
-  }
 
   return (
     <div className={`flex items-end gap-2 animate-fade-up ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
@@ -870,8 +950,8 @@ function MessageBubble({ message, characterName, characterAvatar, onImageClick, 
         {isItem ? (
           <div className={`px-3 py-2.5 rounded-2xl flex items-center gap-2.5 ${isUser ? 'bubble-user' : 'bubble-operator'}`}>
             {message.metadata?.item_image_url ? (
-              <div className="relative w-12 h-12 rounded-xl overflow-hidden flex-shrink-0">
-                <Image src={message.metadata.item_image_url} alt={message.metadata.item_name ?? ''} fill className="object-cover" sizes="48px" />
+              <div className="relative w-12 h-12 rounded-xl overflow-hidden flex-shrink-0" style={{ background: 'rgba(255,255,255,0.92)' }}>
+                <Image src={message.metadata.item_image_url} alt={message.metadata.item_name ?? ''} fill className="object-contain p-1" sizes="48px" />
               </div>
             ) : (
               <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
@@ -885,32 +965,41 @@ function MessageBubble({ message, characterName, characterAvatar, onImageClick, 
               <p className="text-[11px] opacity-70 mt-0.5">{m.chat.giftSent}</p>
             </div>
           </div>
-        ) : hasVideo ? (
-          <div className={`rounded-2xl overflow-hidden ${isUser ? 'bubble-user' : 'bubble-operator'}`} style={{ maxWidth: '240px' }}>
-            {isVideoUnlocked ? (
-              <video
-                src={message.metadata!.video_url!}
-                controls
-                playsInline
-                className="w-full block rounded-2xl"
-                style={{ maxHeight: '320px' }}
-              />
+        ) : paidKind ? (
+          <div className="rounded-2xl overflow-hidden bubble-operator">
+            {media?.unlocked && media.url ? (
+              paidKind === 'video' ? (
+                <video src={media.url} controls playsInline className="w-[240px] block" style={{ maxHeight: '320px' }} />
+              ) : (
+                <div className="relative w-[240px] cursor-pointer" style={{ aspectRatio: '4/3' }} onClick={() => onImageClick?.(media.url!)}>
+                  <Image src={media.url} alt="" fill className="object-cover" sizes="240px" />
+                </div>
+              )
             ) : (
-              <div className="flex flex-col items-center justify-center gap-2 px-5 py-6"
-                style={{ background: 'var(--color-surface-2)', minWidth: '180px' }}>
-                <div className="text-3xl">🎬</div>
-                <p className="text-xs font-semibold text-center" style={{ color: 'var(--color-text)' }}>{m.chat.videoMessage}</p>
-                <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>{fmt(m.chat.videoPrice, { pt: 50 })}</p>
-                <button
-                  onClick={handleUnlockVideo}
-                  disabled={unlocking}
-                  className="mt-1 px-4 py-1.5 rounded-full text-xs font-bold text-white disabled:opacity-50"
-                  style={{ background: 'var(--color-primary)' }}
-                >
-                  {unlocking ? m.chat.processing : fmt(m.chat.watchFor, { pt: 50 })}
-                </button>
+              <div className="relative w-[240px]" style={{ aspectRatio: '4/3', background: 'var(--color-surface-2)' }}>
+                {media && (
+                  <MosaicCover
+                    previewSrc={paidKind === 'image' ? `/api/media/preview?m=${message.id}&w=6&h=5` : null}
+                    kind={paidKind}
+                    price={media.price}
+                    onUnlock={() => onUnlock?.(message.id) ?? Promise.resolve()}
+                  />
+                )}
               </div>
             )}
+            {message.content && (
+              <p className="px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+            )}
+          </div>
+        ) : hasVideo ? (
+          <div className={`rounded-2xl overflow-hidden ${isUser ? 'bubble-user' : 'bubble-operator'}`} style={{ maxWidth: '240px' }}>
+            <video
+              src={message.metadata!.video_url!}
+              controls
+              playsInline
+              className="w-full block rounded-2xl"
+              style={{ maxHeight: '320px' }}
+            />
           </div>
         ) : hasBroadcastImage ? (
           <div className={`rounded-2xl overflow-hidden ${isUser ? 'bubble-user' : 'bubble-operator'}`}>
@@ -926,7 +1015,47 @@ function MessageBubble({ message, characterName, characterAvatar, onImageClick, 
             {message.content}
           </div>
         )}
+        {!isUser && message.metadata?.wish_item_id && (
+          <WishCard
+            name={message.metadata.wish_item_name ?? ''}
+            imageUrl={message.metadata.wish_item_image_url ?? null}
+            price={message.metadata.wish_item_price ?? 0}
+            fulfilled={!!wishFulfilled}
+            onGift={() => onGiftWish?.(message.metadata!.wish_item_id!, message.metadata!.wish_item_name ?? '') ?? Promise.resolve()}
+          />
+        )}
       </div>
+    </div>
+  )
+}
+
+/** キャラのおねだりアイテム。1タップで買って贈れる */
+function WishCard({ name, imageUrl, price, fulfilled, onGift }: {
+  name: string; imageUrl: string | null; price: number; fulfilled: boolean
+  onGift: () => Promise<void>
+}) {
+  const { m } = useI18n()
+  const [busy, setBusy] = useState(false)
+  return (
+    <div className="flex items-center gap-2.5 pl-2 pr-2.5 py-2 mt-0.5"
+      style={{ background: 'var(--color-surface)', border: '1px solid var(--color-primary-border)', borderRadius: 'var(--radius-card)' }}>
+      <div className="relative w-11 h-11 rounded-lg flex-shrink-0" style={{ background: 'var(--color-primary-soft)' }}>
+        {imageUrl && <Image src={imageUrl} alt="" fill className="object-contain p-1" sizes="44px" />}
+      </div>
+      <div className="min-w-0">
+        <p className="text-[10px] font-bold" style={{ color: 'var(--color-primary)' }}>{m.chat.wishLabel}</p>
+        <p className="text-sm font-semibold truncate">{name}</p>
+      </div>
+      {fulfilled ? (
+        <span className="ml-1 text-[11px] font-bold flex-shrink-0" style={{ color: 'var(--color-text-muted)' }}>{m.chat.wishDone}</span>
+      ) : (
+        <button type="button" disabled={busy}
+          onClick={async () => { setBusy(true); try { await onGift() } finally { setBusy(false) } }}
+          className="ml-1 flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-bold text-white disabled:opacity-60"
+          style={{ background: 'var(--color-primary)' }}>
+          {busy ? m.chat.processing : fmt(m.chat.wishGive, { pt: price })}
+        </button>
+      )}
     </div>
   )
 }

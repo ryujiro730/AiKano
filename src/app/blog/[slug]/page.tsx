@@ -17,14 +17,13 @@ import { TwitterEmbed } from '@/components/blog/TwitterEmbed'
 import { ComparisonTable } from '@/components/blog/ComparisonTable'
 import type { ComparisonService } from '@/components/blog/ComparisonTable'
 import { AiKanoHikakuTable } from '@/components/blog/AiKanoHikakuTable'
-import { AiKanoCard, ChatGPTCard, GeminiCard, CandyAICard, CloverCard, ReplikaCard, CrushonCard, KindroidCard, MyDreamCompanionCard, DreamGFCard, CotomoCard, OzChatCard } from '@/components/blog/AiKanoRadarChart'
+import { AiKanoCard, ChatGPTCard, GeminiCard, CloverCard, ReplikaCard, KindroidCard, CotomoCard, OzChatCard } from '@/components/blog/AiKanoRadarChart'
 import { Box } from '@/components/blog/Box'
 import { ImageGrid, GridImg, SizedImg } from '@/components/blog/ImageGrid'
 import { Review } from '@/components/blog/Review'
 import { FaqSection, FaqItem } from '@/components/blog/Faq'
 import { Lead } from '@/components/blog/Lead'
 import { HowToUseCompare1, HowToUseCompare2 } from '@/components/blog/HowToUseCompare'
-import { EroMethodCompare } from '@/components/blog/EroMethodCompare'
 import { JpAiHikakuTable } from '@/components/blog/JpAiHikakuTable'
 import { MdxPre } from '@/components/blog/MdxPre'
 import { MatchkoiBanner } from '@/components/blog/MatchkoiBanner'
@@ -151,7 +150,7 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
         <article className="prose max-w-none blog-prose" style={{ maxWidth: 'none' }}>
           <MDXRemote
             source={post.content}
-            components={{ BlogCta: () => <BlogCta slug={post.slug} position="cta_inline" />, InlineLink: (p: { href: string; children: React.ReactNode }) => <InlineLink {...p} slug={post.slug} />, NextLink, RelatedPosts: () => <RelatedPosts currentSlug={post.slug} />, TwitterEmbed, ComparisonTable, AiKanoHikakuTable, JpAiHikakuTable, AiKanoCard, ChatGPTCard, GeminiCard, CandyAICard, CloverCard, ReplikaCard, CrushonCard, KindroidCard, MyDreamCompanionCard, DreamGFCard, CotomoCard, OzChatCard, Box, Review, ImageGrid, GridImg, SizedImg, FaqSection, FaqItem, Lead, HowToUseCompare1, HowToUseCompare2, EroMethodCompare, pre: MdxPre }}
+            components={{ BlogCta: () => <BlogCta slug={post.slug} position="cta_inline" />, InlineLink: (p: { href: string; children: React.ReactNode }) => <InlineLink {...p} slug={post.slug} />, NextLink, RelatedPosts: () => <RelatedPosts currentSlug={post.slug} />, TwitterEmbed, ComparisonTable, AiKanoHikakuTable, JpAiHikakuTable, AiKanoCard, ChatGPTCard, GeminiCard, CloverCard, ReplikaCard, KindroidCard, CotomoCard, OzChatCard, Box, Review, ImageGrid, GridImg, SizedImg, FaqSection, FaqItem, Lead, HowToUseCompare1, HowToUseCompare2, pre: MdxPre }}
             options={{
               mdxOptions: {
                 remarkPlugins: [remarkGfm, remarkBreaks],

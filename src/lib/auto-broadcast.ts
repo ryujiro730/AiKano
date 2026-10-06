@@ -4,6 +4,7 @@ import { sendNotificationEmail } from './send-notification-email'
 import { translateChatText } from './translate'
 import { isLocale, type Locale } from '@/i18n/config'
 import { localizedCharacter } from './character-i18n'
+import { attachMessageMedia } from './paid-media'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AdminSupabase = SupabaseClient<any, any, any>
@@ -136,14 +137,11 @@ export async function processAutoBroadcast(): Promise<{ scheduled: number; sent:
       }
 
       const imageUrl: string | null = step.image_url ?? null
-      const { error: msgError } = await adminClient.from('messages').insert({
-        conversation_id: conversationId,
-        sender_role: 'character',
-        content: message,
-        points_used: 0,
-        is_read: false,
-        metadata: imageUrl ? { image_url: imageUrl } : null,
-      })
+      const baseMsg = { conversation_id: conversationId, content: message, points_used: 0, is_read: false }
+      // 画像付きは有料（URL は message_media に置き、ユーザーにはモザイクで届く）
+      const { error: msgError } = imageUrl
+        ? await attachMessageMedia(adminClient, baseMsg, { url: imageUrl, kind: 'image' })
+        : await adminClient.from('messages').insert({ ...baseMsg, sender_role: 'character', metadata: null })
       if (msgError) throw new Error('msg insert failed: ' + msgError.message)
 
       await adminClient.from('conversations')

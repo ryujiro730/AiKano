@@ -1,11 +1,10 @@
 export const dynamic = 'force-dynamic'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
-import { LOGIN_BONUS, LOGIN_BONUS_DAYS } from '@/lib/pricing'
+import { LOGIN_BONUS, LOGIN_BONUS_HOURS } from '@/lib/pricing'
 import { logUserAction } from '@/lib/user-action-log'
 
 const BONUS_AMOUNT = LOGIN_BONUS
-const BONUS_DAYS = LOGIN_BONUS_DAYS
 
 const jstDate = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' })
 
@@ -31,17 +30,10 @@ export async function POST() {
     return NextResponse.json({ awarded: false })
   }
 
+  // ログインボーナスは付与から24時間有効。前日の使い残しは持ち越さず、今日の分に置き換える
   const now = new Date()
-  const expiresAt = new Date(now)
-  expiresAt.setDate(expiresAt.getDate() + BONUS_DAYS)
-
-  // 期限切れのボーナスポイントはリセット
-  const existingBonus =
-    profile.bonus_points_expires_at && new Date(profile.bonus_points_expires_at) < now
-      ? 0
-      : (profile.bonus_points ?? 0)
-
-  const newBonusPoints = existingBonus + BONUS_AMOUNT
+  const expiresAt = new Date(now.getTime() + LOGIN_BONUS_HOURS * 3600_000)
+  const newBonusPoints = BONUS_AMOUNT
 
   await Promise.all([
     admin

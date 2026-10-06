@@ -1,11 +1,12 @@
 export const AFFECTION_LEVELS = [
-  { level: 1, title: '見知らぬ人',  emoji: '👤', threshold: 0,    next: 50,   color: '#8e8a94' },
-  { level: 2, title: '知り合い',    emoji: '🌱', threshold: 50,   next: 200,  color: '#b0849a' },
-  { level: 3, title: '友達',        emoji: '😊', threshold: 200,  next: 500,  color: '#c66a8a' },
-  { level: 4, title: '仲良し',      emoji: '💕', threshold: 500,  next: 1000, color: '#d4507c' },
-  { level: 5, title: '恋人候補',    emoji: '💝', threshold: 1000, next: 2500, color: '#d4386f' },
-  { level: 6, title: '恋人',        emoji: '❤️', threshold: 2500, next: 5000, color: '#be2a5f' },
-  { level: 7, title: '運命の人',    emoji: '💫', threshold: 5000, next: null,  color: '#b8862b' },
+  // 前半はすぐ上がり、後半（Lv5〜）はプレゼントや会員の倍率がないと届きにくい。add_affection（079）と同じ値にすること
+  { level: 1, title: '見知らぬ人',  emoji: '👤', threshold: 0,     next: 50,    color: '#8e8a94' },
+  { level: 2, title: '知り合い',    emoji: '🌱', threshold: 50,    next: 200,   color: '#b0849a' },
+  { level: 3, title: '友達',        emoji: '😊', threshold: 200,   next: 600,   color: '#c66a8a' },
+  { level: 4, title: '仲良し',      emoji: '💕', threshold: 600,   next: 1500,  color: '#d4507c' },
+  { level: 5, title: '恋人候補',    emoji: '💝', threshold: 1500,  next: 6000,  color: '#d4386f' },
+  { level: 6, title: '恋人',        emoji: '❤️', threshold: 6000,  next: 25000, color: '#be2a5f' },
+  { level: 7, title: '運命の人',    emoji: '💫', threshold: 25000, next: null,  color: '#b8862b' },
 ] as const
 
 export type AffectionLevelData = {

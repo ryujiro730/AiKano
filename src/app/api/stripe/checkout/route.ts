@@ -5,7 +5,7 @@ import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { INTERNAL_EMAILS } from '@/lib/internal-accounts'
 import { findEligibleCampaign } from '@/lib/campaigns'
-import { findPackage, pointsForPackage, isCampaignTarget, type PurchaseCampaign } from '@/lib/point-packages'
+import { findPackage, pointsForPackage, isCampaignTarget, type PurchaseCampaign, toPurchaseCampaign } from '@/lib/point-packages'
 import { logUserAction } from '@/lib/user-action-log'
 
 // ポイント購入（一回払い）。価格・付与ポイントはサーバー側で決める（クライアントからはパックIDのみ受け取る）
@@ -21,9 +21,7 @@ export async function POST(request: Request) {
     const isInternal = !!user.email && (INTERNAL_EMAILS as readonly string[]).includes(user.email)
     const db = createAdminClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
     const row = isInternal ? null : await findEligibleCampaign(db, user.id, { purchaseContext: true })
-    const campaign: PurchaseCampaign | null = row
-      ? { id: row.id, bonus_rate: Number(row.bonus_rate ?? 1), min_price_yen: row.min_price_yen ?? null, max_price_yen: row.max_price_yen ?? null }
-      : null
+    const campaign: PurchaseCampaign | null = toPurchaseCampaign(row)
     const tokens = pointsForPackage(pkg, campaign)
     const appliedCampaignId = isCampaignTarget(pkg, campaign) ? campaign!.id : ''
 

@@ -1,6 +1,6 @@
 import type { Locale } from '@/i18n/config'
 
-type CharacterText = { name?: string; personality?: string | null; description?: string | null }
+type CharacterText = { name?: string; personality?: string | null; description?: string | null; welcome_message?: string | null }
 
 /** キャラの名前・性格・説明を表示言語に合わせる（翻訳がなければ元の日本語） */
 export function localizedCharacter<T extends CharacterText & { i18n?: unknown }>(c: T, locale: Locale): T {
@@ -12,5 +12,6 @@ export function localizedCharacter<T extends CharacterText & { i18n?: unknown }>
     ...(t.name ? { name: t.name } : {}),
     ...(t.personality ? { personality: t.personality } : {}),
     ...(t.description ? { description: t.description } : {}),
+    ...(t.welcome_message ? { welcome_message: t.welcome_message } : {}),
   }
 }

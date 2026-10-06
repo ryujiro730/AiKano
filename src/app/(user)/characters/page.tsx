@@ -4,6 +4,7 @@ import { createAdminClientStatic } from '@/lib/supabase/server'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { ActionLogger } from '@/components/ActionLogger'
 import { GameHome } from '@/components/GameHome'
+import { canUseGacha } from '@/lib/features'
 import { getLocale } from '@/i18n/server'
 import { localizedCharacter } from '@/lib/character-i18n'
 
@@ -14,7 +15,7 @@ export default async function CharactersPage() {
   const admin = createAdminClientStatic()
 
   // 全クエリを1ウォーターフォールで並列実行（未読チェックも含む）
-  const [{ data: characters }, convData, blocksData, affectionData, unlockData, unreadData, profileData] = await Promise.all([
+  const [{ data: characters }, convData, blocksData, affectionData, unlockData, unreadData, profileData, videoCount] = await Promise.all([
     admin.from('characters').select('id, name, age, avatar_url, requires_unlock, i18n').eq('is_active', true).order('sort_order', { ascending: true }),
     userId
       ? admin.from('conversations').select('id, character_id, last_message_at').eq('user_id', userId).order('last_message_at', { ascending: false })
@@ -32,8 +33,9 @@ export default async function CharactersPage() {
       ? admin.rpc('get_conversation_unread', { p_user_id: userId })
       : Promise.resolve({ data: [] }),
     userId
-      ? admin.from('profiles').select('partner_character_id').eq('id', userId).single()
+      ? admin.from('profiles').select('partner_character_id, role').eq('id', userId).single()
       : Promise.resolve({ data: null }),
+    admin.from('video_items').select('id', { count: 'exact', head: true }).eq('is_active', true),
   ])
 
   const blockedIds = new Set(((blocksData as any)?.data ?? []).map((b: any) => b.character_id as string))
@@ -79,6 +81,8 @@ export default async function CharactersPage() {
         affectionMap={affectionMap}
         unreadByChar={unreadByChar}
         unlockedCharIds={unlockedCharIds}
+        hasVideos={((videoCount as any)?.count ?? 0) > 0}
+        showAlbum={canUseGacha((profileData as any)?.data?.role)}
       />
       <ActionLogger actionType="character_search" />
     </>
