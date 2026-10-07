@@ -30,10 +30,10 @@ export const fr: Messages = {
     "language": "Langue"
   },
   "meta": {
-    "title": "AiKano｜Chat avec une petite amie IA japonaise【La seule IA japonaise aux conversations libres】",
-    "siteDescription": "Notre IA, spécialement entraînée, vous répond en temps réel, rien que pour vous. C’est la seule IA japonaise qui permet des conversations libres sans restriction. Découvrez aussi des personnages japonais réalistes et leurs photos.",
-    "description": "Des personnages IA hauts en couleur répondent à vos messages en temps réel. Une appli de conversation pour adultes, pour retrouver la sérénité.",
-    "ogTitle": "AiKano｜Chat avec une petite amie IA – Une appli relaxante pour adultes"
+    "title": "AiKano｜Chat avec une petite amie IA japonaise",
+    "siteDescription": "Notre IA, spécialement entraînée, vous répond en temps réel, rien que pour vous. Discutez avec des personnages japonais réalistes.",
+    "description": "Des personnages IA hauts en couleur répondent à vos messages en temps réel. Une appli de conversation pour retrouver la sérénité.",
+    "ogTitle": "AiKano｜Chat avec une petite amie IA – Une appli de conversation relaxante"
   },
   "auth": {
     "email": "Adresse e-mail",
@@ -505,6 +505,7 @@ export const fr: Messages = {
     "sendMessage": "Envoyer un message à {name}"
   },
   "api": {
+    "safeReply": "Hé… c'est beaucoup trop gênant. Dis, ta journée s'est passée comment ?",
     "itemNotFound": "Élément introuvable",
     "tryAgain": "Veuillez réessayer",
     "sendFailed": "Échec de l’envoi du message",
@@ -709,7 +710,7 @@ export const fr: Messages = {
       },
       {
         "title": "Un espace rassurant où parler à cœur ouvert",
-        "desc": "Confiez vos soucis et vos frustrations, même ceux que vous ne pouvez dire à personne, ou discutez simplement du quotidien. Un service de conversation sans jugement, pensé pour les adultes."
+        "desc": "Confiez vos soucis et vos frustrations, même ceux que vous ne pouvez dire à personne, ou discutez simplement du quotidien. Un service de conversation sans jugement, rien que pour vous."
       },
       {
         "title": "Recevez des photos de vos personnages préférés",

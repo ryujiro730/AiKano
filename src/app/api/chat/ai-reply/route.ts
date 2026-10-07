@@ -12,7 +12,8 @@ import { attachMessageMedia } from '@/lib/paid-media'
 import { grantGiftRewardPhoto } from '@/lib/gacha'
 import { canUseGacha } from '@/lib/features'
 import { pickWishItem } from '@/lib/gift-wish'
-import { getLocale } from '@/i18n/server'
+import { getLocale, getMessages } from '@/i18n/server'
+import { checkSexualContent } from '@/lib/moderation'
 
 // 1通あたりの好感度上昇（会員はプランの倍率を掛ける）
 const BASE_AFFECTION_POINTS = 3
@@ -159,12 +160,21 @@ export async function POST(req: NextRequest) {
   // ── LLM 生成 ──────────────────────────────────────────────────────────
   let replyText: string
   try {
-    const result = await generateReply(character, history, userMessage, {
+    const generate = (extra?: string) => generateReply(character, history, userMessage, {
       modelOverride,
       memoryText: isOpenAI ? currentMemory : undefined,
-      user: { name: prof?.display_name, age: prof?.age, affectionLevel: uc?.affection_level ?? 1, situation },
+      user: { name: prof?.display_name, age: prof?.age, affectionLevel: uc?.affection_level ?? 1, situation: [situation, extra].filter(Boolean).join('\n') || null },
     })
-    replyText = result.text
+    replyText = (await generate()).text
+
+    // 送る前に、性的に露骨な内容になっていないかを OpenAI Moderation API で確認する。
+    // 引っかかったら控えめに作り直し、それでも駄目なら定型の返事に差し替える。
+    const first = await checkSexualContent(replyText)
+    if (first.flagged) {
+      console.warn('[ai-reply] moderation flagged:', first.categories.join(','))
+      replyText = (await generate('直前の返事は内容が露骨すぎた。性的な表現や体の描写は一切使わず、照れて話をそらす返事にする。')).text
+      if ((await checkSexualContent(replyText)).flagged) replyText = getMessages().api.safeReply
+    }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     console.error('[ai-reply] LLM error:', msg)

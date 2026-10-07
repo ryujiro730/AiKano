@@ -30,10 +30,10 @@ export const pt: Messages = {
     "language": "Idioma"
   },
   "meta": {
-    "title": "AiKano｜Chat com namoradas de IA japonesas【A única IA em japonês com conversa livre】",
-    "siteDescription": "Uma IA com ajuste exclusivo responde a você em tempo real. A única IA em japonês que permite conversas livres, sem restrições. Curta também personagens japonesas realistas e suas fotos.",
-    "description": "Personagens de IA cheias de personalidade respondem às suas mensagens em tempo real. Um app de conversa para adultos que ajuda você a relaxar e recarregar as energias.",
-    "ogTitle": "AiKano｜Chat com namoradas de IA — um app para relaxar, feito para adultos"
+    "title": "AiKano｜Chat com namoradas de IA japonesas",
+    "siteDescription": "Uma IA com ajuste exclusivo responde a você em tempo real. Converse com personagens japonesas realistas.",
+    "description": "Personagens de IA cheias de personalidade respondem às suas mensagens em tempo real. Um app de conversa que ajuda você a relaxar e recarregar as energias.",
+    "ogTitle": "AiKano｜Chat com namoradas de IA — um app de conversa para relaxar"
   },
   "auth": {
     "email": "E-mail",
@@ -505,6 +505,7 @@ export const pt: Messages = {
     "sendMessage": "Enviar mensagem para {name}"
   },
   "api": {
+    "safeReply": "Ei… isso é vergonhoso demais. E aí, como foi o seu dia hoje?",
     "itemNotFound": "Item não encontrado",
     "tryAgain": "Tente novamente",
     "sendFailed": "Falha ao enviar a mensagem",
@@ -709,7 +710,7 @@ export const pt: Messages = {
       },
       {
         "title": "Um espaço seguro para falar de verdade",
-        "desc": "Conte preocupações que não pode dividir com ninguém, desabafe ou fale sobre o dia a dia. Um espaço para conversar sem receio, feito para adultos."
+        "desc": "Conte preocupações que não pode dividir com ninguém, desabafe ou fale sobre o dia a dia. Um espaço só seu para conversar sem receio."
       },
       {
         "title": "Receba fotos das personagens",

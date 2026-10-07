@@ -5,6 +5,7 @@ import { translateChatText } from './translate'
 import { isLocale, type Locale } from '@/i18n/config'
 import { localizedCharacter } from './character-i18n'
 import { attachMessageMedia } from './paid-media'
+import { getOrCreateConversation } from './conversations'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AdminSupabase = SupabaseClient<any, any, any>
@@ -29,18 +30,27 @@ export async function processAutoBroadcast(): Promise<{ scheduled: number; sent:
   // 送信時刻を過ぎた予定を最大300件ずつ取り出す（processing に更新済み・同時実行でも重複しない）
   const { data: claimedIds } = await adminClient.rpc('claim_auto_broadcast_logs', { p_limit: 300 })
   const ids = ((claimedIds ?? []) as unknown[]).map(r => (typeof r === 'string' ? r : (r as { claim_auto_broadcast_logs: string }).claim_auto_broadcast_logs))
-  const { data: pendingLogs } = ids.length > 0
-    ? await adminClient
-        .from('auto_broadcast_logs')
-        .select(`
-          id, user_id,
-          auto_broadcast_steps!inner(
-            id, message, i18n, image_url, step_number,
-            auto_broadcast_sequences!inner(character_id)
-          )
-        `)
-        .in('id', ids)
-    : { data: [] as never[] }
+  // ID を URL に載せるので 100 件ずつに分けて取る（300件まとめると URL が長すぎて失敗しうる）
+  const pendingLogs: { id: string; user_id: string; auto_broadcast_steps: unknown }[] = []
+  for (let i = 0; i < ids.length; i += 100) {
+    const { data, error } = await adminClient
+      .from('auto_broadcast_logs')
+      .select(`
+        id, user_id,
+        auto_broadcast_steps!inner(
+          id, message, i18n, image_url, step_number,
+          auto_broadcast_sequences!inner(character_id)
+        )
+      `)
+      .in('id', ids.slice(i, i + 100))
+      .limit(100)
+    if (error) {
+      console.error('auto broadcast: logs fetch failed:', error.message)
+      await releaseClaims(adminClient, ids)
+      return { scheduled, sent: 0, skipped: 0, cancelled: 0, failed: 0 }
+    }
+    pendingLogs.push(...((data ?? []) as typeof pendingLogs))
+  }
 
   let sent = 0
   let skipped = 0
@@ -55,27 +65,32 @@ export async function processAutoBroadcast(): Promise<{ scheduled: number; sent:
   const pendingUserIds = Array.from(new Set(pendingLogs.map(l => l.user_id)))
 
   // 該当ユーザーの全会話（返信済みかどうかは has_user_reply で判定。メッセージ全件は読まない）
-  const { data: conversations } = await adminClient
-    .from('conversations')
-    .select('id, user_id, character_id, has_user_reply')
-    .in('user_id', pendingUserIds)
-    .limit(10000)
+  // ユーザーIDを URL に載せるので、長くなりすぎないよう 100 件ずつに分けて取る
+  const conversations: { id: string; user_id: string; character_id: string; has_user_reply: boolean; source: string | null }[] = []
+  for (let i = 0; i < pendingUserIds.length; i += 100) {
+    const { data, error } = await adminClient
+      .from('conversations')
+      .select('id, user_id, character_id, has_user_reply, source')
+      .in('user_id', pendingUserIds.slice(i, i + 100))
+      .limit(10000)
+    if (error) {
+      // 取得に失敗したまま送ると会話を重複作成しかねないので、今回の分は次回に回す
+      console.error('auto broadcast: conversations fetch failed:', error.message)
+      await releaseClaims(adminClient, ids)
+      return { scheduled, sent, skipped, cancelled, failed }
+    }
+    conversations.push(...((data ?? []) as typeof conversations))
+  }
 
   // userRepliedToChar: `${userId}:${characterId}` → そのキャラに返信済み
   const userRepliedToChar = new Set<string>(
-    (conversations ?? []).filter(c => c.has_user_reply).map(c => `${c.user_id}:${c.character_id}`),
+    conversations.filter(c => c.has_user_reply).map(c => `${c.user_id}:${c.character_id}`),
   )
 
   // ユーザー起点の会話（ウェルカム送信済み = source='user'）を取得
   // → step1 はスキップするが step2 以降は送信する
-  const { data: userInitConvs } = await adminClient
-    .from('conversations')
-    .select('user_id, character_id')
-    .eq('source', 'user')
-    .in('user_id', pendingUserIds)
-
   const userInitiatedKeys = new Set(
-    (userInitConvs ?? []).map(c => `${c.user_id}:${c.character_id}`)
+    conversations.filter(c => c.source === 'user').map(c => `${c.user_id}:${c.character_id}`)
   )
   // ──────────────────────────────────────────────────────────────────────────
 
@@ -112,7 +127,7 @@ export async function processAutoBroadcast(): Promise<{ scheduled: number; sent:
       const template = locale === 'ja' ? step.message : await localizedStepMessage(adminClient, step, locale)
       const message = resolveVariables(template, userProfile ?? {})
 
-      const existingConv = (conversations ?? []).find(
+      const existingConv = conversations.find(
         c => c.user_id === log.user_id && c.character_id === characterId
       )
 
@@ -121,19 +136,11 @@ export async function processAutoBroadcast(): Promise<{ scheduled: number; sent:
       if (existingConv) {
         conversationId = existingConv.id
       } else {
-        const { data: newConv, error: convError } = await adminClient
-          .from('conversations')
-          .insert({ user_id: log.user_id, character_id: characterId, last_message_at: msgTime, is_unread_staff: false, source: 'auto_broadcast' })
-          .select('id').single()
-        if (convError || !newConv) throw new Error('conv create failed: ' + convError?.message)
-        conversationId = newConv.id
+        const conv = await getOrCreateConversation(adminClient, log.user_id, characterId, { last_message_at: msgTime, is_unread_staff: false, source: 'auto_broadcast' })
+        if (!conv) throw new Error('conv create failed')
+        conversationId = conv.id
         // 同バッチ内の後続ステップが同じ会話を再利用できるようにキャッシュに追加
-        ;(conversations as { id: string; user_id: string; character_id: string; has_user_reply: boolean }[]).push({
-          id: conversationId,
-          user_id: log.user_id,
-          character_id: characterId,
-          has_user_reply: false,
-        })
+        conversations.push({ id: conversationId, user_id: log.user_id, character_id: characterId, has_user_reply: false, source: 'auto_broadcast' })
       }
 
       const imageUrl: string | null = step.image_url ?? null
@@ -180,6 +187,13 @@ export async function processAutoBroadcast(): Promise<{ scheduled: number; sent:
   }
 
   return { scheduled, sent, skipped, cancelled, failed }
+}
+
+/** 取り出した予定を pending に戻す（次の cron で再処理） */
+async function releaseClaims(db: AdminSupabase, ids: string[]) {
+  for (let i = 0; i < ids.length; i += 100) {
+    await db.from('auto_broadcast_logs').update({ status: 'pending' }).in('id', ids.slice(i, i + 100)).eq('status', 'processing')
+  }
 }
 
 // 同報メッセージの翻訳。auto_broadcast_steps.i18n にキャッシュし、同じステップ・言語は一度だけ訳す

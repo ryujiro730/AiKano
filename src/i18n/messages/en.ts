@@ -30,10 +30,10 @@ export const en: Messages = {
     "language": "Language"
   },
   "meta": {
-    "title": "AiKano | Japanese AI Girlfriend Chat — The Only Japanese AI for Unrestricted Conversations",
-    "siteDescription": "Our specially tuned AI replies to you in real time. The only Japanese-language AI that lets you chat freely without restrictions. Enjoy realistic Japanese characters and photos, too.",
-    "description": "Unique AI characters reply to your messages in real time. A chat app for adults to relax and unwind.",
-    "ogTitle": "AiKano | AI Girlfriend Chat — A Relaxing App for Adults"
+    "title": "AiKano | Japanese AI Girlfriend Chat",
+    "siteDescription": "Our specially tuned AI replies to you in real time. Enjoy conversations with realistic Japanese characters.",
+    "description": "Unique AI characters reply to your messages in real time. A chat app to relax and unwind.",
+    "ogTitle": "AiKano | AI Girlfriend Chat — A Relaxing Chat App"
   },
   "auth": {
     "email": "Email address",
@@ -505,6 +505,7 @@ export const en: Messages = {
     "sendMessage": "Send {name} a message"
   },
   "api": {
+    "safeReply": "Hey… that's way too embarrassing. So, how was your day today?",
     "itemNotFound": "Item not found",
     "tryAgain": "Please try again",
     "sendFailed": "Failed to send message",
@@ -709,7 +710,7 @@ export const en: Messages = {
       },
       {
         "title": "A private space to speak your mind",
-        "desc": "From worries and frustrations you can't share with anyone to everyday small talk. A place for adults to talk freely and without hesitation."
+        "desc": "From worries and frustrations you can't share with anyone to everyday small talk. A place just for you to talk freely and without hesitation."
       },
       {
         "title": "Photos sent by the characters",

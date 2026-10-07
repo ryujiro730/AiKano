@@ -30,10 +30,10 @@ export const es: Messages = {
     "language": "Idioma"
   },
   "meta": {
-    "title": "AiKano｜Chat con novia IA japonesa【La única IA en japonés para conversar sin límites】",
-    "siteDescription": "Una IA con ajustes exclusivos te responde en tiempo real, solo a ti. La única IA en japonés que permite conversar libremente y sin restricciones. También puedes disfrutar de personajes japoneses realistas y sus fotos.",
-    "description": "Personajes de IA con personalidades únicas responden a tus mensajes en tiempo real. Una app de conversación para adultos que te ayuda a recuperar la calma.",
-    "ogTitle": "AiKano｜Chat con novia IA: una app reconfortante para adultos"
+    "title": "AiKano｜Chat con novia IA japonesa",
+    "siteDescription": "Una IA con ajustes exclusivos te responde en tiempo real, solo a ti. Disfruta de conversaciones con personajes japoneses realistas.",
+    "description": "Personajes de IA con personalidades únicas responden a tus mensajes en tiempo real. Una app de conversación que te ayuda a recuperar la calma.",
+    "ogTitle": "AiKano｜Chat con novia IA: una app de conversación reconfortante"
   },
   "auth": {
     "email": "Correo electrónico",
@@ -505,6 +505,7 @@ export const es: Messages = {
     "sendMessage": "Enviar un mensaje a {name}"
   },
   "api": {
+    "safeReply": "Oye… eso me da demasiada vergüenza. Oye, ¿qué tal te fue hoy?",
     "itemNotFound": "No se encontró el elemento",
     "tryAgain": "Inténtalo de nuevo",
     "sendFailed": "No se pudo enviar el mensaje",
@@ -709,7 +710,7 @@ export const es: Messages = {
       },
       {
         "title": "Un espacio seguro para hablar con sinceridad",
-        "desc": "Habla con libertad de tus preocupaciones, de lo que no le contarías a nadie o de las pequeñas cosas del día a día. Un espacio de conversación para adultos, sin presiones."
+        "desc": "Habla con libertad de tus preocupaciones, de lo que no le contarías a nadie o de las pequeñas cosas del día a día. Un espacio de conversación solo para ti, sin presiones."
       },
       {
         "title": "Recibe fotos de los personajes",

@@ -6,6 +6,7 @@ import { createClient as createServerClient } from '@/lib/supabase/server'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { resolveVariables } from '@/lib/message-variables'
 import { sendNotificationEmail } from '@/lib/send-notification-email'
+import { getOrCreateConversation } from '@/lib/conversations'
 
 function adminSupabase() {
   return createAdminClient(
@@ -57,29 +58,9 @@ export async function POST(req: NextRequest) {
     : content.trim()
 
   // 既存の会話を探す
-  const { data: existing } = await admin
-    .from('conversations')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('character_id', characterId)
-    .maybeSingle()
-
-  let conversationId: string
-  if (existing?.id) {
-    conversationId = existing.id
-  } else {
-    // 新しい会話を作成
-    const { data: newConv, error: convErr } = await admin
-      .from('conversations')
-      .insert({ user_id: userId, character_id: characterId })
-      .select('id')
-      .single()
-
-    if (convErr || !newConv) {
-      return NextResponse.json({ error: 'Failed to create conversation' }, { status: 500 })
-    }
-    conversationId = newConv.id
-  }
+  const conv = await getOrCreateConversation(admin, userId, characterId)
+  if (!conv) return NextResponse.json({ error: 'Failed to create conversation' }, { status: 500 })
+  const conversationId = conv.id
 
   // メッセージを挿入
   const now = new Date().toISOString()

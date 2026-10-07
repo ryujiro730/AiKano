@@ -8,6 +8,7 @@ import { getLocale, getMessages } from '@/i18n/server'
 import { fmt } from '@/i18n/fmt'
 import { localizedText } from '@/lib/content-i18n'
 import { spendPoints, refundPoints, type Spend } from '@/lib/points'
+import { getOrCreateConversation } from '@/lib/conversations'
 
 // POST /api/items/gift - 持ち物のアイテムをキャラに贈る（1個消費・会話に記録・好感度アップ）
 // buy: true なら、持っていないときはその場でポイントで買って贈る（キャラのおねだりから1タップで贈る用）
@@ -57,9 +58,7 @@ export async function POST(req: NextRequest) {
 
   let conversationId = existingConv?.id as string | undefined
   if (!conversationId) {
-    const { data: conv } = await db.from('conversations')
-      .insert({ user_id: user.id, character_id: characterId, last_message_at: new Date().toISOString() })
-      .select('id').single()
+    const conv = await getOrCreateConversation(db, user.id, characterId, { last_message_at: new Date().toISOString() })
     conversationId = conv?.id
   }
 

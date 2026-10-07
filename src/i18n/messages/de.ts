@@ -30,10 +30,10 @@ export const de: Messages = {
     "language": "Sprache"
   },
   "meta": {
-    "title": "AiKano｜KI-Freundinnen-Chat aus Japan【Einzige japanischsprachige KI für Gespräche ohne Einschränkungen】",
-    "siteDescription": "Unsere individuell abgestimmte KI antwortet dir in Echtzeit – ganz persönlich. Als einzige japanischsprachige KI ermöglicht sie ungezwungene Gespräche ohne Einschränkungen. Entdecke realistische japanische Charaktere und Fotos.",
-    "description": "Persönliche KI-Charaktere antworten dir in Echtzeit. Eine Gesprächs-App für Erwachsene, die dir hilft, wieder zur Ruhe zu kommen.",
-    "ogTitle": "AiKano｜KI-Freundinnen-Chat – Die Wohlfühl-App für Erwachsene"
+    "title": "AiKano｜KI-Freundinnen-Chat aus Japan",
+    "siteDescription": "Unsere individuell abgestimmte KI antwortet dir in Echtzeit – ganz persönlich. Unterhalte dich mit realistischen japanischen Charakteren.",
+    "description": "Persönliche KI-Charaktere antworten dir in Echtzeit. Eine Gesprächs-App, die dir hilft, wieder zur Ruhe zu kommen.",
+    "ogTitle": "AiKano｜KI-Freundinnen-Chat – Die Wohlfühl-Chat-App"
   },
   "auth": {
     "email": "E-Mail-Adresse",
@@ -505,6 +505,7 @@ export const de: Messages = {
     "sendMessage": "{name} eine Nachricht senden"
   },
   "api": {
+    "safeReply": "Hey… das ist mir echt zu peinlich. Sag mal, wie war dein Tag heute?",
     "itemNotFound": "Element nicht gefunden",
     "tryAgain": "Bitte versuche es erneut",
     "sendFailed": "Nachricht konnte nicht gesendet werden",
@@ -709,7 +710,7 @@ export const de: Messages = {
       },
       {
         "title": "Ein geschützter Ort für offene Gespräche",
-        "desc": "Ob Sorgen, die du sonst niemandem erzählst, Frust oder einfach Alltägliches: Hier kannst du ganz ungezwungen reden – ein Gesprächsangebot für Erwachsene."
+        "desc": "Ob Sorgen, die du sonst niemandem erzählst, Frust oder einfach Alltägliches: Hier kannst du ganz ungezwungen reden – ein Gesprächsangebot nur für dich."
       },
       {
         "title": "Fotos von den Charakteren",

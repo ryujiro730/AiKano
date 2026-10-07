@@ -5,6 +5,7 @@ import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { resolveVariables } from '@/lib/message-variables'
 import { isLocale } from '@/i18n/config'
 import { localizedCharacter } from '@/lib/character-i18n'
+import { getOrCreateConversation } from '@/lib/conversations'
 
 function adminSupabase() {
   return createAdminClient(
@@ -70,7 +71,7 @@ export async function POST(req: NextRequest) {
       points: 0,
     }, { onConflict: 'id', ignoreDuplicates: true }),
     admin.from('conversations').select('id')
-      .eq('user_id', user.id).eq('character_id', characterId).single(),
+      .eq('user_id', user.id).eq('character_id', characterId).maybeSingle(),
   ])
 
   if (existing) {
@@ -85,14 +86,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ conversationId: existing.id, welcomeMessage: null })
   }
 
-  // 新規会話作成
-  const { data: newConv, error: convError } = await admin
-    .from('conversations')
-    .insert({ user_id: user.id, character_id: characterId, source: 'user' })
-    .select('id').single()
-
-  if (convError || !newConv) {
-    return NextResponse.json({ error: convError?.message ?? 'Failed to create conversation' }, { status: 500 })
+  // 新規会話作成（二重タップ等で同時に来ても一意制約エラーにしない）
+  const conv = await getOrCreateConversation(admin, user.id, characterId, { source: 'user' })
+  if (!conv) return NextResponse.json({ error: 'Failed to create conversation' }, { status: 500 })
+  const newConv = { id: conv.id }
+  if (!conv.created) {
+    // 同時に作られていた → ウェルカムはもう一方が送る
+    return NextResponse.json({ conversationId: conv.id, welcomeMessage: null })
   }
 
   const welcomeMessage = await sendWelcomeMessage(admin, newConv.id, characterId, user.id)

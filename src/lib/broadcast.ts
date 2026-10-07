@@ -1,5 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import { resolveVariables } from './message-variables'
+import { getOrCreateConversation } from './conversations'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AdminSupabase = SupabaseClient<any, any, any>
@@ -119,22 +120,9 @@ export async function processBroadcast(jobId: string): Promise<void> {
     for (const targetUser of targetUsers) {
       const userId = targetUser.id
       try {
-        const { data: existingConv } = await adminClient
-          .from('conversations').select('id')
-          .eq('user_id', userId).eq('character_id', job.character_id).single()
-
-        let conversationId: string
-
-        if (existingConv) {
-          conversationId = existingConv.id
-        } else {
-          const { data: newConv, error: convError } = await adminClient
-            .from('conversations')
-            .insert({ user_id: userId, character_id: job.character_id, last_message_at: now, is_unread_staff: false })
-            .select('id').single()
-          if (convError || !newConv) { console.error('processBroadcast: conv create failed', convError); continue }
-          conversationId = newConv.id
-        }
+        const conv = await getOrCreateConversation(adminClient, userId, job.character_id, { last_message_at: now, is_unread_staff: false })
+        if (!conv) { console.error('processBroadcast: conv create failed', userId); continue }
+        const conversationId = conv.id
 
         const resolvedMessage = resolveVariables(job.message, targetUser)
         const { error: msgError } = await adminClient.from('messages').insert({
