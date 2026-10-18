@@ -173,6 +173,12 @@ Supabase RPC → 集計・計算・複雑なフィルタ（SQL/PostgreSQL）
 - 会員限定フォト: `character_photos.members_only`。非会員には URL を返さない（`lib/character-photos.ts`）。RLS でも直読み不可
 - 会員判定は `getActivePlan(profile)`（期限切れパスは非会員扱い）
 
+## プレゼントのお礼写真
+
+- アイテムを贈ると、`character_item_photos`（キャラ×アイテムごとの「そのアイテムを持った写真」、081）があれば必ず無料で送る（`lib/item-photos.ts`、ai-reply）
+- 無いキャラ・アイテムは従来どおり、一定額以上のアイテムならガチャ写真から1枚（`grantGiftRewardPhoto`）
+- 画像は Storage `avatars/item-photos/<character_id>/<item_id>.webp`。生成は Vast.ai 上の Z-Image Turbo＋キャラ LoRA（元データ・LoRA は `/mnt/data/vast_job/`）
+
 ---
 
 ## 集計システム（analytics）
@@ -277,7 +283,7 @@ src/
     UtmCapture.tsx          # UTMパラメータ捕捉
     PointsShortageDialog.tsx # ポイント不足ダイアログ
 .github/workflows/deploy.yml  # デプロイ＆cron設定
-supabase/migrations/          # マイグレーション（072まで適用済み）
+supabase/migrations/          # マイグレーション（072・081 は適用済み）
 ```
 
 ---
@@ -285,5 +291,5 @@ supabase/migrations/          # マイグレーション（072まで適用済み
 ## DB マイグレーション運用
 
 - ファイルは `supabase/migrations/NNN_name.sql` の連番
-- **デプロイしても自動適用されない** — Supabase の SQL Editor で手動実行が必要
+- **デプロイしても自動適用されない** — 手元の Supabase CLI がログイン・リンク済みなので `supabase db query --linked -f supabase/migrations/NNN_xxx.sql` で本番に直接実行できる（SQL Editor でも可）
 - 現在未適用の可能性があるもの: `058`（analytics RPC）、`059`〜`061`（UTM・集計バグ修正・シェア）

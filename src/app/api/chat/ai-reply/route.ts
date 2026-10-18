@@ -10,6 +10,7 @@ import { intimacyUnlockFor } from '@/lib/intimacy'
 import { isPhotoRequest, pickCharacterPhoto } from '@/lib/photo-request'
 import { attachMessageMedia } from '@/lib/paid-media'
 import { grantGiftRewardPhoto } from '@/lib/gacha'
+import { getGiftItemPhoto } from '@/lib/item-photos'
 import { canUseGacha } from '@/lib/features'
 import { pickWishItem } from '@/lib/gift-wish'
 import { getLocale, getMessages } from '@/i18n/server'
@@ -132,9 +133,12 @@ export async function POST(req: NextRequest) {
     ? await pickCharacterPhoto(admin, characterId, user.id, conversationId, (character as { avatar_url?: string | null } | null)?.avatar_url ?? null)
     : null
   const photoUrl = photoPick?.url ?? null
-  // プレゼントのお礼写真（一定額以上のアイテムなら、まだ持っていない写真を1枚無料で送る）
-  const giftPhotoUrl = giftName && latest.metadata?.item_id && canUseGacha(prof?.role)
-    ? await grantGiftRewardPhoto(admin, user.id, characterId, latest.metadata.item_id)
+  // プレゼントのお礼写真：そのアイテムを持った写真があれば必ず送る。
+  // 無ければ従来どおり（一定額以上のアイテムなら、まだ持っていない写真を1枚無料で送る）
+  const giftItemId = giftName ? latest.metadata?.item_id : undefined
+  const giftPhotoUrl = giftItemId
+    ? (await getGiftItemPhoto(admin, characterId, giftItemId))
+      ?? (canUseGacha(prof?.role) ? await grantGiftRewardPhoto(admin, user.id, characterId, giftItemId) : null)
     : null
   // おねだり：写真・プレゼントがない普通の会話のときだけ、たまにアイテムをねだる
   const wish = !photoUrl && !giftName

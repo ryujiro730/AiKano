@@ -6,3 +6,8 @@ node_modules/
 
 # Supabase CLI link state
 supabase/.temp/
+
+# ローカルの画像生成作業フォルダ（大きいのでコミットしない）
+/char_generated/
+/momo/
+/momo_generated/
