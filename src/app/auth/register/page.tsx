@@ -91,7 +91,7 @@ export default function RegisterPage() {
     utmMeta['locale'] = locale
 
     const supabase = createClient()
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email, password,
       options: {
         emailRedirectTo: `${location.origin}/auth/callback`,
@@ -100,6 +100,9 @@ export default function RegisterPage() {
     })
 
     if (error) { setError(error.message); setLoading(false); return }
+
+    // メール確認をオフにしている場合はその場でログイン済みになるので、そのままプロフィール設定へ
+    if (data.session) { window.location.href = '/onboarding'; return }
 
     setDone(true)
   }

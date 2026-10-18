@@ -24,6 +24,7 @@ export const de: Messages = {
     "ageSuffix": "{age} Jahre",
     "contact": "Kontakt",
     "tokusho": "Anbieterkennzeichnung",
+    "paymentServices": "Hinweise nach dem Zahlungsdienstegesetz",
     "privacy": "Datenschutz",
     "terms": "Nutzungsbedingungen",
     "company": "Betreiber",

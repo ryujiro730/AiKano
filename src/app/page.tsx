@@ -433,6 +433,7 @@ export default async function HomePage() {
             <a href="mailto:info@aikano.chat" style={{ color: 'var(--color-text-muted)', fontSize: '12px', textDecoration: 'none' }}>{m.common.contact}</a>
             {[
               { label: m.common.tokusho, href: '/legal/tokusho' },
+              { label: m.common.paymentServices, href: '/legal/payment-services' },
               { label: m.common.privacy, href: '/legal/privacy' },
               { label: m.common.terms, href: '/legal/terms' },
             ].map(l => (

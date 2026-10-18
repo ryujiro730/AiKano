@@ -474,7 +474,8 @@ export default async function LP60sPage({ searchParams }: { searchParams: Record
             <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
               <a href="mailto:info@aikano.chat" style={{ color: 'var(--color-text-muted)', fontSize: '14px', textDecoration: 'none' }}>お問い合わせ</a>
               {[
-                { label: '特定商取引法', href: '/legal/tokusho' },
+                { label: '特定商取引法に基づく表記', href: '/legal/tokusho' },
+                { label: '資金決済法に基づく表示', href: '/legal/payment-services' },
                 { label: 'プライバシー', href: '/legal/privacy' },
                 { label: '利用規約', href: '/legal/terms' },
               ].map(l => (
