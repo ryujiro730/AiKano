@@ -167,7 +167,7 @@ export function GameHome({
         {!isLocked && (
           <div style={{ position: 'absolute', right: 10, top: 58, display: 'flex', flexDirection: 'column', gap: 12, zIndex: 3 }}>
             <HudButton href="/shop" icon="/game-icons/shop.png" label={m.hud.shop} from="#f472b6" to="#db2777" />
-            <HudButton onClick={() => setGiftOpen(true)} icon="/items/present.webp" label={m.hud.gift} from="#fde68a" to="#f59e0b" big />
+            <HudButton onClick={() => setGiftOpen(true)} icon="/items/present-icon.webp" label={m.hud.gift} from="#fde68a" to="#f59e0b" big />
             {showAlbum && <HudButton href="/album" icon="/game-icons/album.png" label={m.hud.album} from="#a5b4fc" to="#6366f1" />}
             {hasVideos && <HudButton href="/videos" icon="/game-icons/video.png" label={m.hud.videos} from="#67e8f9" to="#0891b2" />}
           </div>

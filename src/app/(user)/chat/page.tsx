@@ -724,7 +724,7 @@ export default function ChatPage() {
                 aria-label={m.hud.gift}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/items/present.webp" alt="" style={{ width: 30, height: 30 }} />
+                <img src="/items/present-icon.webp" alt="" style={{ width: 30, height: 30 }} />
               </button>
               <div className="flex-1 flex flex-col min-w-0">
                 <div
