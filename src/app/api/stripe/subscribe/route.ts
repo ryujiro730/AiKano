@@ -4,6 +4,7 @@ import Stripe from 'stripe'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { createAdminClient } from '@/lib/supabase/server'
 import { PLANS, type PlanId } from '@/lib/plans'
+import { getOrCreateCustomer } from '@/lib/stripe-customer'
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,22 +20,7 @@ export async function POST(req: NextRequest) {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2026-09-30.endive' as any })
     const admin = createAdminClient()
 
-    const { data: profile } = await admin
-      .from('profiles')
-      .select('stripe_customer_id, email')
-      .eq('id', user.id)
-      .single()
-
-    let customerId = profile?.stripe_customer_id ?? null
-
-    if (!customerId) {
-      const customer = await stripe.customers.create({
-        email: profile?.email ?? user.email ?? undefined,
-        metadata: { userId: user.id },
-      })
-      customerId = customer.id
-      await admin.from('profiles').update({ stripe_customer_id: customerId }).eq('id', user.id)
-    }
+    const customerId = await getOrCreateCustomer(stripe, admin, user)
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3001'
 
