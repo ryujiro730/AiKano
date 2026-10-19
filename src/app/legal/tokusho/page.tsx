@@ -103,8 +103,8 @@ const rows: { label: string; value: React.ReactNode }[] = [
     value: (
       <div className="space-y-1 text-sm">
         <p>・クレジットカード（Visa / Mastercard / American Express / JCB / Diners Club / Discover / 銀聯）</p>
-        <p>・コンビニ払い（ファミリーマート・ローソン・ミニストップ・セイコーマート）※30日間パスのみ</p>
-        <p>・PayPay ※30日間パスのみ</p>
+        <p>・コンビニ払い（ファミリーマート・ローソン・ミニストップ・セイコーマート）※ポイント購入・30日間パス（月額サブスクリプションの自動更新には使えません）</p>
+        <p>・PayPay ※ポイント購入・30日間パス（月額サブスクリプションの自動更新には使えません）</p>
       </div>
     ),
   },
@@ -134,7 +134,7 @@ export default function TokushoPage() {
         <h1 style={{ fontFamily: "'Noto Serif JP', serif", fontSize: '1.75rem', fontWeight: 700, color: '#1a1a1a', marginBottom: '8px' }}>
           特定商取引法に基づく表記
         </h1>
-        <p style={{ fontSize: '13px', color: '#aaa', marginBottom: '48px' }}>最終更新日：2026年10月18日</p>
+        <p style={{ fontSize: '13px', color: '#aaa', marginBottom: '48px' }}>最終更新日：2026年10月19日</p>
 
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <tbody>
