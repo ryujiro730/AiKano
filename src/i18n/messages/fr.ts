@@ -528,7 +528,8 @@ export const fr: Messages = {
     "subject": "Vous avez reçu un message de {name}",
     "label": "Message de votre personnage",
     "reply": "Répondre",
-    "footer": "Cet e-mail a été envoyé automatiquement par AiKano.\nSi vous ne reconnaissez pas cette activité, veuillez l’ignorer."
+    "footer": "Cet e-mail a été envoyé automatiquement par AiKano.\nSi vous ne reconnaissez pas cette activité, veuillez l’ignorer.",
+    "unsubscribe": "Se désabonner des notifications par e-mail"
   },
   "gift": {
     "sentMessage": "🎁 Vous avez offert {item}",

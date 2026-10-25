@@ -638,3 +638,53 @@ export async function generateReply(
   const systemPrompt = buildSystemPrompt(character, 'ja')
   return generateWithClaude(systemPrompt, recentHistory, userMessage)
 }
+
+/**
+ * 追いLINE（ユーザーから返信がないまま時間がたったとき、キャラから送る1通）を生成する。
+ * 指示は options.user.situation に入れる。OpenAI では会話履歴のあとに「ここで自分から送る」合図を置く。
+ */
+export async function generateFollowUp(
+  character: LLMCharacter,
+  history: LLMMessage[],
+  options: {
+    modelOverride?: string
+    memoryText?: string | null
+    user: LLMUserProfile
+  },
+): Promise<ReplyResult> {
+  const cue = '（ここで、ユーザーからの返事を待たずに、あなたから次のメッセージを1通送る。セリフだけを書く）'
+  const provider = process.env.LLM_PROVIDER ?? 'claude'
+  const recentHistory = history.slice(-30)
+
+  if (provider !== 'openai') {
+    return generateReply(character, recentHistory, cue, options)
+  }
+
+  const apiKey = process.env.OPENAI_API_KEY
+  if (!apiKey) throw new Error('OPENAI_API_KEY is not set')
+
+  const model = options.modelOverride || process.env.OPENAI_MODEL || 'gpt-6-luna'
+  const messages = [
+    { role: 'system', content: buildCharacterInstructions(character, options.memoryText ?? null, options.user) },
+    ...recentHistory.map((m) => ({ role: m.role, content: m.content })),
+    { role: 'system', content: cue },
+  ]
+
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(openAIChatBody(model, messages, 256)),
+  })
+
+  if (!res.ok) {
+    const err = await res.text()
+    throw new Error(`OpenAI API error ${res.status}: ${err}`)
+  }
+
+  const data = await res.json()
+  const raw: string = data.choices?.[0]?.message?.content ?? ''
+  return { text: cleanJaRpOutput(raw) }
+}

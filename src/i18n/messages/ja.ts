@@ -465,6 +465,7 @@ export const ja = {
     label: 'キャラクターからメッセージ',
     reply: '返信する',
     footer: 'このメールはAiKanoから自動送信されています。\n心当たりのない場合は無視してください。',
+    unsubscribe: 'メール通知の配信停止はこちら',
   },
   gift: {
     sentMessage: '🎁 {item}をプレゼントしました',

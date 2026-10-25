@@ -178,6 +178,7 @@ Supabase RPC → 集計・計算・複雑なフィルタ（SQL/PostgreSQL）
 - アイテムを贈ると、`character_item_photos`（キャラ×アイテムごとの「そのアイテムを持った写真」、081）があれば必ず無料で送る（`lib/item-photos.ts`、ai-reply）
 - 無いキャラ・アイテムは従来どおり、一定額以上のアイテムならガチャ写真から1枚（`grantGiftRewardPhoto`）
 - 画像は Storage `avatars/item-photos/<character_id>/<item_id>.webp`。生成は Vast.ai 上の Z-Image Turbo＋キャラ LoRA（元データ・LoRA は `/mnt/data/vast_job/`）
+- アルバム（character_photos）も同じ方法で作成し `avatars/char-photos/<character_id>/` に置いた（各キャラ20枚、うち6枚が会員限定）。なつき（旧称ぼく夏系）・メイリン（中国系）は 2026-10-19 追加。なつきのアイテム写真は GPT 製
 
 ---
 
@@ -211,6 +212,13 @@ Supabase RPC → 集計・計算・複雑なフィルタ（SQL/PostgreSQL）
 - `auto_broadcast_logs`: 送信ログ（pending → processing → sent/failed/cancelled）
 - cron が1分おきに `processAutoBroadcast()` を実行
 - `trigger: 'registration'` = ユーザー登録日時 + delay_minutes で送信時刻を計算
+
+## キャラからの追いLINE（呼び戻し）
+
+- ユーザーが戻ってこないと、会話の中身を踏まえた一言をキャラが LLM で書いて送り、Resend でメール通知する（`lib/character-follow-up.ts`、cron `/api/cron/follow-up` を5分おき）
+- 対象選び・間隔は DB 関数 `claim_character_follow_ups`（082）: 一度でも返信した会話のうちユーザーごとに最新の1会話。最終メッセージ・最後の追いLINE・最終アクセス（`profiles.last_login_at`）から 3時間 → 12時間 → 1日 → 2日 → 以降3日おき。通数の上限なし、日本時間 9〜22時台のみ
+- `conversations.follow_up_count` はユーザーが送ると 0 に戻る（トリガー）。メッセージは `metadata.source = 'follow_up'`
+- メールには配信停止リンク（`/api/email/unsubscribe`、`profiles.email_opt_out`）を付ける。自動同報のメールも配信停止を尊重する
 
 ---
 
@@ -283,7 +291,7 @@ src/
     UtmCapture.tsx          # UTMパラメータ捕捉
     PointsShortageDialog.tsx # ポイント不足ダイアログ
 .github/workflows/deploy.yml  # デプロイ＆cron設定
-supabase/migrations/          # マイグレーション（072・081 は適用済み）
+supabase/migrations/          # マイグレーション（072・081・082 は適用済み）
 ```
 
 ---

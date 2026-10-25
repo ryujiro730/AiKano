@@ -2,6 +2,7 @@ import { Resend } from 'resend'
 import { MESSAGES } from '@/i18n/messages'
 import { fmt } from '@/i18n/fmt'
 import type { Locale } from '@/i18n/config'
+import { unsubscribeUrl } from './email-unsubscribe'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://aikano.chat'
 
@@ -15,6 +16,8 @@ export interface NotificationEmailOptions {
   messageContent: string
   conversationId: string
   locale?: Locale
+  /** 渡すと配信停止リンク（本文・List-Unsubscribe ヘッダー）を付ける */
+  userId?: string
 }
 
 export async function sendNotificationEmail(opts: NotificationEmailOptions): Promise<void> {
@@ -25,12 +28,14 @@ export async function sendNotificationEmail(opts: NotificationEmailOptions): Pro
   const m = MESSAGES[opts.locale ?? 'ja']
   const chatUrl = `${APP_URL}/chat`
   const preview = opts.messageContent.slice(0, 60) + (opts.messageContent.length > 60 ? '…' : '')
+  const unsubscribe = opts.userId ? unsubscribeUrl(opts.userId) : null
 
   try {
     await getResend().emails.send({
       from: 'AiKano <noreply@aikano.chat>',
       to: opts.toEmail,
       subject: fmt(m.email.subject, { name: opts.characterName }),
+      ...(unsubscribe ? { headers: { 'List-Unsubscribe': `<${unsubscribe}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' } } : {}),
       html: `
 <!DOCTYPE html>
 <html lang="ja">
@@ -70,6 +75,10 @@ export async function sendNotificationEmail(opts: NotificationEmailOptions): Pro
               <p style="margin:0;font-size:11px;color:#c8a0a8;text-align:center;line-height:1.6;">
                 ${escapeHtml(m.email.footer).replace(/\n/g, '<br>')}
               </p>
+              ${unsubscribe ? `<p style="margin:8px 0 0;font-size:11px;color:#c8a0a8;text-align:center;line-height:1.6;">
+                <a href="${unsubscribe}" style="color:#c8a0a8;">${escapeHtml(m.email.unsubscribe)}</a><br>
+                合同会社TJYM ／ info@tjym.org
+              </p>` : ''}
             </td>
           </tr>
         </table>

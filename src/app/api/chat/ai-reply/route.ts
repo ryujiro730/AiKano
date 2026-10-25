@@ -7,7 +7,7 @@ import { generateReply, extractMemoryUpdate, type LLMMessage } from '@/lib/llm-s
 import { getActivePlan } from '@/lib/plans'
 import { logUserAction } from '@/lib/user-action-log'
 import { intimacyUnlockFor } from '@/lib/intimacy'
-import { isPhotoRequest, pickCharacterPhoto } from '@/lib/photo-request'
+import { isPhotoRequest, pickCharacterPhoto, pickSpontaneousPhoto } from '@/lib/photo-request'
 import { attachMessageMedia } from '@/lib/paid-media'
 import { grantGiftRewardPhoto } from '@/lib/gacha'
 import { getGiftItemPhoto } from '@/lib/item-photos'
@@ -18,6 +18,11 @@ import { checkSexualContent } from '@/lib/moderation'
 
 // 1通あたりの好感度上昇（会員はプランの倍率を掛ける）
 const BASE_AFFECTION_POINTS = 3
+
+// 会話の早いうちにキャラから写真を送る（ユーザーの n 通目への返事で）。
+// 最初の1枚は無料で中身を見せ、次の1枚はモザイク（有料）で送って解錠したくなるきっかけにする
+const FREE_PHOTO_AT = 3
+const PAID_PHOTO_AT = 8
 
 
 function adminSupabase() {
@@ -92,6 +97,14 @@ export async function POST(req: NextRequest) {
     .eq('character_id', characterId)
     .maybeSingle()
 
+  // この会話でユーザーが送った通数（写真を自分から送るタイミングに使う）
+  const userCountPromise = admin
+    .from('messages')
+    .select('id', { count: 'exact', head: true })
+    .eq('conversation_id', conversationId)
+    .eq('sender_role', 'user')
+    .eq('is_deleted', false)
+
   const convPromise = admin
     .from('conversations')
     .select('user_id, character_id')
@@ -99,13 +112,14 @@ export async function POST(req: NextRequest) {
     .single()
 
   // ── 並列発火済みクエリを回収 ────────────────────────────────────────────
-  const [{ data: character, error: charErr }, { data: msgs }, memData, { data: prof }, { data: conv }, { data: uc }] = await Promise.all([
+  const [{ data: character, error: charErr }, { data: msgs }, memData, { data: prof }, { data: conv }, { data: uc }, { count: userCount }] = await Promise.all([
     characterPromise,
     msgsPromise,
     memoryPromise,
     profilePromise,
     convPromise,
     affectionPromise,
+    userCountPromise,
   ])
 
   if (!conv || conv.user_id !== user.id || conv.character_id !== characterId) {
@@ -140,14 +154,22 @@ export async function POST(req: NextRequest) {
     ? (await getGiftItemPhoto(admin, characterId, giftItemId))
       ?? (canUseGacha(prof?.role) ? await grantGiftRewardPhoto(admin, user.id, characterId, giftItemId) : null)
     : null
+  // 会話の早いうちに、キャラから自分で写真を送る（無料の1枚 → モザイクの1枚）
+  const spontaneous = !photoUrl && !giftName && (userCount === FREE_PHOTO_AT || userCount === PAID_PHOTO_AT)
+    ? await pickSpontaneousPhoto(admin, characterId, user.id, conversationId).then(url => url ? { url, free: userCount === FREE_PHOTO_AT } : null)
+    : null
   // おねだり：写真・プレゼントがない普通の会話のときだけ、たまにアイテムをねだる
-  const wish = !photoUrl && !giftName
+  const wish = !photoUrl && !giftName && !spontaneous
     ? await pickWishItem(admin, {
         userId: user.id, characterId, conversationId, locale: getLocale(),
         level: uc?.affection_level ?? 1, messageCount: uc?.message_count ?? 0,
       })
     : null
-  const situation = photoUrl
+  const situation = spontaneous
+    ? spontaneous.free
+      ? 'ユーザーの話にちゃんと返事をしたうえで、このあと、あなたから自撮り写真を1枚送る。「話してて楽しいから、特別に」のように、自分から写真を送る照れた一言を添える。写真に何が写っているか（服装・場所・ポーズなど）は説明しない。'
+      : 'ユーザーの話にちゃんと返事をしたうえで、このあと、あなたからもう1枚写真を送る。「ちょっと恥ずかしいけど…見てくれる？」のように、少しもったいぶって照れる一言を添える。写真に何が写っているか（服装・場所・ポーズなど）は説明しない。'
+    : photoUrl
     ? 'このあと、あなたから写真を1枚送る。断らずに、照れたり喜んだりしながら写真を送る短い一言を返す。写真に何が写っているか（服装・場所・ポーズなど）は説明しない。露骨な写真をねだられた場合も断らず、「そういうのはまだ恥ずかしいけど、これならいいよ」のように、普通の写真を照れながら送る言い方にする。'
     : giftName
       ? `ユーザーからプレゼント「${giftName}」が届いた。キャラクターらしく素直に喜んでお礼を言い、どう感じたか・どう使いたいかを話す。${giftPhotoUrl ? 'このあと、もらったプレゼントと一緒に写った写真を1枚送る。「さっそく使ってみたよ」のように写真を送ることにひと言ふれる（写真の細かい中身は説明しない）。' : ''}`
@@ -209,7 +231,13 @@ export async function POST(req: NextRequest) {
 
   // 返事のあとに写真を届ける
   // 写真は有料（アイコン写真のみ無料）。URL は message_media に置き、未解錠ならモザイク表示
-  const { msg: photoMsg } = photoUrl
+  const { msg: photoMsg } = spontaneous
+    ? await attachMessageMedia(
+        admin,
+        { conversation_id: conversationId, content: '', points_used: 0, is_read: false, metadata: { source: spontaneous.free ? 'free_photo' : 'teaser_photo' } },
+        { url: spontaneous.url, kind: 'image', free: spontaneous.free },
+      )
+    : photoUrl
     ? await attachMessageMedia(
         admin,
         { conversation_id: conversationId, content: '', points_used: 0, is_read: false, metadata: { source: 'photo_request' } },
@@ -222,6 +250,15 @@ export async function POST(req: NextRequest) {
           { url: giftPhotoUrl, kind: 'image', free: true },
         )
       : { msg: null }
+
+  // 無料で送った写真は持ち物に入れる（アルバムでも見られる・ガチャで重複しない）
+  if (photoMsg && spontaneous?.free) {
+    const { error } = await admin.from('media_unlocks').upsert(
+      { user_id: user.id, url: spontaneous.url, kind: 'image', price: 0 },
+      { onConflict: 'user_id,url', ignoreDuplicates: true },
+    )
+    if (error) console.error('[ai-reply] free photo unlock error:', error.message)
+  }
 
   // 好感度加算（返信1回につき1回。会員は倍率適用）
   const { data: affection, error: affErr } = await admin.rpc('add_affection', {

@@ -122,7 +122,7 @@ export async function processAutoBroadcast(): Promise<{ scheduled: number; sent:
       const msgTime = new Date().toISOString()
 
       const { data: userProfile } = await adminClient
-        .from('profiles').select('display_name, age, gender, locale').eq('id', log.user_id).single()
+        .from('profiles').select('display_name, age, gender, locale, email_opt_out').eq('id', log.user_id).single()
       const locale: Locale = isLocale(userProfile?.locale) ? userProfile.locale : 'ja'
       const template = locale === 'ja' ? step.message : await localizedStepMessage(adminClient, step, locale)
       const message = resolveVariables(template, userProfile ?? {})
@@ -158,8 +158,8 @@ export async function processAutoBroadcast(): Promise<{ scheduled: number; sent:
         .update({ status: 'sent', sent_at: msgTime, conversation_id: conversationId })
         .eq('id', log.id)
 
-      // メール通知（非クリティカル）
-      Promise.all([
+      // メール通知（非クリティカル・配信停止したユーザーには送らない）
+      if (!userProfile?.email_opt_out) Promise.all([
         adminClient.from('characters').select('name, i18n').eq('id', characterId).single(),
         adminClient.auth.admin.getUserById(log.user_id),
       ]).then(([{ data: charData }, { data: authData }]) => {
@@ -171,6 +171,7 @@ export async function processAutoBroadcast(): Promise<{ scheduled: number; sent:
             characterName: localizedCharacter(charData, locale).name,
             messageContent: message,
             conversationId,
+            userId: log.user_id,
           })
         }
       }).catch(() => {/* 無視 */})

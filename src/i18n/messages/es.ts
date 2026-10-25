@@ -528,7 +528,8 @@ export const es: Messages = {
     "subject": "Has recibido un mensaje de {name}",
     "label": "Mensaje del personaje",
     "reply": "Responder",
-    "footer": "Este correo se envió automáticamente desde AiKano.\nSi no esperabas este correo, puedes ignorarlo."
+    "footer": "Este correo se envió automáticamente desde AiKano.\nSi no esperabas este correo, puedes ignorarlo.",
+    "unsubscribe": "Cancelar la suscripción a las notificaciones por correo"
   },
   "gift": {
     "sentMessage": "🎁 Le regalaste {item}",
