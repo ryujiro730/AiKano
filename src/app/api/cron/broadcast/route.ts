@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { processBroadcast, createAdminSupabase } from '@/lib/broadcast'
 
 export const dynamic = 'force-dynamic'
+// Supabase への fetch を Next.js のデータキャッシュに載せない（GET の cron では古い結果が返り続けていた）
+export const fetchCache = 'force-no-store'
 
 export async function GET(req: NextRequest) {
   // CRON_SECRET による認証

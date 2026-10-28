@@ -13,7 +13,9 @@ type AdminSupabase = SupabaseClient<any, any, any>
 export function createAdminSupabase(): AdminSupabase {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    // cron から呼ぶので、Next.js のデータキャッシュに載せず毎回 DB を読む
+    { auth: { persistSession: false }, global: { fetch: (url, options) => fetch(url, { ...options, cache: 'no-store' }) } },
   )
 }
 

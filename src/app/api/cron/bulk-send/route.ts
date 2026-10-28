@@ -1,4 +1,6 @@
 export const dynamic = 'force-dynamic'
+// Supabase への fetch を Next.js のデータキャッシュに載せない（GET の cron では古い結果が返り続けていた）
+export const fetchCache = 'force-no-store'
 /**
  * GET /api/cron/bulk-send
  * 予約済み一括送信を処理するcronジョブ（1分ごとに実行）

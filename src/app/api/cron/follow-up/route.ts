@@ -3,6 +3,8 @@ import { createAdminSupabase } from '@/lib/auto-broadcast'
 import { processCharacterFollowUps } from '@/lib/character-follow-up'
 
 export const dynamic = 'force-dynamic'
+// Supabase への fetch を Next.js のデータキャッシュに載せない（GET の cron では古い結果が返り続けていた）
+export const fetchCache = 'force-no-store'
 // LLM 生成をまとめて行うため長めに取る
 export const maxDuration = 300
 
