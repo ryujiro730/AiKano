@@ -1,9 +1,11 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { createClient as createAdminClient } from '@/lib/supabase/service'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { logUserAction } from '@/lib/user-action-log'
 import { getMessages } from '@/i18n/server'
+
+export const fetchCache = 'force-no-store'
 
 // POST /api/items/purchase - アイテム購入（ポイント消費）
 export async function POST(req: NextRequest) {

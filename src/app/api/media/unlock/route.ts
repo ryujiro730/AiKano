@@ -8,6 +8,8 @@ import { spendPoints, refundPoints, usablePoints } from '@/lib/points'
 import { logUserAction } from '@/lib/user-action-log'
 import { getAffectionLevel } from '@/lib/character-photos'
 
+export const fetchCache = 'force-no-store'
+
 /**
  * POST /api/media/unlock { messageId } | { photoId }
  * キャラがチャットで送った画像・動画をポイントで解錠する（会員も有料）。

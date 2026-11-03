@@ -4,6 +4,8 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { getConversationMedia } from '@/lib/paid-media'
 
+export const fetchCache = 'force-no-store'
+
 // GET /api/media/conversation?conversationId=… — 会話内のキャラ送信メディア（未解錠は URL なし）
 export async function GET(req: NextRequest) {
   const user = await getAuthUser()

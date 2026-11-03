@@ -7,6 +7,8 @@ import { spendPoints, refundPoints } from '@/lib/points'
 import { logUserAction } from '@/lib/user-action-log'
 import { canUseGacha } from '@/lib/features'
 
+export const fetchCache = 'force-no-store'
+
 /**
  * POST /api/gacha/draw { characterId, count: 1 | 10 }
  * まだ持っていない写真から count 枚を引く。残りが count 枚未満なら引けない（10連は残り10枚以上のとき）。

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { createClient as createAdminClient, type SupabaseClient } from '@supabase/supabase-js'
+import { createClient as createAdminClient } from '@/lib/supabase/service'
+import { type SupabaseClient } from '@supabase/supabase-js'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
 
 export function serviceDb(): SupabaseClient {

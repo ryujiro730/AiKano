@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { createClient as createAdminClient } from '@/lib/supabase/service'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { getMessages } from '@/i18n/server'
+
+export const fetchCache = 'force-no-store'
 
 function adminSupabase() {
   return createAdminClient(

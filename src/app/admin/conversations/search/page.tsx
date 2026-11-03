@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Search, MessageSquare } from 'lucide-react'
 import { SavedTemplateList, SaveTemplateButton } from '@/components/admin/SearchTemplates'
 import { SearchResults } from '@/components/admin/SearchResults'
-import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { createClient as createAdminClient } from '@/lib/supabase/service'
 import { LabelFilter } from '@/components/admin/LabelFilter'
 
 type SP = {

@@ -12,6 +12,8 @@ import { createClient as createServerClient } from '@/lib/supabase/server'
 import { createAdminSupabase } from '@/lib/auto-broadcast'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
 
+export const fetchCache = 'force-no-store'
+
 export async function POST(req: NextRequest) {
   const authClient = createServerClient()
   const user = await getAuthUser()

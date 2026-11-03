@@ -5,6 +5,8 @@ import { Resend } from 'resend'
 import { getMessages } from '@/i18n/server'
 import { fmt } from '@/i18n/fmt'
 
+export const fetchCache = 'force-no-store'
+
 export async function POST(req: NextRequest) {
   const resend = new Resend(process.env.RESEND_API_KEY)
   const authClient = createClient()

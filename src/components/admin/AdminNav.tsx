@@ -30,6 +30,7 @@ export function AdminNav({ navItems }: { navItems: NavItem[] }) {
       <nav className="hidden md:flex items-center gap-1 overflow-x-auto">
         {navItems.map(item => (
           <Link
+            prefetch={false}
             key={item.href}
             href={item.href}
             className="px-3 py-1.5 rounded-lg text-sm transition-colors whitespace-nowrap"
@@ -75,6 +76,7 @@ export function AdminNav({ navItems }: { navItems: NavItem[] }) {
             <nav className="flex-1 overflow-y-auto py-3 px-3 flex flex-col gap-1">
               {navItems.map(item => (
                 <Link
+                  prefetch={false}
                   key={item.href}
                   href={item.href}
                   className="px-4 py-3 rounded-xl text-sm transition-colors"

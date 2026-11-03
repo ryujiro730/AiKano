@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { verifyUnsubscribe } from '@/lib/email-unsubscribe'
 
+export const fetchCache = 'force-no-store'
+
 // メール配信停止。メール内のリンク（GET）と、メールアプリのワンクリック配信停止（POST, List-Unsubscribe-Post）の両方を受ける
 async function unsubscribe(req: NextRequest): Promise<boolean> {
   const userId = req.nextUrl.searchParams.get('u') ?? ''

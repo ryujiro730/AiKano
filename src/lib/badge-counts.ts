@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/service'
 
 export type BadgeCounts = { unread: number; support: number }
 

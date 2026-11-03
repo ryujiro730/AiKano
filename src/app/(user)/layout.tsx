@@ -30,17 +30,17 @@ export default async function UserLayout({ children }: { children: React.ReactNo
 
   const admin = createAdminClient()
 
-  const [{ data: profile }] = await Promise.all([
-    admin
-      .from('profiles')
-      .select('display_name, age, points, bonus_points, bonus_points_expires_at, role, subscription_status, subscription_plan, locale')
-      .eq('id', userId)
-      .single(),
-    admin
-      .from('profiles')
-      .update({ last_login_at: new Date().toISOString() } as any)
-      .eq('id', userId),
-  ])
+  const { data: profile } = await admin
+    .from('profiles')
+    .select('display_name, age, points, bonus_points, bonus_points_expires_at, role, subscription_status, subscription_plan, locale, last_login_at')
+    .eq('id', userId)
+    .single()
+
+  // 最終アクセスは前回から2分以上たったときだけ書く（画面を開くたびに書いていた。追いLINE の判定は時間単位なので2分で足りる）
+  const lastLogin = profile?.last_login_at ? new Date(profile.last_login_at).getTime() : 0
+  if (Date.now() - lastLogin > 2 * 60_000) {
+    await admin.from('profiles').update({ last_login_at: new Date().toISOString() } as any).eq('id', userId)
+  }
 
   if (!profile || profile.age === null) {
     redirect('/onboarding')

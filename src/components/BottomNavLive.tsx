@@ -36,7 +36,8 @@ export function BottomNavLive({
   useEffect(() => {
     if (!userId) return
 
-    const interval = setInterval(refresh, 60_000)
+    // タブが裏にあるあいだは取らない（表に戻ったときに取る）
+    const interval = setInterval(() => { if (document.visibilityState === 'visible') refresh() }, 60_000)
 
     const onVisibility = () => {
       if (document.visibilityState === 'visible') refresh()

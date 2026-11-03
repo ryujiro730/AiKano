@@ -1,10 +1,12 @@
 export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
 import { createClient as createServerClient } from '@/lib/supabase/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/service'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { getMessages } from '@/i18n/server'
 import { fmt } from '@/i18n/fmt'
+
+export const fetchCache = 'force-no-store'
 
 const UNLOCK_COST = 300
 

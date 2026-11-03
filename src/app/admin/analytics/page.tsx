@@ -1,5 +1,5 @@
 export const dynamic = 'force-dynamic'
-import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { createClient as createAdminClient } from '@/lib/supabase/service'
 import { unstable_cache } from 'next/cache'
 import Link from 'next/link'
 import { INTERNAL_EMAILS } from '@/lib/internal-accounts'

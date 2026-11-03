@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { getBadgeCounts } from '@/lib/badge-counts'
 
+export const fetchCache = 'force-no-store'
+
 export async function GET() {
   const user = await getAuthUser()
   if (!user) return NextResponse.json({ unread: 0, support: 0 })

@@ -1,4 +1,5 @@
-import { createClient, createAdminClientStatic } from '@/lib/supabase/server'
+import { createAdminClientStatic } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { redirect } from 'next/navigation'
 import { unstable_cache } from 'next/cache'
 import { AdminNav } from '@/components/admin/AdminNav'
@@ -7,8 +8,10 @@ import { AdminNav } from '@/components/admin/AdminNav'
 const getAdminProfile = unstable_cache(
   async (userId: string) => {
     const adminDb = createAdminClientStatic()
-    const { data } = await adminDb
+    const { data, error } = await adminDb
       .from('profiles').select('role, display_name').eq('id', userId).single()
+    // 取得に失敗した結果（null）をキャッシュすると、しばらく「管理者でない」扱いで追い出され続ける。投げればキャッシュされない
+    if (error && error.code !== 'PGRST116') throw new Error(`admin profile: ${error.message}`)
     return data
   },
   ['admin-profile'],
@@ -16,10 +19,8 @@ const getAdminProfile = unstable_cache(
 )
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  // getSession() はクッキー読み取りのみ（ネットワーク不要）→ 高速
-  const supabase = createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  const user = session?.user ?? null
+  // getSession() は Cookie を検証しないので使わない（偽の Cookie で管理画面が開けてしまう）
+  const user = await getAuthUser()
 
   if (!user) redirect('/auth/login')
 

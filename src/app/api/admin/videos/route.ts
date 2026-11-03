@@ -1,8 +1,10 @@
 export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
-import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { createClient as createAdminClient } from '@/lib/supabase/service'
 import { NextRequest, NextResponse } from 'next/server'
 import { VIDEO_UNLOCK_POINTS } from '@/lib/pricing'
+
+export const fetchCache = 'force-no-store'
 
 async function checkAdmin() {
   const supabase = createClient()

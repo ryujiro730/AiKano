@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { createClient as createAdminClient } from '@/lib/supabase/service'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { generateReply, extractMemoryUpdate, type LLMMessage } from '@/lib/llm-service'
 import { getActivePlan } from '@/lib/plans'
@@ -15,6 +15,8 @@ import { canUseGacha } from '@/lib/features'
 import { pickWishItem } from '@/lib/gift-wish'
 import { getLocale, getMessages } from '@/i18n/server'
 import { checkSexualContent } from '@/lib/moderation'
+
+export const fetchCache = 'force-no-store'
 
 // 1通あたりの好感度上昇（会員はプランの倍率を掛ける）
 const BASE_AFFECTION_POINTS = 3

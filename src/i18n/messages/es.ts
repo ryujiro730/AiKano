@@ -531,6 +531,20 @@ export const es: Messages = {
     "footer": "Este correo se envió automáticamente desde AiKano.\nSi no esperabas este correo, puedes ignorarlo.",
     "unsubscribe": "Cancelar la suscripción a las notificaciones por correo"
   },
+  "campaignEmail": {
+    "label": "Campaña",
+    "subject": "[Campaña] {copy}",
+    "subjectDefault": "Una campaña de AiKano",
+    "cta": "Ver detalles",
+    "reminderSubjectLeft": "¡Solo quedan {left}! {copy}",
+    "reminderSubjectOpen": "¡Todavía estás a tiempo! {copy}",
+    "reminderLeftLine": "La campaña termina en {left}.",
+    "reminderBody": "Un aviso para quienes aún no han comprado puntos.",
+    "reminderCta": "Comprar puntos",
+    "days": "{n} días",
+    "hours": "{n} horas",
+    "minutes": "{n} min"
+  },
   "gift": {
     "sentMessage": "🎁 Le regalaste {item}",
     "title": "Un regalo para {name}",

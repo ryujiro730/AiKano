@@ -1,8 +1,10 @@
 export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
-import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { createClient as createAdminClient } from '@/lib/supabase/service'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { getCharacterPhotosForUser } from '@/lib/character-photos'
+
+export const fetchCache = 'force-no-store'
 
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   const user = await getAuthUser()

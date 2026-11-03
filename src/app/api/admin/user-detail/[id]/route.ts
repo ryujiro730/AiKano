@@ -2,6 +2,8 @@ export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
 
+export const fetchCache = 'force-no-store'
+
 // 管理画面: ユーザー詳細（プロフィール＋DB集計＋直近の取引）
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   const auth = await requireAdmin()

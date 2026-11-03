@@ -31,6 +31,8 @@ import { MosaicCover, LevelLockedCover, UnownedPhotoCover, GachaButton, useMedia
 import type { MessageMediaView } from '@/lib/paid-media'
 
 const MAX_CACHED_MSGS = 60
+// 開いたときに読む件数。古い順に上限なしで読むと PostgREST の1000件で切れ、新しいメッセージが出なくなっていた
+const MESSAGE_FETCH_LIMIT = 200
 const CHAT_ENABLED = process.env.NEXT_PUBLIC_CHAT_ENABLED !== 'false'
 
 function readCache<T>(key: string): T | null {
@@ -187,7 +189,8 @@ export default function ChatPage() {
     if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
     pollIntervalRef.current = setInterval(async () => {
       const cid = convIdRef.current
-      if (!cid) return
+      // タブが裏にあるあいだは取らない（Realtime で届くぶんはそのまま受け取る）
+      if (!cid || document.visibilityState !== 'visible') return
       setMessages(prev => {
         const lastCreatedAt = prev.length > 0 ? prev[prev.length - 1].created_at : new Date(0).toISOString()
         supabase
@@ -253,7 +256,7 @@ export default function ChatPage() {
         supabase.from('profiles').select('*').eq('id', userId).single(),
         supabase.from('characters').select('*').eq('id', characterId).single(),
         fetch(`/api/characters/${characterId}/photos`).then(r => r.json()).then(j => ({ data: (j.photos ?? null) as CharacterPhoto[] | null })),
-        supabase.from('messages').select('*').eq('conversation_id', cachedConvId).eq('is_deleted', false).order('created_at', { ascending: true }),
+        supabase.from('messages').select('*').eq('conversation_id', cachedConvId).eq('is_deleted', false).order('created_at', { ascending: false }).limit(MESSAGE_FETCH_LIMIT),
         supabase.from('user_characters').select('affection_points,affection_level,message_count').eq('user_id', userId).eq('character_id', characterId!).maybeSingle(),
       ])
       if (profRes.data) {
@@ -269,6 +272,7 @@ export default function ChatPage() {
       }
       if (photosRes.data) setPhotos(photosRes.data)
       if (msgsRes.data) {
+        msgsRes.data.reverse()
         setMessages(msgsRes.data)
         writeCache(`msgs:${cachedConvId}`, msgsRes.data.slice(-MAX_CACHED_MSGS))
       }
@@ -315,9 +319,10 @@ export default function ChatPage() {
         .from('messages').select('*')
         .eq('conversation_id', newConvId)
         .eq('is_deleted', false)
-        .order('created_at', { ascending: true })
+        .order('created_at', { ascending: false })
+        .limit(MESSAGE_FETCH_LIMIT)
 
-      const allMsgs = msgs || []
+      const allMsgs = (msgs || []).reverse()
       if (welcomeMessage && !allMsgs.find((m: Message) => m.id === welcomeMessage.id)) {
         allMsgs.unshift(welcomeMessage)
       }

@@ -5,6 +5,8 @@ import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { createAdminClient } from '@/lib/supabase/server'
 import { isUsableCustomer } from '@/lib/stripe-customer'
 
+export const fetchCache = 'force-no-store'
+
 export async function POST() {
   const user = await getAuthUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

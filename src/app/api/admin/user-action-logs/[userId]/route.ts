@@ -2,6 +2,8 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
 
+export const fetchCache = 'force-no-store'
+
 // ユーザーの行動タイムライン（新しい順）。
 // 行動ログ＋送信メッセージ＋ポイント取引＋ログインを DB 関数 admin_user_timeline で合成する。
 // ?limit=（最大1000）&before=ISO日時 でページング、?types=a,b で種類を絞り込み

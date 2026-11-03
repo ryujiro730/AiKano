@@ -4,6 +4,8 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { tinyImageUrl } from '@/lib/paid-media'
 
+export const fetchCache = 'force-no-store'
+
 /**
  * GET /api/media/preview?m=<messageId> | ?p=<photoId> | ?v=<videoItemId>
  * 未解錠メディアのモザイク用サムネイル（最大 6×6px の極小画像）。元 URL はクライアントに渡さない。

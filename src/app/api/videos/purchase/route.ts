@@ -1,10 +1,12 @@
 export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
-import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { createClient as createAdminClient } from '@/lib/supabase/service'
 import { NextRequest, NextResponse } from 'next/server'
 import { logUserAction } from '@/lib/user-action-log'
 import { spendPoints, refundPoints } from '@/lib/points'
 import { getMessages } from '@/i18n/server'
+
+export const fetchCache = 'force-no-store'
 
 // POST /api/videos/purchase - 動画購入（ポイント消費）
 export async function POST(req: NextRequest) {

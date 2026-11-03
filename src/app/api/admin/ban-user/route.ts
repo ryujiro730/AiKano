@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
 import { logUserAction } from '@/lib/user-action-log'
 
+export const fetchCache = 'force-no-store'
+
 // 管理画面: ユーザーのBAN / 解除（Supabase Auth のBAN。ログイン・セッション更新ができなくなる）
 export async function POST(req: Request) {
   const auth = await requireAdmin()

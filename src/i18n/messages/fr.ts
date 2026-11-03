@@ -531,6 +531,20 @@ export const fr: Messages = {
     "footer": "Cet e-mail a été envoyé automatiquement par AiKano.\nSi vous ne reconnaissez pas cette activité, veuillez l’ignorer.",
     "unsubscribe": "Se désabonner des notifications par e-mail"
   },
+  "campaignEmail": {
+    "label": "Offre spéciale",
+    "subject": "[Offre] {copy}",
+    "subjectDefault": "Une offre d'AiKano",
+    "cta": "Voir les détails",
+    "reminderSubjectLeft": "Plus que {left} ! {copy}",
+    "reminderSubjectOpen": "Il est encore temps ! {copy}",
+    "reminderLeftLine": "L'offre se termine dans {left}.",
+    "reminderBody": "Un petit mot pour celles et ceux qui n'ont pas encore acheté de points.",
+    "reminderCta": "Acheter des points",
+    "days": "{n} jours",
+    "hours": "{n} heures",
+    "minutes": "{n} min"
+  },
   "gift": {
     "sentMessage": "🎁 Vous avez offert {item}",
     "title": "Offrir un cadeau à {name}",

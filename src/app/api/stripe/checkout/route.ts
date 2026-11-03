@@ -1,12 +1,14 @@
 export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
-import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { createClient as createAdminClient } from '@/lib/supabase/service'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { INTERNAL_EMAILS } from '@/lib/internal-accounts'
 import { findEligibleCampaign } from '@/lib/campaigns'
 import { findPackage, pointsForPackage, isCampaignTarget, type PurchaseCampaign, toPurchaseCampaign } from '@/lib/point-packages'
 import { logUserAction } from '@/lib/user-action-log'
+
+export const fetchCache = 'force-no-store'
 
 // ポイント購入（一回払い）。価格・付与ポイントはサーバー側で決める（クライアントからはパックIDのみ受け取る）
 export async function POST(request: Request) {

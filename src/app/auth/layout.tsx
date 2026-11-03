@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/service'
 import { LanguageSelect } from '@/components/LanguageSelect'
 
 // キャラ写真は10分ごとに更新（ビルド時にも生成されるため、公開鍵だけで読む）

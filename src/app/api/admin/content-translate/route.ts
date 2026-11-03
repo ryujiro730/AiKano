@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
 import { translateContent, CONTENT_CONTEXT } from '@/lib/content-translate'
 
+export const fetchCache = 'force-no-store'
+
 const FIELDS = { items: ['name', 'description'], item_categories: ['name'], campaigns: ['catchphrase', 'description', 'cta_text'] } as const
 
 // POST /api/admin/content-translate { table: 'items' | 'item_categories' | 'campaigns', id } — 保存した日本語を各言語に訳して i18n に入れる

@@ -1,11 +1,13 @@
 export const dynamic = 'force-dynamic'
+import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient as createServerClient } from '@/lib/supabase/server'
-import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { createClient as createAdminClient } from '@/lib/supabase/service'
 import { resolveVariables } from '@/lib/message-variables'
 import { isLocale } from '@/i18n/config'
 import { localizedCharacter } from '@/lib/character-i18n'
 import { getOrCreateConversation } from '@/lib/conversations'
+
+export const fetchCache = 'force-no-store'
 
 function adminSupabase() {
   return createAdminClient(
@@ -51,10 +53,8 @@ async function cancelStep1Broadcasts(admin: ReturnType<typeof adminSupabase>, us
 }
 
 export async function POST(req: NextRequest) {
-  const authClient = createServerClient()
-  const { data: { session } } = await authClient.auth.getSession()
-  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const user = session.user
+  const user = await getAuthUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { characterId } = await req.json()
   if (!characterId) return NextResponse.json({ error: 'characterId required' }, { status: 400 })

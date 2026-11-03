@@ -96,6 +96,10 @@ Supabase RPC → 集計・計算・複雑なフィルタ（SQL/PostgreSQL）
 
 ## Supabase JS SDK の既知の注意点
 
+- サーバーで supabase-js を使うときは `@/lib/supabase/service` の `createClient`（トークン自動更新を切る。切らないとメモリが漏れる）。全 API ルートに `fetchCache = 'force-no-store'`
+- ユーザーの特定は必ず `getAuthUser()`（`getUser()` で検証）。サーバーで `getSession()` を使ってはいけない（Cookie を検証しないので偽の Cookie でなりすませる）
+- ポイント・好感度を書き換える DB 関数は service_role だけに EXECUTE を与える（関数は既定で PUBLIC に実行権がある。084 で add_points などを閉じた）
+
 - `!inner` ネストジョインを使うクエリは `.limit(N)` を必ず付ける（付けないと空配列を返すバグあり）
 - service role key は `SUPABASE_SERVICE_ROLE_KEY` 環境変数から取得
 - `NOT IN` は NULL を除外するため `.not('col', 'in', '...')` は `.or('col.is.null,col.not.in.(...)')` に置き換える
@@ -143,6 +147,8 @@ Supabase RPC → 集計・計算・複雑なフィルタ（SQL/PostgreSQL）
 ---
 
 ## ポイント・課金システム
+
+**キャンペーン**（matchkoi から移植）: 対象判定は `lib/campaign-eligibility.ts` 1か所（期間・性別・一人一回限り・条件。表示・バナー・決済で共用）。一人一回限りは `point_transactions.campaign_id / once_campaign_id` のユニーク制約で DB が保証（083）。Stripe webhook は「取引を先に記録 → 成功したら add_points」。管理画面は `components/admin/CampaignManager.tsx` → `/api/admin/campaigns/*`（ブラウザから campaigns に直接書かない）。お知らせメール（公開時・条件達成・24h/72h 追い・手動）は `lib/campaign-email.ts`、対象は DB 関数 `campaign_email_targets` / `campaign_reminder_targets`（088）、cron `/api/cron/campaigns` を5分おき
 
 **課金導線**: ポイント購入は `PointPackageList`（購入ダイアログと /payment#points で共用）→ `/api/stripe/checkout`（packageId のみ受け取り、価格・付与pt・キャンペーン倍率はサーバーで決定）→ webhook で付与。キャンペーン判定は `lib/campaigns.ts`、付与pt計算は `lib/point-packages.ts` を表示とサーバーで共用。
 
@@ -212,6 +218,7 @@ Supabase RPC → 集計・計算・複雑なフィルタ（SQL/PostgreSQL）
 - `auto_broadcast_logs`: 送信ログ（pending → processing → sent/failed/cancelled）
 - cron が1分おきに `processAutoBroadcast()` を実行
 - `trigger: 'registration'` = ユーザー登録日時 + delay_minutes で送信時刻を計算
+- 予約は `schedule_auto_broadcasts()`（086）: シーケンス作成より後に登録した人だけ・30分以上前に過ぎたステップは予約しない・1通目を逃した人には続きも送らない・BAN 中は除く
 
 ## キャラからの追いLINE（呼び戻し）
 
@@ -291,7 +298,7 @@ src/
     UtmCapture.tsx          # UTMパラメータ捕捉
     PointsShortageDialog.tsx # ポイント不足ダイアログ
 .github/workflows/deploy.yml  # デプロイ＆cron設定
-supabase/migrations/          # マイグレーション（072・081・082 は適用済み）
+supabase/migrations/          # マイグレーション（072・081〜088 は適用済み。089 はデプロイ後に適用）
 ```
 
 ---

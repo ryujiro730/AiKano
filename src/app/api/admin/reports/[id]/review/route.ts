@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { createAdminClientStatic } from '@/lib/supabase/server'
 
+export const fetchCache = 'force-no-store'
+
 export async function POST(_req: NextRequest, { params }: { params: { id: string } }) {
   const user = await getAuthUser()
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })

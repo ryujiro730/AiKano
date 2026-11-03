@@ -42,13 +42,13 @@ export function CampaignBanner() {
 
   if (!visible || !campaign) return null
 
+  // 絵文字は使わない（デザイン規約）。区切りは記号の中黒で
   const parts = [
-    `🎉 ${m.campaign.active}`,
+    m.campaign.active,
     campaign.catchphrase,
-    campaign.description ? `✦ ${campaign.description}` : '',
-    `✨ ${m.campaign.checkNow}`,
-    '💖',
-  ].filter(Boolean).join('  　  ')
+    campaign.description,
+    m.campaign.checkNow,
+  ].filter(Boolean).join('  ・  ')
 
   return (
     <div

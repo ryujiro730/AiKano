@@ -10,9 +10,11 @@ export const dynamic = 'force-dynamic'
  * {"messages":[{"role":"system","content":"..."},{"role":"user","content":"..."},{"role":"assistant","content":"..."},...]}
  */
 
+import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient as createAdminClient } from '@supabase/supabase-js'
-import { createClient as createServerClient } from '@/lib/supabase/server'
+import { createClient as createAdminClient } from '@/lib/supabase/service'
+
+export const fetchCache = 'force-no-store'
 
 function adminSupabase() {
   return createAdminClient(
@@ -22,10 +24,8 @@ function adminSupabase() {
 }
 
 export async function GET(req: NextRequest) {
-  // getSession()はcookie読み取りのみ（ネットワーク不要）→ 確実に動作
-  const authClient = createServerClient()
-  const { data: { session } } = await authClient.auth.getSession()
-  const userId = session?.user?.id
+  // getSession() は Cookie を検証しないので使わない（偽の Cookie で管理者になれてしまう）
+  const userId = (await getAuthUser())?.id
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const admin = adminSupabase()

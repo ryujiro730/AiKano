@@ -4,6 +4,8 @@ import { createClient as createServerClient } from '@/lib/supabase/server'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { getTargetUserIds, createAdminSupabase } from '@/lib/broadcast'
 
+export const fetchCache = 'force-no-store'
+
 export async function GET(req: NextRequest) {
   const authClient = createServerClient()
   const user = await getAuthUser()

@@ -2,6 +2,8 @@ export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
+export const fetchCache = 'force-no-store'
+
 export async function POST(request: Request) {
   const supabase = createClient()
   await supabase.auth.signOut()

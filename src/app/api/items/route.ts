@@ -1,15 +1,17 @@
 export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { NextResponse } from 'next/server'
 import { getLocale } from '@/i18n/server'
 import { localizedText } from '@/lib/content-i18n'
 
+export const fetchCache = 'force-no-store'
+
 // GET /api/items - 公開中のアイテム・カテゴリ（アイテムがあるものだけ）・ユーザーの持ち物
 export async function GET() {
   const supabase = createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const user = session.user
+  const user = await getAuthUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const locale = getLocale()
 
   const [{ data: items }, { data: categories }, { data: inventory }, { data: profile }] = await Promise.all([

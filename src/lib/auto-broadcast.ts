@@ -1,4 +1,5 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/service'
+import { type SupabaseClient } from '@supabase/supabase-js'
 import { resolveVariables } from './message-variables'
 import { sendNotificationEmail } from './send-notification-email'
 import { translateChatText } from './translate'

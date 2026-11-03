@@ -1,12 +1,14 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServerClient } from '@/lib/supabase/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/service'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { REGISTRATION_BONUS, REFERRAL_BONUS } from '@/lib/pricing'
 import { logUserAction } from '@/lib/user-action-log'
 import { sendTJPostback } from '@/lib/trafficjunky'
 import { getLocale, getMessages } from '@/i18n/server'
+
+export const fetchCache = 'force-no-store'
 
 const IP_WINDOW_DAYS = 30
 

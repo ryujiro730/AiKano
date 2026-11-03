@@ -1,8 +1,10 @@
 export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
 import { createClient as createServerClient } from '@/lib/supabase/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/service'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
+
+export const fetchCache = 'force-no-store'
 
 export async function DELETE() {
   const authClient = createServerClient()

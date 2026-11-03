@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
-import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { createClient as createAdminClient } from '@/lib/supabase/service'
 import { Download, MessageSquare, Bot } from 'lucide-react'
 import Link from 'next/link'
 

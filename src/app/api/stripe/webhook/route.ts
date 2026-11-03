@@ -6,6 +6,9 @@ import { PLANS, type PlanId } from '@/lib/plans'
 import { grantSubscriptionBonus } from '@/lib/subscription-bonus'
 import { logUserAction } from '@/lib/user-action-log'
 import { sendTJPurchase } from '@/lib/trafficjunky'
+import { findPackage } from '@/lib/point-packages'
+
+export const fetchCache = 'force-no-store'
 
 // 現行APIでは請求期間はサブスク本体ではなく items に入っている
 function subscriptionPeriod(sub: any) {
@@ -18,6 +21,54 @@ function subscriptionPeriod(sub: any) {
 // 現行APIでは請求書のサブスクIDは parent.subscription_details に入っている
 function invoiceSubscriptionId(invoice: any): string | null {
   return invoice.parent?.subscription_details?.subscription ?? invoice.subscription ?? null
+}
+
+/**
+ * ポイント購入を記録してから付与する。記録（stripe_session_id の一意制約）が通ったときだけ add_points するので、
+ * 同じ通知が重なってもポイントは1回しか付かない。
+ * キャンペーン倍率で買ったときは campaign_id を、一人一回限りなら once_campaign_id も入れる。
+ * 一人一回限りの制約にかかった（もう受け取り済み）ら、倍率なしの通常ポイントで記録し直す。
+ * 返り値: 付与したポイント数 / 'duplicate'（処理済みの通知）/ 'error'
+ */
+async function recordPointPurchase(
+  admin: ReturnType<typeof createAdminClient>,
+  session: Stripe.Checkout.Session,
+  userId: string,
+  tokens: number,
+  priceYen: number | null,
+  campaignId: string | null,
+  packageId: string | null,
+): Promise<number | 'duplicate' | 'error'> {
+  let once = false
+  if (campaignId) {
+    const { data: c } = await admin.from('campaigns').select('one_time_per_user').eq('id', campaignId).maybeSingle()
+    once = !!c?.one_time_per_user
+  }
+  const row = (amount: number, cid: string | null) => ({
+    user_id: userId,
+    amount,
+    type: 'purchase',
+    description: `${amount}ポイント購入`,
+    price_yen: priceYen,
+    stripe_session_id: session.id,
+    campaign_id: cid,
+    once_campaign_id: cid && once ? cid : null,
+  })
+
+  let amount = tokens
+  let { error } = await admin.from('point_transactions').insert(row(amount, campaignId))
+  if (error?.code === '23505' && error.message.includes('once_campaign')) {
+    // このキャンペーンの倍率はもう受け取っている → 通常のポイントで記録し直す
+    amount = findPackage(packageId ?? '')?.tokens ?? Math.floor((priceYen ?? 0) / 10)
+    ;({ error } = await admin.from('point_transactions').insert(row(amount, null)))
+  }
+  if (error?.code === '23505') return 'duplicate'
+  if (error) {
+    console.error('[stripe webhook] purchase record failed:', error.message)
+    return 'error'
+  }
+  await admin.rpc('add_points', { p_user_id: userId, p_amount: amount })
+  return amount
 }
 
 export async function POST(request: Request) {
@@ -46,18 +97,22 @@ export async function POST(request: Request) {
     const session = event.data.object as Stripe.Checkout.Session
     if (session.mode === 'payment') {
       if (session.payment_status !== 'unpaid') {
-        const { userId, tokens, priceYen, type: payType, planId } = session.metadata ?? {}
+        const { userId, tokens, priceYen, type: payType, planId, campaignId, packageId } = session.metadata ?? {}
 
         // ── 月額パス（コンビニ払い等）────────────────────────────────
         if (payType === 'monthly_pass' && userId && planId) {
-          const { data: existing } = await admin
-            .from('point_transactions')
-            .select('id')
-            .eq('stripe_session_id', session.id)
-            .single()
-          if (!existing) {
-            const plan = PLANS[planId as PlanId]
-            if (plan) {
+          const plan = PLANS[planId as PlanId]
+          if (plan) {
+            // 先に取引を記録する（stripe_session_id の一意制約で、同じ通知が重なっても1回だけ通る）
+            const { error: insErr } = await admin.from('point_transactions').insert({
+              user_id: userId,
+              amount: 0,
+              type: 'purchase',
+              description: `${plan.name}パス購入（1ヶ月）`,
+              price_yen: session.amount_total ?? plan.price_yen,
+              stripe_session_id: session.id,
+            })
+            if (!insErr) {
               const periodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
               await admin.from('profiles').update({
                 stripe_customer_id: session.customer as string,
@@ -68,42 +123,23 @@ export async function POST(request: Request) {
                 monthly_messages_limit: plan.monthly_messages,
                 monthly_reset_at: periodEnd,
               }).eq('id', userId)
-              // 冪等チェック用に point_transactions へ記録
-              await admin.from('point_transactions').insert({
-                user_id: userId,
-                amount: 0,
-                type: 'purchase',
-                description: `${plan.name}パス購入（1ヶ月）`,
-                price_yen: session.amount_total ?? plan.price_yen,
-                stripe_session_id: session.id,
-              })
               await logUserAction(admin, userId, 'subscription_start', { plan: plan.name, method: 'コンビニ・PayPay', price_yen: session.amount_total ?? plan.price_yen })
               await sendTJPurchase(admin, userId, session.id, session.amount_total ?? plan.price_yen, `pass_${planId}`)
               await grantSubscriptionBonus(admin, userId, planId, `pass:${session.id}`)
+            } else if (insErr.code !== '23505') {
+              console.error('[stripe webhook] pass record failed:', insErr.message)
+              return NextResponse.json({ error: 'record failed' }, { status: 500 })
             }
           }
         }
 
         // ── ポイント購入（一回払い）────────────────────────────────
         if (!payType && userId && tokens) {
-          const { data: existing } = await admin
-            .from('point_transactions')
-            .select('id')
-            .eq('stripe_session_id', session.id)
-            .single()
-          if (!existing) {
-            const tokenCount = parseInt(tokens)
-            await admin.rpc('add_points', { p_user_id: userId, p_amount: tokenCount })
-            await admin.from('point_transactions').insert({
-              user_id: userId,
-              amount: tokenCount,
-              type: 'purchase',
-              description: `${tokenCount}ポイント購入`,
-              price_yen: priceYen ? parseInt(priceYen) : (session.amount_total ?? null),
-              stripe_session_id: session.id,
-            })
-            await logUserAction(admin, userId, 'point_purchase_complete', { tokens: tokenCount, price_yen: priceYen ? parseInt(priceYen) : session.amount_total })
-            await sendTJPurchase(admin, userId, session.id, priceYen ? parseInt(priceYen) : (session.amount_total ?? 0), `points_${tokenCount}`)
+          const granted = await recordPointPurchase(admin, session, userId, parseInt(tokens), priceYen ? parseInt(priceYen) : (session.amount_total ?? null), campaignId || null, packageId ?? null)
+          if (granted === 'error') return NextResponse.json({ error: 'record failed' }, { status: 500 })
+          if (granted !== 'duplicate') {
+            await logUserAction(admin, userId, 'point_purchase_complete', { tokens: granted, price_yen: priceYen ? parseInt(priceYen) : session.amount_total })
+            await sendTJPurchase(admin, userId, session.id, priceYen ? parseInt(priceYen) : (session.amount_total ?? 0), `points_${granted}`)
           }
         }
       }

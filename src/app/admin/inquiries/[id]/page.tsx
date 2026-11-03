@@ -1,4 +1,4 @@
-import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { createClient as createAdminClient } from '@/lib/supabase/service'
 import { unstable_noStore as noStore } from 'next/cache'
 import { notFound } from 'next/navigation'
 import { format } from 'date-fns-tz'

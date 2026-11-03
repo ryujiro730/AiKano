@@ -1,7 +1,9 @@
 export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
-import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { createClient as createAdminClient } from '@/lib/supabase/service'
+
+export const fetchCache = 'force-no-store'
 
 // サポート画面を開いたらスタッフ返信を既読にする
 export async function POST() {

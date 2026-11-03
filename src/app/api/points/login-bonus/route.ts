@@ -1,8 +1,11 @@
 export const dynamic = 'force-dynamic'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { NextResponse } from 'next/server'
 import { LOGIN_BONUS, LOGIN_BONUS_HOURS } from '@/lib/pricing'
 import { logUserAction } from '@/lib/user-action-log'
+
+export const fetchCache = 'force-no-store'
 
 const BONUS_AMOUNT = LOGIN_BONUS
 
@@ -10,9 +13,9 @@ const jstDate = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/T
 
 export async function POST() {
   const supabase = createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const userId = session.user.id
+  const authUser = await getAuthUser()
+  if (!authUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const userId = authUser.id
 
   const admin = createAdminClient()
   const { data: profile } = await admin

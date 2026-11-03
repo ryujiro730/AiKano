@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { createClient as createAdminClient } from '@/lib/supabase/service'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { PLANS, type PlanId } from '@/lib/plans'
 import { POINTS_PER_MESSAGE } from '@/lib/pricing'
@@ -8,6 +8,8 @@ import { logUserAction } from '@/lib/user-action-log'
 import { spendPoints, refundPoints, usablePoints } from '@/lib/points'
 import { getMessages } from '@/i18n/server'
 import { fmt } from '@/i18n/fmt'
+
+export const fetchCache = 'force-no-store'
 
 // ユーザーメッセージ送信：ポイント消費 → メッセージ保存をサーバー側で一括実行。
 // AI返信は ai-reply 側でポイント残高に関係なく返す。

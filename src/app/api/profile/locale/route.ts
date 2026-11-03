@@ -4,6 +4,8 @@ import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { createAdminClient } from '@/lib/supabase/server'
 import { isLocale, LOCALE_COOKIE } from '@/i18n/config'
 
+export const fetchCache = 'force-no-store'
+
 // 表示言語の変更。Cookie と profiles.locale（自動同報・メール用）の両方を更新する
 export async function POST(req: NextRequest) {
   const { locale } = await req.json().catch(() => ({}))

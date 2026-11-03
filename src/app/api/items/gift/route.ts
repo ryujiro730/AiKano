@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { createClient as createAdminClient } from '@/lib/supabase/service'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { logUserAction } from '@/lib/user-action-log'
 import { getActivePlan } from '@/lib/plans'
@@ -9,6 +9,8 @@ import { fmt } from '@/i18n/fmt'
 import { localizedText } from '@/lib/content-i18n'
 import { spendPoints, refundPoints, type Spend } from '@/lib/points'
 import { getOrCreateConversation } from '@/lib/conversations'
+
+export const fetchCache = 'force-no-store'
 
 // POST /api/items/gift - 持ち物のアイテムをキャラに贈る（1個消費・会話に記録・好感度アップ）
 // buy: true なら、持っていないときはその場でポイントで買って贈る（キャラのおねだりから1タップで贈る用）

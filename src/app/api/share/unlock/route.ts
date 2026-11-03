@@ -1,9 +1,11 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServerClient } from '@/lib/supabase/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/service'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { getMessages } from '@/i18n/server'
+
+export const fetchCache = 'force-no-store'
 
 const SHARE_COOLDOWN_DAYS = 7
 const BASE_CHARACTER_LIMIT = 3

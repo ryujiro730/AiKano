@@ -7,7 +7,7 @@ export const fetchCache = 'force-no-store'
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { createClient as createAdminClient } from '@/lib/supabase/service'
 import { resolveVariables } from '@/lib/message-variables'
 
 function adminSupabase() {
@@ -18,8 +18,9 @@ function adminSupabase() {
 }
 
 export async function GET(req: NextRequest) {
-  const secret = req.nextUrl.searchParams.get('secret')
-  if (secret !== process.env.CRON_SECRET) {
+  // 他の cron と同じ Bearer 認証
+  const token = req.headers.get('authorization')?.replace('Bearer ', '')
+  if (!process.env.CRON_SECRET || token !== process.env.CRON_SECRET) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -38,15 +39,16 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ processed: 0 })
   }
 
-  // 楽観的ロック: pending → processing に更新できたものだけ処理（競合状態防止）
+  // 楽観的ロック: pending → processing に更新できたものだけ処理（競合状態防止。0件更新はエラーにならないので行数で見る）
   const schedules: typeof candidates = []
   for (const candidate of candidates) {
-    const { error: lockErr } = await admin
+    const { data: locked } = await admin
       .from('bulk_send_schedules')
       .update({ status: 'processing' })
       .eq('id', candidate.id)
       .eq('status', 'pending')
-    if (!lockErr) schedules.push(candidate)
+      .select('id')
+    if (locked?.length) schedules.push(candidate)
   }
 
   if (!schedules.length) {

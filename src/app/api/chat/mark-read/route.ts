@@ -1,12 +1,13 @@
 export const dynamic = 'force-dynamic'
+import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient as createServerClient } from '@/lib/supabase/server'
-import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { createClient as createAdminClient } from '@/lib/supabase/service'
+
+export const fetchCache = 'force-no-store'
 
 export async function POST(req: NextRequest) {
-  const authClient = createServerClient()
-  const { data: { session } } = await authClient.auth.getSession()
-  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const authUser = await getAuthUser()
+  if (!authUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { conversationId } = await req.json()
   if (!conversationId) return NextResponse.json({ error: 'conversationId required' }, { status: 400 })
@@ -18,7 +19,7 @@ export async function POST(req: NextRequest) {
 
   // 所有権を先に確認してからメッセージ更新
   const { data: conv } = await admin
-    .from('conversations').select('id').eq('id', conversationId).eq('user_id', session.user.id).single()
+    .from('conversations').select('id').eq('id', conversationId).eq('user_id', authUser.id).single()
   if (!conv) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   await admin.from('messages').update({ is_read: true })

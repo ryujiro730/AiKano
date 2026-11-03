@@ -44,10 +44,13 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
+  // 取り直しは5分ごと。タブが裏にあるあいだは取らず、表に戻ったときに取る（開きっぱなしの人の分だけリクエストが増えるため）
   useEffect(() => {
     fetchCampaign()
-    const interval = setInterval(fetchCampaign, 60_000)
-    return () => clearInterval(interval)
+    const interval = setInterval(() => { if (document.visibilityState === 'visible') fetchCampaign() }, 5 * 60_000)
+    const onVisible = () => { if (document.visibilityState === 'visible') fetchCampaign() }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => { clearInterval(interval); document.removeEventListener('visibilitychange', onVisible) }
   }, [fetchCampaign])
 
   return (

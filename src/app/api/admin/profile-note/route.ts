@@ -1,8 +1,10 @@
 export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
-import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import { createClient as createSupabaseClient } from '@/lib/supabase/service'
 import { createClient } from '@/lib/supabase/server'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
+
+export const fetchCache = 'force-no-store'
 
 function getSupabaseAdmin() {
   return createSupabaseClient(

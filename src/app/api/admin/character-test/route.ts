@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
 import { generateReply, type LLMMessage } from '@/lib/llm-service'
 
+export const fetchCache = 'force-no-store'
+
 // 管理画面: 編集中のキャラ設定でAIの返事を試す（保存もユーザーへの送信もしない）
 export async function POST(req: Request) {
   const auth = await requireAdmin()

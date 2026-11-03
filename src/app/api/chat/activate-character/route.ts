@@ -1,14 +1,15 @@
 export const dynamic = 'force-dynamic'
+import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient as createServerClient } from '@/lib/supabase/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/service'
+
+export const fetchCache = 'force-no-store'
 
 
 export async function POST(req: NextRequest) {
-  const authClient = createServerClient()
-  const { data: { session } } = await authClient.auth.getSession()
-  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const userId = session.user.id
+  const authUser = await getAuthUser()
+  if (!authUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const userId = authUser.id
 
   const { characterId } = await req.json()
   if (!characterId) return NextResponse.json({ error: 'characterId required' }, { status: 400 })

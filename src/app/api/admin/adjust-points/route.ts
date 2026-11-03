@@ -1,55 +1,28 @@
 export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
-import { createClient as createSupabaseClient } from '@supabase/supabase-js'
-import { createClient } from '@/lib/supabase/server'
-import { getAuthUser } from '@/lib/supabase/get-auth-user'
+import { requireAdmin } from '@/lib/admin-auth'
 import { logUserAction } from '@/lib/user-action-log'
 
-function getAdmin() {
-  return createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
-}
+export const fetchCache = 'force-no-store'
 
 export async function POST(request: Request) {
-  const supabase = createClient()
-  const user = await getAuthUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { data: callerProfile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-  if (!callerProfile || callerProfile.role !== 'admin') {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+  const auth = await requireAdmin()
+  if ('res' in auth) return auth.res
+  const admin = auth.db
 
   const { userId, amount, description } = await request.json()
   if (!userId || typeof amount !== 'number' || amount === 0) {
     return NextResponse.json({ error: 'Invalid params' }, { status: 400 })
   }
 
-  const admin = getAdmin()
-
-  // 現在のポイント取得
-  const { data: profile, error: fetchErr } = await admin
-    .from('profiles').select('points').eq('id', userId).single()
-  if (fetchErr || !profile) return NextResponse.json({ error: 'User not found' }, { status: 404 })
-
-  const newPoints = Math.max(0, profile.points + amount)
-
-  // ポイント更新 + トランザクション記録を並列（amountは符号付きで保存）
-  const [{ error: updateErr }, { error: txErr }] = await Promise.all([
-    admin.from('profiles').update({ points: newPoints }).eq('id', userId),
-    admin.from('point_transactions').insert({
-      user_id: userId,
-      amount,  // 正: 付与、負: 減算
-      type: 'admin_adjust',
-      description: description || (amount > 0 ? '管理者による付与' : '管理者による減算'),
-      price_yen: null,
-    }),
-  ])
-
-  if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 })
-  if (txErr) return NextResponse.json({ error: txErr.message }, { status: 500 })
+  // 残高の更新と取引の記録を DB で1回に（読んでから書くと、同時のポイント消費を上書きしてしまう）
+  const { data: newPoints, error } = await admin.rpc('admin_adjust_points', {
+    p_user_id: userId,
+    p_amount: amount,
+    p_description: description || (amount > 0 ? '管理者による付与' : '管理者による減算'),
+  })
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (newPoints == null) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
   await logUserAction(admin, userId, 'admin_points_adjust', { amount, reason: description || undefined })
 

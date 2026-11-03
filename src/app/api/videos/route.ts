@@ -1,7 +1,9 @@
 export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
-import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { createClient as createAdminClient } from '@/lib/supabase/service'
 import { NextResponse } from 'next/server'
+
+export const fetchCache = 'force-no-store'
 
 // GET /api/videos - アクティブな動画一覧 + 購入済みID一覧
 export async function GET() {

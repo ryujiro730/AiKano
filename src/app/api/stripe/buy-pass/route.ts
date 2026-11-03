@@ -6,6 +6,8 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { PLANS, type PlanId } from '@/lib/plans'
 import { getOrCreateCustomer } from '@/lib/stripe-customer'
 
+export const fetchCache = 'force-no-store'
+
 export async function POST(req: NextRequest) {
   try {
     const user = await getAuthUser()

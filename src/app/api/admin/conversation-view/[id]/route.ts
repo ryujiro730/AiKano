@@ -2,6 +2,8 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/admin-auth'
 
+export const fetchCache = 'force-no-store'
+
 // 管理画面: 会話の閲覧（読み取り専用）。メッセージは新しい順に最大300件、?before=ISO で過去を取得
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   const auth = await requireAdmin()

@@ -111,6 +111,9 @@ jobs:
       - name: Setup crontab on VPS
         run: |
           ssh ${{ secrets.VULTR_USER }}@${{ secrets.VULTR_HOST }} \
-            "(crontab -l 2>/dev/null | grep -v 'auto-broadcast' | grep -v 'cron/follow-up'; \
-              echo '* * * * * curl -s http://localhost:3001/api/cron/auto-broadcast -H \"Authorization: Bearer ${{ secrets.CRON_SECRET }}\" >> /var/log/humanchat-cron.log 2>&1'; \
-              echo '*/5 * * * * curl -s -m 290 http://localhost:3001/api/cron/follow-up -H \"Authorization: Bearer ${{ secrets.CRON_SECRET }}\" >> /var/log/humanchat-cron.log 2>&1') | crontab -"
+            "(crontab -l 2>/dev/null | grep -v 'humanchat-cron.log'; \
+              echo '* * * * * curl -s --max-time 55 http://localhost:3001/api/cron/auto-broadcast -H \"Authorization: Bearer ${{ secrets.CRON_SECRET }}\" >> /var/log/humanchat-cron.log 2>&1'; \
+              echo '* * * * * curl -s --max-time 55 http://localhost:3001/api/cron/broadcast -H \"Authorization: Bearer ${{ secrets.CRON_SECRET }}\" >> /var/log/humanchat-cron.log 2>&1'; \
+              echo '* * * * * curl -s --max-time 55 http://localhost:3001/api/cron/bulk-send -H \"Authorization: Bearer ${{ secrets.CRON_SECRET }}\" >> /var/log/humanchat-cron.log 2>&1'; \
+              echo '*/5 * * * * curl -s --max-time 290 http://localhost:3001/api/cron/campaigns -H \"Authorization: Bearer ${{ secrets.CRON_SECRET }}\" >> /var/log/humanchat-cron.log 2>&1'; \
+              echo '*/5 * * * * curl -s --max-time 290 http://localhost:3001/api/cron/follow-up -H \"Authorization: Bearer ${{ secrets.CRON_SECRET }}\" >> /var/log/humanchat-cron.log 2>&1') | crontab -"
