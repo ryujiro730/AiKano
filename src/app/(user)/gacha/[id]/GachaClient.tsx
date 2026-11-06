@@ -7,6 +7,7 @@ import { ChevronLeft, Loader2, Lock, Sparkles } from 'lucide-react'
 import Lightbox from '@/components/Lightbox'
 import { PointsShortageDialog } from '@/components/PointsShortageDialog'
 import { LevelLockedCover, UnownedPhotoCover } from '@/components/PaidMedia'
+import { previewSrc } from '@/lib/preview-src'
 import { GachaStage, type GachaStageHandle } from '@/components/gacha/GachaStage'
 import { GACHA_SINGLE_POINTS, GACHA_TEN_POINTS } from '@/lib/pricing'
 import { useI18n } from '@/i18n/client'
@@ -175,9 +176,9 @@ export function GachaClient({ character, photos: initialPhotos }: {
                     <Lock size={14} />
                   </Link>
                 ) : p.levelLocked ? (
-                  <LevelLockedCover previewSrc={`/api/media/preview?p=${p.id}`} level={p.required_level ?? 0} />
+                  <LevelLockedCover previewSrc={previewSrc('p', p.id, p.preview)} level={p.required_level ?? 0} />
                 ) : p.paywalled ? (
-                  <UnownedPhotoCover previewSrc={`/api/media/preview?p=${p.id}`} />
+                  <UnownedPhotoCover previewSrc={previewSrc('p', p.id, p.preview)} />
                 ) : (
                   <button className="absolute inset-0" onClick={() => openPhoto(p.url)}>
                     <Image src={p.url} alt="" fill className="object-cover" sizes="25vw" />

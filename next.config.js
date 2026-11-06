@@ -14,6 +14,8 @@ const nextConfig = {
       { protocol: 'https', hostname: 'api.dicebear.com' },
     ],
     dangerouslyAllowSVG: true,
+    // 縮小した画像をブラウザに7日持たせる（既定の60秒だと1分ごとに取り直していた）。管理画面のアップロードは毎回別のファイル名。item-photos のように同じパスへ上書きしたときは最大7日古いものが出る
+    minimumCacheTTL: 604800,
   },
   trailingSlash: false,
   async redirects() {

@@ -33,11 +33,11 @@ export async function getCharacterPhotosForUser(
     if (p.members_only && !canSeeAll) return { ...p, url: '', locked: true, paywalled: true }
     if (p.required_level) {
       return level >= p.required_level
-        ? { ...p, locked: false, paywalled: false, levelLocked: false }
+        ? { ...p, locked: false, paywalled: false, levelLocked: false, preview: null }
         : { ...p, url: '', locked: false, paywalled: false, levelLocked: true }
     }
     if (!unlocked.has(p.url)) return { ...p, url: '', locked: false, paywalled: true }
-    return { ...p, locked: false, paywalled: false }
+    return { ...p, locked: false, paywalled: false, preview: null }
   })
 }
 

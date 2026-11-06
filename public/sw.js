@@ -1,4 +1,15 @@
 const CACHE_NAME = 'lovechat-v1'
+const IMAGE_CACHE = 'aikano-images-v1'
+const IMAGE_CACHE_MAX = 400
+
+// 画像キャッシュが増えすぎないよう、古いものから消す
+let trimming = false
+function trimImageCache(cache) {
+  if (trimming) return
+  trimming = true
+  cache.keys().then((keys) => Promise.all(keys.slice(0, Math.max(0, keys.length - IMAGE_CACHE_MAX)).map((k) => cache.delete(k))))
+    .finally(() => { trimming = false })
+}
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
@@ -18,7 +29,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((cacheNames) =>
       Promise.all(
         cacheNames
-          .filter((name) => name !== CACHE_NAME)
+          .filter((name) => name !== CACHE_NAME && name !== IMAGE_CACHE)
           .map((name) => caches.delete(name))
       )
     )
@@ -44,6 +55,26 @@ self.addEventListener('fetch', (event) => {
   // Next.js APIルートはキャッシュしない
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(fetch(request))
+    return
+  }
+
+  // 縮小済みの画像（/_next/image）はキャッシュ優先。URL に元画像・幅・画質が入っていて中身が変わらないので、
+  // 一度読んだら取り直さない（ネットワーク優先だと開くたびにサーバーまで行っていた）
+  if (url.pathname === '/_next/image') {
+    event.respondWith(
+      caches.open(IMAGE_CACHE).then((cache) =>
+        cache.match(request).then((hit) => {
+          if (hit) return hit
+          return fetch(request).then((response) => {
+            if (response.ok) {
+              cache.put(request, response.clone())
+              trimImageCache(cache)
+            }
+            return response
+          })
+        })
+      )
+    )
     return
   }
 

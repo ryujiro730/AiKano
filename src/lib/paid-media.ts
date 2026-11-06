@@ -12,7 +12,7 @@ export type MediaKind = 'image' | 'video'
 
 export const MEDIA_PRICE: Record<MediaKind, number> = { image: IMAGE_UNLOCK_POINTS, video: VIDEO_UNLOCK_POINTS }
 
-export type MessageMediaView = { kind: MediaKind; price: number; unlocked: boolean; url: string | null }
+export type MessageMediaView = { kind: MediaKind; price: number; unlocked: boolean; url: string | null; preview?: string | null }
 
 /** キャラ発言にメディアを付ける。URL は message_media に入れ、messages.metadata には目印だけ置く */
 export async function attachMessageMedia(
@@ -49,15 +49,15 @@ export async function getUnlockedUrls(db: SupabaseClient, userId: string, urls: 
 export async function getConversationMedia(db: SupabaseClient, userId: string, conversationId: string) {
   const { data } = await db
     .from('message_media')
-    .select('message_id, url, kind, price, messages!inner(conversation_id)')
+    .select('message_id, url, kind, price, preview, messages!inner(conversation_id)')
     .eq('messages.conversation_id', conversationId)
     .limit(1000)
-  const rows = (data ?? []) as unknown as { message_id: string; url: string; kind: MediaKind; price: number }[]
+  const rows = (data ?? []) as unknown as { message_id: string; url: string; kind: MediaKind; price: number; preview: string | null }[]
   const unlocked = await getUnlockedUrls(db, userId, rows.filter(r => r.price > 0).map(r => r.url))
   const out: Record<string, MessageMediaView> = {}
   for (const r of rows) {
     const open = r.price === 0 || unlocked.has(r.url)
-    out[r.message_id] = { kind: r.kind, price: r.price, unlocked: open, url: open ? r.url : null }
+    out[r.message_id] = { kind: r.kind, price: r.price, unlocked: open, url: open ? r.url : null, preview: open ? null : r.preview }
   }
   return out
 }

@@ -103,6 +103,7 @@ jobs:
              docker rm lovechat-app-1 || true && \
              docker run -d --name lovechat-app-1 -p 127.0.0.1:3001:3000 \
                --env-file /opt/lovechat/.env \
+               -v aikano-next-cache:/app/.next/cache \
                -e NODE_ENV=production \
                --restart unless-stopped \
                ghcr.io/ryujiro730/aikano:latest && \

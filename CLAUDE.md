@@ -118,6 +118,11 @@ Supabase RPC → 集計・計算・複雑なフィルタ（SQL/PostgreSQL）
 - アクションログ: 課金・送信などの確定イベントはサーバーで `logUserAction()`（`lib/user-action-log.ts`）、画面閲覧はクライアントで `logAction()`。表示は `components/admin/ActionLogTimeline.tsx`（残高の増減付き）
 - キャラ管理の「テスト会話」で、保存前の設定と好感度レベルを指定してAIの返事を試せる（`/api/admin/character-test`）
 
+## 画像の読み込み
+
+- 未解錠メディアのモザイクは行の `preview` 列（data URI、090）を写真一覧にそのまま埋め込む（`lib/preview-src.ts` の `previewSrc()`）。空なら `/api/media/preview` が初回に作って保存（`lib/media-preview.ts`）。毎回 Supabase の画像変換を呼ぶと1枚約1秒かかる
+- `/_next/image` は sharp で縮小、`minimumCacheTTL` 7日、キャッシュは Docker ボリューム `aikano-next-cache` に置いてデプロイで消さない。Service Worker は `/_next/image` をキャッシュ優先（最大400件）
+
 ## 未読数・バッジ
 
 - 未読数の定義は DB 関数 `get_conversation_unread` / `get_badge_counts`（063）に一本化。メッセージ一覧・フッター・ホームが同じ条件（直近15日・ブロック除外）を使う
@@ -298,7 +303,7 @@ src/
     UtmCapture.tsx          # UTMパラメータ捕捉
     PointsShortageDialog.tsx # ポイント不足ダイアログ
 .github/workflows/deploy.yml  # デプロイ＆cron設定
-supabase/migrations/          # マイグレーション（072・081〜088 は適用済み。089 はデプロイ後に適用）
+supabase/migrations/          # マイグレーション（072・081〜090 は適用済み）
 ```
 
 ---

@@ -33,8 +33,8 @@ export default async function AlbumPage() {
       name: c.name,
       avatarUrl: c.avatar_url,
       owned: collectible.filter(p => !p.paywalled && !p.levelLocked).map(p => ({ id: p.id, url: p.url })),
-      unowned: collectible.filter(p => p.paywalled).map(p => p.id),
-      levelLocked: collectible.filter(p => p.levelLocked).map(p => ({ id: p.id, level: p.required_level ?? 0 })),
+      unowned: collectible.filter(p => p.paywalled).map(p => ({ id: p.id, preview: p.preview ?? null })),
+      levelLocked: collectible.filter(p => p.levelLocked).map(p => ({ id: p.id, level: p.required_level ?? 0, preview: p.preview ?? null })),
       membersOnly: photos.filter(p => p.locked).length,
     }
   }))

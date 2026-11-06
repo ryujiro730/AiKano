@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { Lock, Sparkles, Crown } from 'lucide-react'
 import Lightbox from '@/components/Lightbox'
 import { LevelLockedCover, UnownedPhotoCover } from '@/components/PaidMedia'
+import { previewSrc } from '@/lib/preview-src'
 import { GachaTabs } from '@/components/gacha/GachaTabs'
 import { useI18n } from '@/i18n/client'
 import { fmt } from '@/i18n/fmt'
@@ -17,9 +18,9 @@ export type AlbumCharacter = {
   /** 持っている写真 */
   owned: { id: string; url: string }[]
   /** まだ持っていない写真（ガチャで手に入る） */
-  unowned: string[]
+  unowned: { id: string; preview: string | null }[]
   /** 好感度レベルが足りない写真 */
-  levelLocked: { id: string; level: number }[]
+  levelLocked: { id: string; level: number; preview: string | null }[]
   /** 会員限定（非会員には中身を出さない） */
   membersOnly: number
 }
@@ -98,14 +99,14 @@ export function AlbumClient({ characters }: { characters: AlbumCharacter[] }) {
                     <Image src={p.url} alt="" fill className="object-cover" sizes="33vw" />
                   </button>
                 ))}
-                {c.unowned.map(id => (
-                  <Link key={id} href={`/gacha/${c.id}`} prefetch={false} className="relative overflow-hidden rounded-[10px]" style={{ aspectRatio: '1' }}>
-                    <UnownedPhotoCover previewSrc={`/api/media/preview?p=${id}`} />
+                {c.unowned.map(p => (
+                  <Link key={p.id} href={`/gacha/${c.id}`} prefetch={false} className="relative overflow-hidden rounded-[10px]" style={{ aspectRatio: '1' }}>
+                    <UnownedPhotoCover previewSrc={previewSrc('p', p.id, p.preview)} />
                   </Link>
                 ))}
                 {c.levelLocked.map(p => (
                   <div key={p.id} className="relative overflow-hidden rounded-[10px]" style={{ aspectRatio: '1' }}>
-                    <LevelLockedCover previewSrc={`/api/media/preview?p=${p.id}`} level={p.level} />
+                    <LevelLockedCover previewSrc={previewSrc('p', p.id, p.preview)} level={p.level} />
                   </div>
                 ))}
                 {Array.from({ length: c.membersOnly }).map((_, i) => (

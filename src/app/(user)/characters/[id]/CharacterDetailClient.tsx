@@ -11,6 +11,7 @@ import { AffectionMeter } from '@/components/AffectionMeter'
 import { AffectionIcon } from '@/components/AffectionIcon'
 import { LockedPhotoTile } from '@/components/LockedPhotoTile'
 import { LevelLockedCover, UnownedPhotoCover, GachaButton } from '@/components/PaidMedia'
+import { previewSrc } from '@/lib/preview-src'
 import type { Character, CharacterPhoto } from '@/types'
 import { useI18n } from '@/i18n/client'
 import { fmt } from '@/i18n/fmt'
@@ -182,13 +183,13 @@ export function CharacterDetailClient({ character, photos: initialPhotos, userCh
             {paywalledPhotos.map(photo => (
               <div key={photo.id} className="relative overflow-hidden rounded-xl" style={{ aspectRatio: '1' }}>
                 <Link href={`/gacha/${character.id}`} prefetch={false} className="absolute inset-0">
-                  <UnownedPhotoCover previewSrc={`/api/media/preview?p=${photo.id}`} />
+                  <UnownedPhotoCover previewSrc={previewSrc('p', photo.id, photo.preview)} />
                 </Link>
               </div>
             ))}
             {levelLockedPhotos.map(photo => (
               <div key={photo.id} className="relative overflow-hidden rounded-xl" style={{ aspectRatio: '1' }}>
-                <LevelLockedCover previewSrc={`/api/media/preview?p=${photo.id}`} level={photo.required_level ?? 0} />
+                <LevelLockedCover previewSrc={previewSrc('p', photo.id, photo.preview)} level={photo.required_level ?? 0} />
               </div>
             ))}
             {lockedPhotos.map(photo => (

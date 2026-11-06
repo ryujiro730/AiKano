@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect } from 'react'
 import Link from 'next/link'
 import { Sparkles, LayoutGrid } from 'lucide-react'
 import { useI18n } from '@/i18n/client'
@@ -7,6 +8,15 @@ import { useI18n } from '@/i18n/client'
 /** ガチャ ⇄ コレクション の切り替えタブ */
 export function GachaTabs({ active }: { active: 'gacha' | 'collection' }) {
   const { m } = useI18n()
+  // キャラを選ぶ前に3D演出（three.js、数百KB）を読み込み始めておく。ガチャ画面を開いたとき黒い枠のまま待たせないように
+  useEffect(() => {
+    if (active !== 'gacha') return
+    const t = setTimeout(() => {
+      import('three').catch(() => {})
+      import('three/examples/jsm/postprocessing/UnrealBloomPass.js').catch(() => {})
+    }, 300)
+    return () => clearTimeout(t)
+  }, [active])
   const tabs = [
     { key: 'gacha', href: '/gacha', label: m.album.tabGacha, icon: Sparkles },
     { key: 'collection', href: '/album', label: m.album.tabCollection, icon: LayoutGrid },

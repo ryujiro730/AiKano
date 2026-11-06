@@ -28,6 +28,7 @@ import { POINTS_PER_MESSAGE } from '@/lib/pricing'
 import { GiftSheet, type GiftResult } from '@/components/GiftSheet'
 import { canUseGacha } from '@/lib/features'
 import { MosaicCover, LevelLockedCover, UnownedPhotoCover, GachaButton, useMediaUnlock } from '@/components/PaidMedia'
+import { previewSrc } from '@/lib/preview-src'
 import type { MessageMediaView } from '@/lib/paid-media'
 
 const MAX_CACHED_MSGS = 60
@@ -812,13 +813,13 @@ export default function ChatPage() {
               {photos.filter(p => !p.locked && p.paywalled).map(photo => (
                 <div key={photo.id} className="relative overflow-hidden rounded-xl" style={{ aspectRatio: '1' }}>
                   <Link href={`/gacha/${character.id}`} prefetch={false} className="absolute inset-0">
-                    <UnownedPhotoCover previewSrc={`/api/media/preview?p=${photo.id}`} />
+                    <UnownedPhotoCover previewSrc={previewSrc('p', photo.id, photo.preview)} />
                   </Link>
                 </div>
               ))}
               {photos.filter(p => !p.locked && p.levelLocked).map(photo => (
                 <div key={photo.id} className="relative overflow-hidden rounded-xl" style={{ aspectRatio: '1' }}>
-                  <LevelLockedCover previewSrc={`/api/media/preview?p=${photo.id}`} level={photo.required_level ?? 0} />
+                  <LevelLockedCover previewSrc={previewSrc('p', photo.id, photo.preview)} level={photo.required_level ?? 0} />
                 </div>
               ))}
               {photos.filter(p => p.locked).map(photo => (
@@ -984,7 +985,7 @@ function MessageBubble({ message, characterName, characterAvatar, onImageClick, 
               <div className="relative w-[240px]" style={{ aspectRatio: '4/3', background: 'var(--color-surface-2)' }}>
                 {media && (
                   <MosaicCover
-                    previewSrc={paidKind === 'image' ? `/api/media/preview?m=${message.id}&w=6&h=5` : null}
+                    previewSrc={paidKind === 'image' ? previewSrc('m', message.id, media.preview) : null}
                     kind={paidKind}
                     price={media.price}
                     onUnlock={() => onUnlock?.(message.id) ?? Promise.resolve()}
