@@ -28,10 +28,12 @@ export function GiftSheet({ characterId, characterName, onClose, onGifted }: {
   const [selected, setSelected] = useState<string | null>(null)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
+  const [teaser, setTeaser] = useState<{ total: number; photos: { itemName: string; itemIcon: string | null; preview: string }[] } | null>(null)
 
   useEffect(() => {
     fetch('/api/items').then(r => r.json()).then(d => setOwned(d.inventory ?? [])).catch(() => setOwned([]))
-  }, [])
+    fetch(`/api/items/teaser?characterId=${encodeURIComponent(characterId)}`).then(r => r.ok ? r.json() : null).then(setTeaser).catch(() => {})
+  }, [characterId])
 
   const send = async () => {
     const target = owned?.find(o => o.item_id === selected)
@@ -64,11 +66,32 @@ export function GiftSheet({ characterId, characterName, onClose, onGifted }: {
         </div>
 
         <div className="px-4 pb-5">
-          {/* 贈るとそのアイテムを持った写真が届く（character_item_photos。全キャラ×全アイテム分ある） */}
-          <p className="flex items-center gap-1.5 text-xs font-semibold mb-3 px-3 py-2 rounded-[var(--radius-card,12px)]"
-            style={{ background: 'var(--color-primary-soft)', color: 'var(--color-primary)' }}>
-            <Camera size={14} className="flex-shrink-0" />{fmt(m.gift.photoHint, { name: characterName })}
-          </p>
+          {/* 贈るとそのアイテムを持った写真が届く（character_item_photos）。実物をぼかして数枚ちら見せする */}
+          <div className="mb-4 p-3 rounded-[var(--radius-card,12px)]"
+            style={{ background: 'linear-gradient(160deg, #fff1f6 0%, #ffe3ee 100%)', border: '1px solid var(--color-primary-border)' }}>
+            <p className="flex items-center gap-1.5 text-sm font-black" style={{ color: 'var(--color-primary)' }}>
+              <Camera size={16} className="flex-shrink-0" />{fmt(m.gift.teaserTitle, { name: characterName })}
+            </p>
+            <p className="text-[11px] mt-0.5 mb-2.5" style={{ color: 'var(--color-text-muted)' }}>
+              {teaser?.total ? fmt(m.gift.teaserSub, { name: characterName, n: teaser.total }) : fmt(m.gift.photoHint, { name: characterName })}
+            </p>
+            {teaser && teaser.photos.length > 0 && (
+              <div className="grid grid-cols-4 gap-1.5">
+                {teaser.photos.map((p, i) => (
+                  <div key={i} className="relative overflow-hidden rounded-[10px]" style={{ aspectRatio: '2 / 3', background: 'var(--color-surface-2)' }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={p.preview} alt="" className="absolute inset-0 w-full h-full object-cover"
+                      style={{ filter: 'blur(5px) saturate(1.1)', transform: 'scale(1.15)' }} />
+                    {p.itemIcon && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={p.itemIcon} alt={p.itemName} className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 object-cover rounded-lg"
+                        style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.35))' }} />
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           {owned === null ? (
             <div className="flex justify-center py-10"><Loader2 className="animate-spin" size={20} style={{ color: 'var(--color-primary)' }} /></div>
           ) : owned.length === 0 ? (

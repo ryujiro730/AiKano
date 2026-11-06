@@ -56,7 +56,7 @@ export const en: Messages = {
       "Takes 30 seconds",
       "No app needed"
     ],
-    "consentA": "Our staff may review conversations to improve the service and train AI. By continuing, you agree to the ",
+    "consentA": "By signing up, you agree to the ",
     "consentTerms": "Terms of Service",
     "consentAnd": " and ",
     "consentPrivacy": "Privacy Policy",
@@ -555,6 +555,8 @@ export const en: Messages = {
     "minutes": "{n} min"
   },
   "gift": {
+    "teaserTitle": "Send a gift and get an exclusive photo from {name}",
+    "teaserSub": "A photo of {name} with the gift you sent ({n} kinds in total)",
     "photoHint": "Give a gift and {name} will send you a photo holding it",
     "sentMessage": "🎁 You gave {item} as a gift",
     "title": "A gift for {name}",
@@ -571,6 +573,7 @@ export const en: Messages = {
     "openChat": "View conversation"
   },
   "hud": {
+    "photoBadge": "Photo",
     "shop": "Shop",
     "gift": "Gift",
     "album": "Collection",
@@ -589,10 +592,11 @@ export const en: Messages = {
     "membersOnlyHint": "Become a member to see this"
   },
   "gacha": {
+    "oddsByChar": "The % on the right is the chance that your next photo is of that character (based on how many photos you don’t have yet).",
     "indexTitle": "Photo gacha",
-    "indexLead": "Pick a character and draw. You only get photos you don't have yet.",
+    "indexLead": "Photos from every character. You only get photos you don’t have yet, and never the same one twice.",
     "completeShort": "Complete",
-    "entry": "Photo gacha {pt}pt ({n} left)",
+    "entry": "Photo gacha {pt}pt",
     "title": "{name}'s photo gacha",
     "lead": "You get photos you don't have yet. The same photo never comes twice.",
     "drawOne": "Draw 1",
@@ -605,9 +609,9 @@ export const en: Messages = {
     "tapToSkip": "Tap to skip",
     "again": "Draw again",
     "newPhoto": "NEW",
-    "lineup": "Lineup",
+    "lineup": "Collection progress and odds by character",
     "shortageTitle": "Not enough points",
-    "empty": "No photos for this character yet",
+    "empty": "No gacha photos yet",
     "membersOnlyNote": "Members-only photos join the gacha when you become a member"
   },
   "album": {

@@ -30,6 +30,19 @@ export async function buildPreview(kind: PreviewKind, url: string): Promise<stri
   return `data:${type};base64,${Buffer.from(await res.arrayBuffer()).toString('base64')}`
 }
 
+/**
+ * プレゼントのお礼写真のちら見せ用（character_item_photos.preview、095）。
+ * モザイクより少し大きい 24×36 にして、画面側でぼかす（何を持っているかの雰囲気だけ伝わる）
+ */
+export async function buildTeaserPreview(url: string): Promise<string | null> {
+  const tiny = tinyImageUrl(url, 24, 36)
+  if (!tiny) return null
+  const res = await fetch(tiny, { cache: 'no-store', headers: { accept: 'image/webp' } }).catch(() => null)
+  if (!res?.ok) return null
+  const type = res.headers.get('content-type') ?? 'image/png'
+  return `data:${type};base64,${Buffer.from(await res.arrayBuffer()).toString('base64')}`
+}
+
 /** 行の preview を読む（無ければ作って保存する）。元 URL は返さない */
 export async function getOrBuildPreview(db: SupabaseClient, kind: PreviewKind, id: string, url: string, saved: string | null) {
   if (saved) return saved

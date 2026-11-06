@@ -10,14 +10,14 @@ import { canUseGacha } from '@/lib/features'
 export const fetchCache = 'force-no-store'
 
 /**
- * POST /api/gacha/draw { characterId, count: 1 | 10 }
- * まだ持っていない写真から count 枚を引く。残りが count 枚未満なら引けない（10連は残り10枚以上のとき）。
+ * POST /api/gacha/draw { count: 1 | 10 }
+ * 全キャラの、まだ持っていない写真から count 枚を引く。残りが count 枚未満なら引けない（10連は残り10枚以上のとき）。
  */
 export async function POST(req: NextRequest) {
   const user = await getAuthUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const { characterId, count } = await req.json().catch(() => ({}))
-  if (typeof characterId !== 'string' || !(count in GACHA_PLANS)) {
+  const { count } = await req.json().catch(() => ({}))
+  if (!(count in GACHA_PLANS)) {
     return NextResponse.json({ error: 'bad request' }, { status: 400 })
   }
   const n = count as GachaCount
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   const { data: me } = await db.from('profiles').select('role').eq('id', user.id).single()
   if (!canUseGacha(me?.role)) return NextResponse.json({ error: 'not_available' }, { status: 403 })
 
-  const { remaining } = await getGachaPool(db, user.id, characterId)
+  const { remaining } = await getGachaPool(db, user.id)
   if (remaining.length < n) return NextResponse.json({ error: 'not_enough_left', remaining: remaining.length }, { status: 409 })
 
   const spend = await spendPoints(db, user.id, price, `写真ガチャ ${n}回`)

@@ -140,12 +140,12 @@ export function UnownedPhotoCover({ previewSrc }: { previewSrc?: string | null }
   )
 }
 
-/** キャラの写真ガチャへのボタン（まだ持っていない写真があるときだけ出す） */
-export function GachaButton({ characterId, remaining }: { characterId: string; remaining: number }) {
+/** 写真ガチャへのボタン（そのキャラにまだ持っていない写真があるときだけ出す。ガチャ自体は全キャラから出る） */
+export function GachaButton({ remaining }: { remaining: number }) {
   const { m } = useI18n()
   if (remaining <= 0) return null
   return (
-    <Link href={`/gacha/${characterId}`} prefetch={false}
+    <Link href="/gacha" prefetch={false}
       className="w-full mt-2 flex items-center justify-center gap-2 py-2.5 text-xs font-bold text-white"
       style={{ background: 'var(--color-primary)', borderRadius: 'var(--radius-card, 12px)' }}>
       <Sparkles size={14} />

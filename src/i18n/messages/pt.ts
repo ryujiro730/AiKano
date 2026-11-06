@@ -56,7 +56,7 @@ export const pt: Messages = {
       "Leva só 30 segundos",
       "Não precisa baixar o app"
     ],
-    "consentA": "Nossa equipe pode analisar suas conversas para melhorar o serviço e treinar a IA. Além disso, concordo com os ",
+    "consentA": "Ao se cadastrar, você concorda com os ",
     "consentTerms": "Termos de Uso",
     "consentAnd": " e a ",
     "consentPrivacy": "Política de Privacidade",
@@ -555,6 +555,8 @@ export const pt: Messages = {
     "minutes": "{n} min"
   },
   "gift": {
+    "teaserTitle": "Dê um presente e receba uma foto exclusiva de {name}",
+    "teaserSub": "Uma foto de {name} com o presente que você deu ({n} no total)",
     "photoHint": "Dê um presente e {name} vai te mandar uma foto com ele",
     "sentMessage": "🎁 Você deu {item} de presente",
     "title": "Presente para {name}",
@@ -571,6 +573,7 @@ export const pt: Messages = {
     "openChat": "Ver conversa"
   },
   "hud": {
+    "photoBadge": "Foto",
     "shop": "Loja",
     "gift": "Presente",
     "album": "Coleção",
@@ -589,10 +592,11 @@ export const pt: Messages = {
     "membersOnlyHint": "Vire membro para ver"
   },
   "gacha": {
+    "oddsByChar": "O % à direita é a chance de a sua próxima foto ser dessa personagem (com base em quantas fotos você ainda não tem).",
     "indexTitle": "Gacha de fotos",
-    "indexLead": "Escolha uma personagem e gire. Só saem fotos que você ainda não tem.",
+    "indexLead": "Fotos de todas as personagens. Você só recebe fotos que ainda não tem, e nunca a mesma duas vezes.",
     "completeShort": "Completo",
-    "entry": "Gacha de fotos {pt}pt ({n} restantes)",
+    "entry": "Gacha de fotos {pt}pt",
     "title": "Gacha de fotos da {name}",
     "lead": "Você ganha fotos que ainda não tem. A mesma foto nunca se repete.",
     "drawOne": "Girar 1",
@@ -605,9 +609,9 @@ export const pt: Messages = {
     "tapToSkip": "Toque para pular",
     "again": "De novo",
     "newPhoto": "NOVA",
-    "lineup": "Coleção",
+    "lineup": "Progresso e probabilidades por personagem",
     "shortageTitle": "Pontos insuficientes",
-    "empty": "Ainda não há fotos desta personagem",
+    "empty": "Ainda não há fotos no gacha",
     "membersOnlyNote": "As fotos exclusivas entram no gacha quando você vira membro"
   },
   "album": {

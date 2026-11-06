@@ -3,41 +3,38 @@
 import { useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ChevronLeft, Loader2, Lock, Sparkles } from 'lucide-react'
+import { Loader2, Lock, Sparkles } from 'lucide-react'
 import Lightbox from '@/components/Lightbox'
 import { PointsShortageDialog } from '@/components/PointsShortageDialog'
-import { LevelLockedCover, UnownedPhotoCover } from '@/components/PaidMedia'
-import { previewSrc } from '@/lib/preview-src'
 import { GachaStage, type GachaStageHandle } from '@/components/gacha/GachaStage'
+import { GachaTabs } from '@/components/gacha/GachaTabs'
 import { GACHA_SINGLE_POINTS, GACHA_TEN_POINTS } from '@/lib/pricing'
 import { useI18n } from '@/i18n/client'
 import { fmt } from '@/i18n/fmt'
-import type { CharacterPhoto } from '@/types'
 
-type Result = { id: string; url: string }
+/** キャラごとの、ガチャで出る写真の数と持っている数 */
+export type GachaCharacter = { id: string; name: string; avatarUrl: string; total: number; owned: number }
+type Result = { id: string; url: string; character_id: string }
 
 const GOLD_TEXT = 'linear-gradient(180deg, #fff6d6 0%, #f7d27a 45%, #c98a1c 100%)'
 const GOLD_FRAME = 'linear-gradient(135deg, #fff3c4 0%, #e9b949 30%, #fff8dc 50%, #c98a1c 75%, #f6d27f 100%)'
 
-export function GachaClient({ character, photos: initialPhotos }: {
-  character: { id: string; name: string; avatarUrl: string }
-  photos: CharacterPhoto[]
-}) {
+/** 写真ガチャ（全キャラの写真からひとつ。キャラは選べない） */
+export function GachaClient({ characters: initial, showMembersOnlyNote }: { characters: GachaCharacter[]; showMembersOnlyNote: boolean }) {
   const { m } = useI18n()
   const stageRef = useRef<GachaStageHandle>(null)
-  const [photos, setPhotos] = useState(initialPhotos)
+  const [characters, setCharacters] = useState(initial)
   const [busy, setBusy] = useState<null | 1 | 10>(null)
   const [playing, setPlaying] = useState(false)
   const [results, setResults] = useState<Result[] | null>(null)
   const [shortage, setShortage] = useState<{ current: number; required: number } | null>(null)
   const [lightbox, setLightbox] = useState<{ photos: string[]; index: number } | null>(null)
 
-  // ガチャの中身＝会員限定（非会員）・レベル限定を除いたフォト
-  const pool = photos.filter(p => !p.locked && !p.levelLocked && !p.required_level)
-  const owned = pool.filter(p => !p.paywalled)
-  const remaining = pool.length - owned.length
-  const pct = remaining > 0 ? Math.round((100 / remaining) * 10) / 10 : 0
-  const hasMembersOnly = photos.some(p => p.locked)
+  const total = characters.reduce((a, c) => a + c.total, 0)
+  const owned = characters.reduce((a, c) => a + c.owned, 0)
+  const remaining = total - owned
+  const pct = remaining > 0 ? Math.round((100 / remaining) * 100) / 100 : 0
+  const byId = new Map(characters.map(c => [c.id, c]))
 
   const draw = async (count: 1 | 10) => {
     if (busy || playing) return
@@ -45,7 +42,7 @@ export function GachaClient({ character, photos: initialPhotos }: {
     const res = await fetch('/api/gacha/draw', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ characterId: character.id, count }),
+      body: JSON.stringify({ count }),
     }).catch(() => null)
     const data = await res?.json().catch(() => ({})) ?? {}
     setBusy(null)
@@ -65,8 +62,9 @@ export function GachaClient({ character, photos: initialPhotos }: {
     setPlaying(true)
     await stageRef.current?.play({ gold: count === 10 })
     setPlaying(false)
-    const byId = new Map(got.map(g => [g.id, g.url]))
-    setPhotos(prev => prev.map(p => byId.has(p.id) ? { ...p, url: byId.get(p.id)!, paywalled: false } : p))
+    const gotPer = new Map<string, number>()
+    got.forEach(g => gotPer.set(g.character_id, (gotPer.get(g.character_id) ?? 0) + 1))
+    setCharacters(prev => prev.map(c => gotPer.has(c.id) ? { ...c, owned: c.owned + gotPer.get(c.id)! } : c))
     setResults(got)
   }
 
@@ -75,8 +73,10 @@ export function GachaClient({ character, photos: initialPhotos }: {
     stageRef.current?.reset()
   }
 
-  const viewable = [character.avatarUrl, ...photos.filter(p => !p.locked && !p.paywalled && !p.levelLocked).map(p => p.url)]
-  const openPhoto = (url: string) => setLightbox({ photos: viewable, index: Math.max(0, viewable.indexOf(url)) })
+  const openPhoto = (url: string) => {
+    const urls = (results ?? []).map(r => r.url)
+    setLightbox({ photos: urls, index: Math.max(0, urls.indexOf(url)) })
+  }
 
   // 結果画面の紙吹雪（表示のたびに位置を変える）
   const confetti = useMemo(() => Array.from({ length: 46 }, (_, i) => ({
@@ -91,12 +91,8 @@ export function GachaClient({ character, photos: initialPhotos }: {
 
   return (
     <div className="pb-10">
-      <div className="flex items-center gap-2 pt-1 pb-3">
-        <Link href="/gacha" className="p-1.5 -ml-1 text-[var(--color-text-muted)]"><ChevronLeft size={20} /></Link>
-        <span className="relative w-8 h-8 rounded-full overflow-hidden flex-shrink-0" style={{ boxShadow: '0 0 0 2px #f2c14e' }}>
-          <Image src={character.avatarUrl} alt="" fill className="object-cover" sizes="32px" />
-        </span>
-        <h1 className="font-bold text-base truncate">{fmt(m.gacha.title, { name: character.name })}</h1>
+      <div className="pt-2">
+        <GachaTabs active="gacha" />
       </div>
 
       {/* 3D 演出 */}
@@ -112,13 +108,13 @@ export function GachaClient({ character, photos: initialPhotos }: {
             style={{ background: GOLD_TEXT, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}>
             PHOTO GACHA
           </p>
-          {pool.length > 0 && (
+          {total > 0 && (
             <div className="flex items-center gap-2 mt-2">
               <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.14)' }}>
                 <div className="h-full rounded-full transition-all duration-700"
-                  style={{ width: `${(owned.length / pool.length) * 100}%`, background: 'linear-gradient(90deg, #ff8fb3, #f7d27a)', boxShadow: '0 0 8px rgba(247,210,122,0.8)' }} />
+                  style={{ width: `${(owned / total) * 100}%`, background: 'linear-gradient(90deg, #ff8fb3, #f7d27a)', boxShadow: '0 0 8px rgba(247,210,122,0.8)' }} />
               </div>
-              <span className="text-[11px] font-bold text-white/90 tabular-nums">{fmt(m.gacha.progress, { owned: owned.length, total: pool.length })}</span>
+              <span className="text-[11px] font-bold text-white/90 tabular-nums">{fmt(m.gacha.progress, { owned, total })}</span>
             </div>
           )}
         </div>
@@ -127,10 +123,10 @@ export function GachaClient({ character, photos: initialPhotos }: {
         )}
       </div>
 
-      <p className="text-xs mb-3" style={{ color: 'var(--color-text-muted)' }}>{m.gacha.lead}</p>
+      <p className="text-xs mb-3" style={{ color: 'var(--color-text-muted)' }}>{m.gacha.indexLead}</p>
 
       {/* ボタン */}
-      {pool.length === 0 ? (
+      {total === 0 ? (
         <p className="text-sm text-center py-6" style={{ color: 'var(--color-text-muted)' }}>{m.gacha.empty}</p>
       ) : remaining === 0 ? (
         <div className="text-center py-4 px-4 mb-2 font-black text-sm"
@@ -163,32 +159,39 @@ export function GachaClient({ character, photos: initialPhotos }: {
         <p className="text-[11px] mb-5" style={{ color: 'var(--color-text-muted)' }}>{fmt(m.gacha.odds, { n: remaining, pct })}</p>
       )}
 
-      {/* ラインナップ */}
-      {photos.length > 0 && (
+      {/* キャラごとの集め具合と提供割合（出る確率は持っていない写真すべてで均等。キャラごとの割合＝そのキャラの残り枚数÷全体の残り枚数） */}
+      {characters.length > 0 && (
         <>
           <p className="text-[11px] font-bold mb-2 mt-4" style={{ color: 'var(--color-text-muted)', letterSpacing: '0.04em' }}>{m.gacha.lineup}</p>
-          <div className="grid grid-cols-4 gap-1.5">
-            {photos.map(p => (
-              <div key={p.id} className="relative overflow-hidden rounded-[10px]" style={{ aspectRatio: '1' }}>
-                {p.locked ? (
-                  <Link href="/payment" className="absolute inset-0 flex items-center justify-center text-white"
-                    style={{ background: 'linear-gradient(160deg, #3a2a33 0%, #17131a 100%)' }}>
-                    <Lock size={14} />
-                  </Link>
-                ) : p.levelLocked ? (
-                  <LevelLockedCover previewSrc={previewSrc('p', p.id, p.preview)} level={p.required_level ?? 0} />
-                ) : p.paywalled ? (
-                  <UnownedPhotoCover previewSrc={previewSrc('p', p.id, p.preview)} />
-                ) : (
-                  <button className="absolute inset-0" onClick={() => openPhoto(p.url)}>
-                    <Image src={p.url} alt="" fill className="object-cover" sizes="25vw" />
-                  </button>
-                )}
-              </div>
-            ))}
+          <div className="flex flex-col gap-2">
+            {characters.map(c => {
+              const left = c.total - c.owned
+              return (
+                <div key={c.id} className="flex items-center gap-3 px-3 py-2.5"
+                  style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-card)' }}>
+                  <span className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                    <Image src={c.avatarUrl} alt="" fill className="object-cover" sizes="40px" />
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-sm truncate">{c.name}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--color-surface-2)' }}>
+                        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${(c.owned / c.total) * 100}%`, background: 'linear-gradient(90deg, #ff8fb3, #f2c14e)' }} />
+                      </div>
+                      <span className="text-[11px] tabular-nums" style={{ color: 'var(--color-text-muted)' }}>{fmt(m.gacha.progress, { owned: c.owned, total: c.total })}</span>
+                    </div>
+                  </div>
+                  <span className="text-[11px] tabular-nums flex-shrink-0 text-right" style={{ color: 'var(--color-text-muted)', minWidth: 44 }}>
+                    {left > 0 ? `${Math.round((left / remaining) * 1000) / 10}%` : m.gacha.completeShort}
+                  </span>
+                </div>
+              )
+            })}
           </div>
-          {hasMembersOnly && (
-            <p className="text-[11px] mt-2" style={{ color: 'var(--color-text-muted)' }}>{m.gacha.membersOnlyNote}</p>
+          <p className="text-[11px] mt-2" style={{ color: 'var(--color-text-muted)' }}>{m.gacha.oddsByChar}</p>
+          <Link href="/album" prefetch={false} className="block text-center text-xs font-bold mt-3" style={{ color: 'var(--color-primary)' }}>{m.album.title} →</Link>
+          {showMembersOnlyNote && (
+            <p className="text-[11px] mt-2 flex items-center gap-1" style={{ color: 'var(--color-text-muted)' }}><Lock size={11} />{m.gacha.membersOnlyNote}</p>
           )}
         </>
       )}
@@ -220,6 +223,11 @@ export function GachaClient({ character, photos: initialPhotos }: {
                   <span className="gacha-shine absolute inset-0" style={{ animationDelay: `${0.8 + i * 0.09}s` }} />
                   <span className="absolute top-1.5 left-1.5 text-[10px] font-black px-1.5 py-px rounded-md"
                     style={{ background: GOLD_FRAME, color: '#4a2a05' }}>{m.gacha.newPhoto}</span>
+                  {/* どのキャラの写真か */}
+                  {byId.get(r.character_id) && (
+                    <span className="absolute bottom-1.5 inset-x-1.5 text-[10px] font-bold text-white text-center truncate px-1 py-0.5 rounded-md"
+                      style={{ background: 'rgba(0,0,0,0.55)' }}>{byId.get(r.character_id)!.name}</span>
+                  )}
                 </span>
               </button>
             ))}

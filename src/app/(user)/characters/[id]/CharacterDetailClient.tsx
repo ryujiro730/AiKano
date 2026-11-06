@@ -182,7 +182,7 @@ export function CharacterDetailClient({ character, photos: initialPhotos, userCh
             ))}
             {paywalledPhotos.map(photo => (
               <div key={photo.id} className="relative overflow-hidden rounded-xl" style={{ aspectRatio: '1' }}>
-                <Link href={`/gacha/${character.id}`} prefetch={false} className="absolute inset-0">
+                <Link href="/gacha" prefetch={false} className="absolute inset-0">
                   <UnownedPhotoCover previewSrc={previewSrc('p', photo.id, photo.preview)} />
                 </Link>
               </div>
@@ -196,7 +196,7 @@ export function CharacterDetailClient({ character, photos: initialPhotos, userCh
               <LockedPhotoTile key={photo.id} className="rounded-xl" />
             ))}
           </div>
-          <GachaButton characterId={character.id} remaining={paywalledPhotos.length} />
+          <GachaButton remaining={paywalledPhotos.length} />
         </div>
       )}
 

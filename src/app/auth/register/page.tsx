@@ -16,7 +16,6 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [done, setDone] = useState(false)
-  const [consentChecked, setConsentChecked] = useState(false)
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -159,25 +158,7 @@ export default function RegisterPage() {
 
         {error && <p className="text-red-400 text-xs">{error}</p>}
 
-        {/* 同意チェックボックス */}
-        <label className="flex items-start gap-3 cursor-pointer select-none rounded-[10px] p-3"
-          style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
-          <input
-            type="checkbox"
-            checked={consentChecked}
-            onChange={e => setConsentChecked(e.target.checked)}
-            className="mt-0.5 flex-shrink-0 accent-[var(--color-primary)]"
-            style={{ width: '16px', height: '16px' }}
-          />
-          <span className="text-xs text-[var(--color-text-muted)] leading-relaxed">
-            {m.auth.consentA.trim()}{gap(locale, 'x')}
-            <Link href="/legal/terms" className="underline" style={{ color: 'var(--color-primary)' }}>{m.auth.consentTerms}</Link>{gap(locale, m.auth.consentAnd.trim())}{m.auth.consentAnd.trim()}{gap(locale, 'x')}
-            <Link href="/legal/privacy" className="underline" style={{ color: 'var(--color-primary)' }}>{m.auth.consentPrivacy}</Link>
-            {gap(locale, m.auth.consentB.trim())}{m.auth.consentB.trim()}
-          </span>
-        </label>
-
-        <button type="submit" disabled={loading || !consentChecked}
+        <button type="submit" disabled={loading}
           className="btn-primary w-full flex items-center justify-center gap-2 font-bold disabled:opacity-60" style={{ height: 52, fontSize: 15 }}>
           {loading && <Loader2 size={15} className="animate-spin" />}
           {m.auth.registerSubmit}
@@ -190,7 +171,7 @@ export default function RegisterPage() {
         <div className="flex-1 h-px" style={{ background: 'var(--color-border)' }} />
       </div>
 
-      <button type="button" onClick={handleGoogle} disabled={!consentChecked}
+      <button type="button" onClick={handleGoogle}
         className="w-full flex items-center justify-center gap-2.5 rounded-[10px] text-sm font-semibold transition-opacity hover:opacity-80 disabled:opacity-40"
         style={{ height: 50, background: '#fff', border: '1px solid var(--color-border-warm)', color: 'var(--color-text)' }}>
         <svg width="18" height="18" viewBox="0 0 24 24">
@@ -201,6 +182,14 @@ export default function RegisterPage() {
         </svg>
         {m.auth.registerWithGoogle}
       </button>
+
+      {/* 同意はチェックではなく、登録した時点で同意したものとみなす旨を表示する */}
+      <p className="text-[11px] text-[var(--color-text-muted)] leading-relaxed mt-4 text-center">
+        {m.auth.consentA.trim()}{gap(locale, 'x')}
+        <Link href="/legal/terms" className="underline" style={{ color: 'var(--color-primary)' }}>{m.auth.consentTerms}</Link>{gap(locale, m.auth.consentAnd.trim())}{m.auth.consentAnd.trim()}{gap(locale, 'x')}
+        <Link href="/legal/privacy" className="underline" style={{ color: 'var(--color-primary)' }}>{m.auth.consentPrivacy}</Link>
+        {gap(locale, m.auth.consentB.trim())}{m.auth.consentB.trim()}
+      </p>
 
       <p className="text-[var(--color-text-muted)] text-sm mt-5 text-center">
         {m.auth.haveAccount}{' '}

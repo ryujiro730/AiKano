@@ -157,6 +157,8 @@ Supabase RPC → 集計・計算・複雑なフィルタ（SQL/PostgreSQL）
 
 **コンビニ払い**: 2026-11-06 承認。Checkout は Stripe の管理画面の設定でカード・コンビニ・PayPay を出す（`payment_method_types` は指定しない）。払込番号を出した時点で webhook が `pending_payments`（092）に払込票URL・期限を記録し、決済ページの「お支払い待ち」から開ける。入金（`async_payment_succeeded`）で付与して paid、期限切れ（`async_payment_failed`）で expired。決済ページの完了表示は `/api/payments/status` が Stripe に実際の状態を聞いて出し分ける
 
+**Stripe webhook**: 署名の鍵は GitHub Secret `STRIPE_WEBHOOK_SECRET`（本番の送信先 vibrant-rhythm の whsec。2026-10-03 に本番キーへ替えたとき差し替え漏れで、11/06 まで本番の通知が全部 400 で落ちていた）。受け取った通知と処理結果は `stripe_webhook_log`（094）に残る（outcome: ok / pending / no_profile / error）。顧客IDで見つからないユーザーは、Stripe の顧客の metadata.userId かメールで探して結びつける（`profileForCustomer`）
+
 **課金導線**: ポイント購入は `PointPackageList`（購入ダイアログと /payment#points で共用）→ `/api/stripe/checkout`（packageId のみ受け取り、価格・付与pt・キャンペーン倍率はサーバーで決定）→ webhook で付与。キャンペーン判定は `lib/campaigns.ts`、付与pt計算は `lib/point-packages.ts` を表示とサーバーで共用。
 
 **書き込み権限**: profiles・point_transactions・user_items・動画購入はブラウザから書けない（065）。必ず service role のサーバーAPI経由で書く
@@ -188,14 +190,16 @@ Supabase RPC → 集計・計算・複雑なフィルタ（SQL/PostgreSQL）
 
 ## 写真ガチャ
 
-- 全員に公開（`lib/features.ts` の `GACHA_PUBLIC`）。中身は `character_photos` のうち会員限定・レベル限定を除いたもの（`lib/gacha.ts`）
+- 全員に公開（`lib/features.ts` の `GACHA_PUBLIC`）。**キャラは選べない**: 全キャラ（公開中・ブロックしていない）の写真からひとつのガチャ（`/gacha`、2026-11-06〜。`/gacha/<id>` は `/gacha` へ転送）。中身は `character_photos` のうち会員限定（非会員）・レベル限定を除いたもの（`lib/gacha.ts` の `getGachaPool`）。画面にキャラごとの集め具合と提供割合（残り枚数の比）を出す
+- プレゼントのお礼写真（`grantGiftRewardPhoto`）だけは贈ったキャラの写真から出す
+- スクリプト `scripts/photo-factory/factory.py` で写真を自動生成できる（OpenAI gpt-image-2.6-flare。アイテム写真の作り直し・会員限定のプレミアム写真。顔・露出・中身を点検して登録まで）。水着・下着など色っぽいものは OpenAI の審査で断られるので、ガチャ用のグラビアは Z-Image 側で作る
 - ガチャ専用写真は `character_photos.source = 'gacha'`（093）。水着・下着のグラビアで、チャットでキャラから送る写真（`lib/photo-request.ts`）には使わない
 - 元写真は `/mnt/data/vast_job/pull/gacha/<slug>/`（Z-Image＋LoRA、各キャラ約78枚）。NudeNet で露出（胸・局部）・お尻の露出があるものと、顔が本人に似ていないもの（ArcFace 0.35 未満）を外した 425 枚を登録。生成プロンプトは「裸なし」でも約1割は胸が出るので、追加するときも必ず検出にかける（Stripe の規約）
 
 ## プレゼントのお礼写真
 
 - アイテムを贈ると、`character_item_photos`（キャラ×アイテムごとの「そのアイテムを持った写真」、081）があれば必ず無料で送る（`lib/item-photos.ts`、ai-reply）
-- ショップ画面とプレゼント画面（`GiftSheet`）で「贈るとそのアイテムを持った写真が届く」と案内している
+- ショップ画面とプレゼント画面（`GiftSheet`）で「贈るとそのアイテムを持った写真が届く」と案内。プレゼント画面ではそのキャラのお礼写真を4枚ぼかしてちら見せ（`/api/items/teaser`、`character_item_photos.preview`＝24×36 の極小画像、095）。ホームとチャットのプレゼントボタンに「写真」の札
 - 無いキャラ・アイテムは従来どおり、一定額以上のアイテムならガチャ写真から1枚（`grantGiftRewardPhoto`）
 - 画像は Storage `avatars/item-photos/<character_id>/<item_id>.webp`。生成は Vast.ai 上の Z-Image Turbo＋キャラ LoRA（元データ・LoRA は `/mnt/data/vast_job/`）
 - アルバム（character_photos）も同じ方法で作成し `avatars/char-photos/<character_id>/` に置いた（各キャラ20枚、うち6枚が会員限定）。なつき（旧称ぼく夏系）・メイリン（中国系）は 2026-10-19 追加。なつきのアイテム写真は GPT 製
@@ -318,7 +322,7 @@ src/
     UtmCapture.tsx          # UTMパラメータ捕捉
     PointsShortageDialog.tsx # ポイント不足ダイアログ
 .github/workflows/deploy.yml  # デプロイ＆cron設定
-supabase/migrations/          # マイグレーション（072・081〜093 は適用済み）
+supabase/migrations/          # マイグレーション（072・081〜095 は適用済み）
 ```
 
 ---

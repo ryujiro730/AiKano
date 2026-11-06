@@ -725,12 +725,15 @@ export default function ChatPage() {
                 type="button"
                 onClick={() => setGiftOpen(true)}
                 disabled={sending}
-                className="flex-shrink-0 flex items-center justify-center rounded-full transition-transform active:scale-90 disabled:opacity-40"
+                className="relative flex-shrink-0 flex items-center justify-center rounded-full transition-transform active:scale-90 disabled:opacity-40"
                 style={{ width: 44, height: 44, background: 'linear-gradient(160deg, #fde68a, #f59e0b)', border: '2px solid #fff', boxShadow: '0 2px 6px rgba(0,0,0,0.15)' }}
                 aria-label={m.hud.gift}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src="/items/present-icon.webp" alt="" style={{ width: 30, height: 30 }} />
+                {/* 贈ると写真が届くことを、押す前から伝える */}
+                <span className="absolute -top-1.5 -right-2 text-[9px] font-black text-white px-1 rounded-md"
+                  style={{ background: 'var(--color-primary)', border: '1.5px solid #fff', lineHeight: '14px' }}>{m.hud.photoBadge}</span>
               </button>
               <div className="flex-1 flex flex-col min-w-0">
                 <div
@@ -812,7 +815,7 @@ export default function ChatPage() {
               ))}
               {photos.filter(p => !p.locked && p.paywalled).map(photo => (
                 <div key={photo.id} className="relative overflow-hidden rounded-xl" style={{ aspectRatio: '1' }}>
-                  <Link href={`/gacha/${character.id}`} prefetch={false} className="absolute inset-0">
+                  <Link href="/gacha" prefetch={false} className="absolute inset-0">
                     <UnownedPhotoCover previewSrc={previewSrc('p', photo.id, photo.preview)} />
                   </Link>
                 </div>
@@ -826,7 +829,7 @@ export default function ChatPage() {
                 <LockedPhotoTile key={photo.id} className="rounded-xl" />
               ))}
             </div>
-            <GachaButton characterId={character.id} remaining={photos.filter(p => !p.locked && p.paywalled).length} />
+            <GachaButton remaining={photos.filter(p => !p.locked && p.paywalled).length} />
           </div>
         </div>
       )}

@@ -100,7 +100,7 @@ export function AlbumClient({ characters }: { characters: AlbumCharacter[] }) {
                   </button>
                 ))}
                 {c.unowned.map(p => (
-                  <Link key={p.id} href={`/gacha/${c.id}`} prefetch={false} className="relative overflow-hidden rounded-[10px]" style={{ aspectRatio: '1' }}>
+                  <Link key={p.id} href="/gacha" prefetch={false} className="relative overflow-hidden rounded-[10px]" style={{ aspectRatio: '1' }}>
                     <UnownedPhotoCover previewSrc={previewSrc('p', p.id, p.preview)} />
                   </Link>
                 ))}
@@ -120,7 +120,7 @@ export function AlbumClient({ characters }: { characters: AlbumCharacter[] }) {
               </div>
 
               {c.unowned.length > 0 && (
-                <Link href={`/gacha/${c.id}`} prefetch={false}
+                <Link href="/gacha" prefetch={false}
                   className="w-full mt-2 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold text-white"
                   style={{ background: 'var(--color-primary)', borderRadius: 'var(--radius-card)' }}>
                   <Sparkles size={14} />{m.album.collect}

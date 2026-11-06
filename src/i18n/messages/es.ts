@@ -56,7 +56,7 @@ export const es: Messages = {
       "En solo 30 segundos",
       "Sin necesidad de instalar una app"
     ],
-    "consentA": "El personal puede revisar tus conversaciones para mejorar el servicio y entrenar la IA. Además, acepto los ",
+    "consentA": "Al registrarte, aceptas los ",
     "consentTerms": "Términos de uso",
     "consentAnd": " y la ",
     "consentPrivacy": "Política de privacidad",
@@ -555,6 +555,8 @@ export const es: Messages = {
     "minutes": "{n} min"
   },
   "gift": {
+    "teaserTitle": "Haz un regalo y recibe una foto exclusiva de {name}",
+    "teaserSub": "Una foto de {name} con el regalo que enviaste ({n} en total)",
     "photoHint": "Haz un regalo y {name} te enviará una foto con él",
     "sentMessage": "🎁 Le regalaste {item}",
     "title": "Un regalo para {name}",
@@ -571,6 +573,7 @@ export const es: Messages = {
     "openChat": "Ver conversación"
   },
   "hud": {
+    "photoBadge": "Foto",
     "shop": "Tienda",
     "gift": "Regalo",
     "album": "Colección",
@@ -589,10 +592,11 @@ export const es: Messages = {
     "membersOnlyHint": "Hazte miembro para verla"
   },
   "gacha": {
+    "oddsByChar": "El % de la derecha es la probabilidad de que tu próxima foto sea de ese personaje (según cuántas fotos aún no tienes).",
     "indexTitle": "Gacha de fotos",
-    "indexLead": "Elige una chica y tira. Solo salen fotos que aún no tienes.",
+    "indexLead": "Fotos de todos los personajes. Solo salen fotos que aún no tienes, y nunca la misma dos veces.",
     "completeShort": "Completo",
-    "entry": "Gacha de fotos {pt}pt (quedan {n})",
+    "entry": "Gacha de fotos {pt}pt",
     "title": "Gacha de fotos de {name}",
     "lead": "Te salen fotos que aún no tienes. Nunca se repite la misma foto.",
     "drawOne": "Tirar 1",
@@ -605,9 +609,9 @@ export const es: Messages = {
     "tapToSkip": "Toca para saltar",
     "again": "Otra vez",
     "newPhoto": "NUEVA",
-    "lineup": "Colección",
+    "lineup": "Progreso y probabilidades por personaje",
     "shortageTitle": "No tienes suficientes puntos",
-    "empty": "Aún no hay fotos de este personaje",
+    "empty": "Aún no hay fotos en el gacha",
     "membersOnlyNote": "Las fotos exclusivas entran en el gacha cuando te haces miembro"
   },
   "album": {

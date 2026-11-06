@@ -56,7 +56,7 @@ export const de: Messages = {
       "In 30 Sekunden erledigt",
       "Keine App erforderlich"
     ],
-    "consentA": "Mir ist bewusst, dass Teammitglieder zur Verbesserung des Dienstes und zum Training der KI möglicherweise unsere Gespräche einsehen. Außerdem stimme ich den ",
+    "consentA": "Mit der Registrierung stimmst du den ",
     "consentTerms": "Nutzungsbedingungen",
     "consentAnd": " und den ",
     "consentPrivacy": "Datenschutzhinweisen",
@@ -555,6 +555,8 @@ export const de: Messages = {
     "minutes": "{n} Min."
   },
   "gift": {
+    "teaserTitle": "Schenke etwas und bekomme ein exklusives Foto von {name}",
+    "teaserSub": "Ein Foto von {name} mit deinem Geschenk ({n} insgesamt)",
     "photoHint": "Schenke etwas und {name} schickt dir ein Foto damit",
     "sentMessage": "🎁 {item} verschenkt",
     "title": "Geschenk für {name}",
@@ -571,6 +573,7 @@ export const de: Messages = {
     "openChat": "Unterhaltung ansehen"
   },
   "hud": {
+    "photoBadge": "Foto",
     "shop": "Shop",
     "gift": "Geschenk",
     "album": "Sammlung",
@@ -589,10 +592,11 @@ export const de: Messages = {
     "membersOnlyHint": "Werde Mitglied, um es zu sehen"
   },
   "gacha": {
+    "oddsByChar": "Das % rechts ist die Wahrscheinlichkeit, dass dein nächstes Foto von dieser Figur ist (abhängig davon, wie viele Fotos du noch nicht hast).",
     "indexTitle": "Foto-Gacha",
-    "indexLead": "Wähle einen Charakter und zieh. Du bekommst nur Fotos, die du noch nicht hast.",
+    "indexLead": "Fotos von allen Figuren. Du bekommst nur Fotos, die du noch nicht hast, und nie dasselbe zweimal.",
     "completeShort": "Komplett",
-    "entry": "Foto-Gacha {pt}pt (noch {n})",
+    "entry": "Foto-Gacha {pt}pt",
     "title": "Foto-Gacha von {name}",
     "lead": "Du bekommst Fotos, die du noch nicht hast. Kein Foto kommt doppelt.",
     "drawOne": "1× ziehen",
@@ -605,9 +609,9 @@ export const de: Messages = {
     "tapToSkip": "Tippen zum Überspringen",
     "again": "Nochmal",
     "newPhoto": "NEU",
-    "lineup": "Sammlung",
+    "lineup": "Sammelfortschritt und Wahrscheinlichkeiten pro Figur",
     "shortageTitle": "Nicht genug Punkte",
-    "empty": "Für diesen Charakter gibt es noch keine Fotos",
+    "empty": "Noch keine Gacha-Fotos",
     "membersOnlyNote": "Fotos nur für Mitglieder kommen in die Gacha, sobald du Mitglied bist"
   },
   "album": {

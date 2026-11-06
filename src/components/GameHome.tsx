@@ -167,7 +167,7 @@ export function GameHome({
         {!isLocked && (
           <div style={{ position: 'absolute', right: 10, top: 58, display: 'flex', flexDirection: 'column', gap: 12, zIndex: 3 }}>
             <HudButton href="/shop" icon="/game-icons/shop.png" label={m.hud.shop} from="#f472b6" to="#db2777" />
-            <HudButton onClick={() => setGiftOpen(true)} icon="/items/present-icon.webp" label={m.hud.gift} from="#fde68a" to="#f59e0b" big />
+            <HudButton onClick={() => setGiftOpen(true)} icon="/items/present-icon.webp" label={m.hud.gift} from="#fde68a" to="#f59e0b" big badge={m.hud.photoBadge} />
             {showAlbum && <HudButton href="/album" icon="/game-icons/album.png" label={m.hud.album} from="#a5b4fc" to="#6366f1" />}
             {hasVideos && <HudButton href="/videos" icon="/game-icons/video.png" label={m.hud.videos} from="#67e8f9" to="#0891b2" />}
           </div>
@@ -441,11 +441,19 @@ export function GameHome({
 }
 
 /** スマホゲーム風の丸いメニューボタン */
-function HudButton({ href, onClick, icon, label, from, to, big }: {
+function HudButton({ href, onClick, icon, label, from, to, big, badge }: {
   href?: string; onClick?: () => void; icon: string; label: string; from: string; to: string; big?: boolean
+  /** ボタンの右上に付ける小さな札（プレゼント＝「写真」がもらえる、など） */
+  badge?: string
 }) {
   const inner = (
-    <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+    <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, position: 'relative' }}>
+      {badge && (
+        <span style={{
+          position: 'absolute', top: -4, right: -8, zIndex: 1, fontSize: 9, fontWeight: 900, color: '#fff',
+          background: 'var(--color-primary)', border: '1.5px solid #fff', borderRadius: 8, padding: '1px 5px', boxShadow: '0 2px 4px rgba(0,0,0,0.25)',
+        }}>{badge}</span>
+      )}
       <span className="hud-bob" style={{
         width: 54, height: 54, borderRadius: '50%',
         background: `radial-gradient(circle at 32% 28%, rgba(255,255,255,0.55), transparent 42%), linear-gradient(160deg, ${from}, ${to})`,

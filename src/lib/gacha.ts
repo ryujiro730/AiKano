@@ -3,7 +3,8 @@ import { getActivePlan } from './plans'
 import { GACHA_SINGLE_POINTS, GACHA_TEN_POINTS, GIFT_PHOTO_MIN_ITEM_POINTS } from './pricing'
 
 /**
- * キャラごとの写真ガチャ。キャラのフォト（character_photos）がそのままガチャの中身になる。
+ * 写真ガチャ。全キャラのフォト（character_photos）がひとつのガチャの中身になる（2026-11-06〜。キャラは選べない）。
+ * 公開中のキャラだけで、ユーザーがブロックしたキャラは除く。プレゼントのお礼写真（grantGiftRewardPhoto）だけはキャラを指定する
  * - そのユーザーがまだ持っていない写真だけから、均等な確率で出る（重複なし。引き続ければ必ずそろう）
  * - 会員限定フォトは会員だけ、好感度レベル限定フォトはガチャに入れない（レベルのご褒美）
  * - 持っている＝ media_unlocks に URL がある（チャットで解錠した写真も含む）
@@ -16,20 +17,31 @@ export const GACHA_PLANS = {
 } as const
 export type GachaCount = keyof typeof GACHA_PLANS
 
-type PoolPhoto = { id: string; url: string }
+export type PoolPhoto = { id: string; url: string; character_id: string }
 
-/** ガチャの中身（ユーザーが引ける写真）と、そのうち持っていないもの */
-export async function getGachaPool(db: SupabaseClient, userId: string, characterId: string) {
-  const [{ data: photos }, { data: profile }, { data: owned }] = await Promise.all([
-    db.from('character_photos').select('id, url, members_only, required_level').eq('character_id', characterId).order('order_index'),
+/**
+ * ガチャの中身（ユーザーが引ける写真）と、そのうち持っていないもの。
+ * characterId を渡すとそのキャラだけ（プレゼントのお礼写真用）、渡さなければ全キャラ（ガチャ）
+ */
+export async function getGachaPool(db: SupabaseClient, userId: string, characterId?: string) {
+  let photosQuery = db.from('character_photos')
+    .select('id, url, members_only, required_level, character_id, characters!inner(is_active)')
+    .eq('characters.is_active', true)
+    .order('order_index')
+    .limit(10000)
+  if (characterId) photosQuery = photosQuery.eq('character_id', characterId)
+  const [{ data: photos }, { data: profile }, { data: owned }, { data: blocks }] = await Promise.all([
+    photosQuery,
     db.from('profiles').select('subscription_status, subscription_plan, subscription_period_end, role').eq('id', userId).single(),
     db.from('media_unlocks').select('url').eq('user_id', userId).limit(5000),
+    characterId ? Promise.resolve({ data: [] as { character_id: string }[] }) : db.from('blocks').select('character_id').eq('user_id', userId).limit(500),
   ])
   const canSeeMembers = !!getActivePlan(profile) || profile?.role === 'admin'
   const ownedUrls = new Set((owned ?? []).map(r => r.url as string))
+  const blocked = new Set((blocks ?? []).map(b => b.character_id as string))
   const pool: PoolPhoto[] = (photos ?? [])
-    .filter(p => !p.required_level && (canSeeMembers || !p.members_only))
-    .map(p => ({ id: p.id as string, url: p.url as string }))
+    .filter(p => !p.required_level && (canSeeMembers || !p.members_only) && !blocked.has(p.character_id as string))
+    .map(p => ({ id: p.id as string, url: p.url as string, character_id: p.character_id as string }))
   const remaining = pool.filter(p => !ownedUrls.has(p.url))
   return { pool, remaining }
 }

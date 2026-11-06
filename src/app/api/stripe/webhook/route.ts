@@ -25,6 +25,28 @@ function invoiceSubscriptionId(invoice: any): string | null {
 }
 
 /**
+ * Stripe の顧客IDからユーザーを探す。見つからなければ、Stripe の顧客情報の metadata.userId（getOrCreateCustomer が入れる）か
+ * メールアドレスで探して、顧客IDを結びつける（申し込み時の通知を取りこぼすと、以後の更新がどのユーザーにも結びつかなかった）
+ */
+async function profileForCustomer(stripe: Stripe, admin: ReturnType<typeof createAdminClient>, customerId: string | null) {
+  if (!customerId) return null
+  const { data: found } = await admin.from('profiles').select('id, subscription_plan').eq('stripe_customer_id', customerId).maybeSingle()
+  if (found) return found
+  const customer = await stripe.customers.retrieve(customerId).catch(() => null)
+  if (!customer || customer.deleted) return null
+  const metaUserId = (customer as Stripe.Customer).metadata?.userId
+  const email = (customer as Stripe.Customer).email
+  const { data: linked } = metaUserId
+    ? await admin.from('profiles').select('id, subscription_plan').eq('id', metaUserId).maybeSingle()
+    : email
+      ? await admin.from('profiles').select('id, subscription_plan').ilike('email', email).maybeSingle()
+      : { data: null }
+  if (!linked) return null
+  await admin.from('profiles').update({ stripe_customer_id: customerId }).eq('id', linked.id)
+  return linked
+}
+
+/**
  * ポイント購入を記録してから付与する。記録（stripe_session_id の一意制約）が通ったときだけ add_points するので、
  * 同じ通知が重なってもポイントは1回しか付かない。
  * キャンペーン倍率で買ったときは campaign_id を、一人一回限りなら once_campaign_id も入れる。
@@ -87,6 +109,25 @@ export async function POST(request: Request) {
   }
 
   const admin = createAdminClient()
+  // 何をしたかを stripe_webhook_log に残す（094）。各処理で上書きする
+  const log: { userId?: string | null; outcome: string; detail?: Record<string, unknown> } = { outcome: 'ignored' }
+  const res = await handle(event, stripe, admin, log).catch(async (e) => {
+    log.outcome = 'error'
+    log.detail = { ...(log.detail ?? {}), error: e instanceof Error ? e.message : String(e) }
+    return NextResponse.json({ error: 'handler failed' }, { status: 500 })
+  })
+  await admin.from('stripe_webhook_log').upsert({
+    event_id: event.id, type: event.type, user_id: log.userId ?? null, outcome: log.outcome, detail: log.detail ?? null,
+  }, { onConflict: 'event_id' })
+  return res
+}
+
+async function handle(
+  event: Stripe.Event,
+  stripe: Stripe,
+  admin: ReturnType<typeof createAdminClient>,
+  log: { userId?: string | null; outcome: string; detail?: Record<string, unknown> },
+): Promise<NextResponse> {
 
   // ── 一回払い決済（ポイント購入）────────────────────────────────
   // NOTE: サブスク checkout の場合は mode==='subscription' なので以下はスキップされ、
@@ -97,7 +138,10 @@ export async function POST(request: Request) {
   ) {
     const session = event.data.object as Stripe.Checkout.Session
     if (session.mode === 'payment') {
+      log.userId = session.metadata?.userId ?? null
+      log.detail = { session: session.id, amount: session.amount_total, payment_status: session.payment_status }
       if (session.payment_status !== 'unpaid') {
+        log.outcome = 'ok'
         const { userId, tokens, priceYen, type: payType, planId, campaignId, packageId } = session.metadata ?? {}
 
         // ── 月額パス（コンビニ払い等）────────────────────────────────
@@ -146,6 +190,7 @@ export async function POST(request: Request) {
         await setPendingStatus(admin, session.id, 'paid')
       } else if (event.type === 'checkout.session.completed') {
         // コンビニ払いなど: 払込番号を出しただけでまだ払われていない。入金で async_payment_succeeded が来る
+        log.outcome = 'pending'
         await recordPendingPayment(stripe, admin, session)
         if (session.metadata?.userId) await logUserAction(admin, session.metadata.userId, 'payment_pending', { price_yen: session.amount_total })
       }
@@ -157,6 +202,8 @@ export async function POST(request: Request) {
     const session = event.data.object as Stripe.Checkout.Session
     await setPendingStatus(admin, session.id, 'expired')
     const userId = session.metadata?.userId
+    log.userId = userId ?? null
+    log.outcome = 'ok'
     if (userId) await logUserAction(admin, userId, 'payment_expired', { price_yen: session.amount_total })
   }
 
@@ -166,6 +213,8 @@ export async function POST(request: Request) {
     if (session.mode !== 'subscription') return NextResponse.json({ received: true })
 
     const { userId, planId } = session.metadata ?? {}
+    log.userId = userId ?? null
+    log.detail = { session: session.id, customer: session.customer, planId }
     if (!userId || !planId) return NextResponse.json({ received: true })
 
     const plan = PLANS[planId as PlanId]
@@ -188,6 +237,7 @@ export async function POST(request: Request) {
 
     await logUserAction(admin, userId, 'subscription_start', { plan: plan.name, method: 'クレジットカード', price_yen: plan.price_yen })
     await grantSubscriptionBonus(admin, userId, planId, `stripe:${subscriptionId}:${periodStart}`)
+    log.outcome = 'ok'
   }
 
   // ── サブスク更新（プラン変更・更新）────────────────────────────
@@ -195,12 +245,10 @@ export async function POST(request: Request) {
     const subscription = event.data.object as any
     const customerId = subscription.customer as string
 
-    const { data: profile } = await admin
-      .from('profiles')
-      .select('id, subscription_plan')
-      .eq('stripe_customer_id', customerId)
-      .single()
-    if (!profile) return NextResponse.json({ received: true })
+    const profile = await profileForCustomer(stripe, admin, customerId)
+    log.userId = profile?.id ?? null
+    log.detail = { customer: customerId, subscription: subscription.id, status: subscription.status, price: subscription.items?.data?.[0]?.price?.id }
+    if (!profile) { log.outcome = 'no_profile'; return NextResponse.json({ received: true }) }
 
     // Price IDからプランを特定
     const priceId = subscription.items.data[0]?.price?.id
@@ -215,6 +263,7 @@ export async function POST(request: Request) {
       monthly_messages_limit: plan?.monthly_messages ?? 0,
       monthly_reset_at: periodEnd,
     }).eq('id', profile.id)
+    log.outcome = 'ok'
   }
 
   // ── サブスクキャンセル ──────────────────────────────────────────
@@ -222,7 +271,9 @@ export async function POST(request: Request) {
     const subscription = event.data.object as any
     const customerId = subscription.customer as string
 
-    const { data: canceled } = await admin.from('profiles').select('id, subscription_plan').eq('stripe_customer_id', customerId).single()
+    const canceled = await profileForCustomer(stripe, admin, customerId)
+    log.userId = canceled?.id ?? null
+    log.outcome = canceled ? 'ok' : 'no_profile'
     await admin.from('profiles').update({
       subscription_status: 'canceled',
       subscription_plan: null,
@@ -236,11 +287,14 @@ export async function POST(request: Request) {
     const invoice = event.data.object as Stripe.Invoice
     const customerId = invoice.customer as string
     const subscriptionId = invoiceSubscriptionId(invoice)
-    if (!subscriptionId) return NextResponse.json({ received: true })
+    const payer = await profileForCustomer(stripe, admin, customerId)
+    log.userId = payer?.id ?? null
+    log.detail = { customer: customerId, invoice: invoice.id, subscription: subscriptionId, amount_paid: invoice.amount_paid, billing_reason: (invoice as any).billing_reason }
+    log.outcome = payer ? 'ok' : 'no_profile'
+    if (!subscriptionId) { log.outcome = 'no_subscription'; return NextResponse.json({ received: true }) }
 
     // サブスク代金を売上として記録（初回・更新とも。stripe_session_id の一意制約で二重記録を防ぐ）
     if ((invoice.amount_paid ?? 0) > 0) {
-      const { data: payer } = await admin.from('profiles').select('id').eq('stripe_customer_id', customerId).maybeSingle()
       if (payer) {
         const { error: dupErr } = await admin.from('point_transactions').insert({
           user_id: payer.id,
@@ -277,7 +331,10 @@ export async function POST(request: Request) {
   if (event.type === 'invoice.payment_failed') {
     const invoice = event.data.object as Stripe.Invoice
     const customerId = invoice.customer as string
+    await profileForCustomer(stripe, admin, customerId)
     const { data: failed } = await admin.from('profiles').update({ subscription_status: 'past_due' }).eq('stripe_customer_id', customerId).select('id').maybeSingle()
+    log.userId = failed?.id ?? null
+    log.outcome = failed ? 'ok' : 'no_profile'
     if (failed) await logUserAction(admin, failed.id, 'subscription_payment_failed')
   }
 
