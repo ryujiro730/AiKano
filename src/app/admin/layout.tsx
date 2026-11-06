@@ -41,6 +41,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     { href: '/admin/inquiries', label: 'お問い合わせ' },
     { href: '/admin/videos', label: '動画販売' },
     { href: '/admin/items', label: 'アイテム' },
+    { href: '/admin/item-photos', label: 'プレゼント写真' },
     { href: '/admin/campaigns', label: 'キャンペーン' },
     { href: '/admin/auto-broadcast-schedule', label: '自動同報' },
     { href: '/admin/promo-submissions', label: 'プロモ申請' },

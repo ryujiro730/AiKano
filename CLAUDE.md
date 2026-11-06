@@ -110,7 +110,7 @@ Supabase RPC → 集計・計算・複雑なフィルタ（SQL/PostgreSQL）
 
 ## 管理画面（AI返信前提で簡素化）
 
-- メニュー: 概要 / ユーザー / 会話 / キャラ管理 / 集計 / 銀行振込 / お問い合わせ / 動画販売 / アイテム / キャンペーン / 自動同報 / プロモ申請（人手返信用の受信トレイ・モニター・オペグラ・個別送信・通報はメニューから外した。ページ自体は残っている）
+- メニュー: 概要 / ユーザー / 会話 / キャラ管理 / 集計 / 銀行振込 / お問い合わせ / 動画販売 / アイテム / プレゼント写真 / キャンペーン / 自動同報 / プロモ申請（人手返信用の受信トレイ・モニター・オペグラ・個別送信・通報はメニューから外した。ページ自体は残っている）
 - 管理APIの認可は `requireAdmin()`（`lib/admin-auth.ts`）。集計は DB 関数 `admin_user_stats` / `admin_conversation_list` / `admin_overview`（066〜068、service_role のみ）
 - `lib/supabase/server.ts` の `createAdminClient()` は純粋な service role（以前は cookie 付きでユーザー権限になっていたのを修正）。ユーザーの特定は必ず `getAuthUser()` で行い、本人のデータに絞る条件を書くこと
 - ユーザー一覧は `search_admin_users`、行動タイムラインは `admin_user_timeline`（行動ログ＋メッセージ＋ポイント取引＋ログインを合成）。どちらもページング対応（069）
