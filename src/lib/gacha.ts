@@ -25,7 +25,7 @@ export type PoolPhoto = { id: string; url: string; character_id: string }
  */
 export async function getGachaPool(db: SupabaseClient, userId: string, characterId?: string) {
   let photosQuery = db.from('character_photos')
-    .select('id, url, members_only, required_level, character_id, characters!inner(is_active)')
+    .select('id, url, members_only, required_level, is_free, character_id, characters!inner(is_active)')
     .eq('characters.is_active', true)
     .order('order_index')
     .limit(10000)
@@ -40,7 +40,7 @@ export async function getGachaPool(db: SupabaseClient, userId: string, character
   const ownedUrls = new Set((owned ?? []).map(r => r.url as string))
   const blocked = new Set((blocks ?? []).map(b => b.character_id as string))
   const pool: PoolPhoto[] = (photos ?? [])
-    .filter(p => !p.required_level && (canSeeMembers || !p.members_only) && !blocked.has(p.character_id as string))
+    .filter(p => !p.required_level && !p.is_free && (canSeeMembers || !p.members_only) && !blocked.has(p.character_id as string))
     .map(p => ({ id: p.id as string, url: p.url as string, character_id: p.character_id as string }))
   const remaining = pool.filter(p => !ownedUrls.has(p.url))
   return { pool, remaining }

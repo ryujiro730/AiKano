@@ -243,6 +243,13 @@ export default function AdminCharactersPage() {
     setPhotos(prev => prev.map(p => p.id === photoId ? { ...p, members_only: membersOnly } : p))
   }
 
+  // 無料フォト（プロフィールで誰でも見られる。ガチャには入らない）
+  const toggleFree = async (photoId: string, isFree: boolean) => {
+    const { error } = await supabase.from('character_photos').update({ is_free: isFree }).eq('id', photoId)
+    if (error) { alert('更新に失敗しました: ' + error.message); return }
+    setPhotos(prev => prev.map(p => p.id === photoId ? { ...p, is_free: isFree } : p))
+  }
+
   // 好感度レベル限定（そのレベルに達したユーザーは無料で見られる。なしなら1枚ずつ有料）
   const setRequiredLevel = async (photoId: string, level: number | null) => {
     const { error } = await supabase.from('character_photos').update({ required_level: level }).eq('id', photoId)
@@ -914,6 +921,14 @@ export default function AdminCharactersPage() {
                           style={{ background: 'rgba(0,0,0,0.6)' }}
                         >
                           <Trash2 size={12} className="text-red-400" />
+                        </button>
+                        <button
+                          onClick={() => toggleFree(photo.id, !photo.is_free)}
+                          className="absolute bottom-6 right-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold text-white"
+                          style={{ background: photo.is_free ? 'rgba(22,163,74,0.92)' : 'rgba(0,0,0,0.45)' }}
+                          title="無料（プロフィールで誰でも見られる。ガチャには入らない）の切り替え"
+                        >
+                          {photo.is_free ? '無料' : '有料'}
                         </button>
                         <button
                           onClick={() => toggleMembersOnly(photo.id, !photo.members_only)}

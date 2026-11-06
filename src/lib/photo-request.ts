@@ -18,7 +18,7 @@ export function isPhotoRequest(text: string) {
  */
 export async function pickCharacterPhoto(db: SupabaseClient, characterId: string, userId: string, conversationId: string, avatarUrl: string | null) {
   const [{ data: photos }, { data: profile }, { data: sent }, { data: uc }] = await Promise.all([
-    db.from('character_photos').select('url, members_only, required_level').eq('character_id', characterId).eq('source', 'album'),
+    db.from('character_photos').select('url, members_only, required_level, is_free').eq('character_id', characterId).eq('source', 'album'),
     db.from('profiles').select('subscription_status, subscription_plan, subscription_period_end, role').eq('id', userId).single(),
     db.from('message_media').select('url, messages!inner(conversation_id)').eq('messages.conversation_id', conversationId).limit(500),
     db.from('user_characters').select('affection_level').eq('user_id', userId).eq('character_id', characterId).maybeSingle(),
@@ -29,7 +29,7 @@ export async function pickCharacterPhoto(db: SupabaseClient, characterId: string
     ...(avatarUrl ? [{ url: avatarUrl, free: true }] : []),
     ...(photos ?? [])
       .filter(p => (canSeeMembers || !p.members_only) && (!p.required_level || level >= p.required_level))
-      .map(p => ({ url: p.url as string, free: !!p.required_level })),
+      .map(p => ({ url: p.url as string, free: !!p.required_level || !!p.is_free })),
   ]
   if (candidates.length === 0) return null
   const sentUrls = new Set((sent ?? []).map(r => r.url as string))
@@ -44,12 +44,12 @@ export async function pickCharacterPhoto(db: SupabaseClient, characterId: string
  */
 export async function pickSpontaneousPhoto(db: SupabaseClient, characterId: string, userId: string, conversationId: string) {
   const [{ data: photos }, { data: sent }, { data: owned }] = await Promise.all([
-    db.from('character_photos').select('url, members_only, required_level').eq('character_id', characterId).eq('source', 'album'),
+    db.from('character_photos').select('url, members_only, required_level, is_free').eq('character_id', characterId).eq('source', 'album'),
     db.from('message_media').select('url, messages!inner(conversation_id)').eq('messages.conversation_id', conversationId).limit(500),
     db.from('media_unlocks').select('url').eq('user_id', userId).limit(5000),
   ])
   const skip = new Set([...(sent ?? []), ...(owned ?? [])].map(r => r.url as string))
-  const pool = (photos ?? []).filter(p => !p.members_only && !p.required_level && !skip.has(p.url as string))
+  const pool = (photos ?? []).filter(p => !p.members_only && !p.required_level && !p.is_free && !skip.has(p.url as string))
   if (pool.length === 0) return null
   return pool[Math.floor(Math.random() * pool.length)].url as string
 }

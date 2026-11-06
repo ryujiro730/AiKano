@@ -5,6 +5,8 @@
   # アイテム写真（贈ったときに届く「そのアイテムを持った写真」）を作り直す
   .venv/bin/python factory.py items --chars aoi,eri
   # プレミアム写真（会員限定アルバム）を各キャラ30枚
+  # 普通のアルバム（ちょっとセクシー。ガチャ・チャットで届く）を各キャラ20枚
+  .venv/bin/python factory.py album --chars all --n 20
   .venv/bin/python factory.py premium --chars all --n 30
   # 作るだけで登録しない（点検結果と一覧画像は出る）
   ... --dry
@@ -65,8 +67,8 @@ CHARS = {
     'iori':    dict(name='華僑イオリ', mood='sexy', vibe='31-year-old glamorous half-korean woman, worldly and elegant', place='a glamorous hotel suite with warm evening light'),
     'momo':    dict(name='もも', mood='cute', vibe='22-year-old japanese woman, a gentle young nurse', place='a cozy small apartment in Tokyo'),
 }
-# アイテム写真をもう GPT で作ってあるキャラ（items では作り直さない）
-ITEMS_DONE = {'momo', 'natsuki'}
+# アイテム写真をもう GPT で作ってあるキャラ（items では作り直さない）。もものは ComfyUI 製だったので作り直す
+ITEMS_DONE = {'natsuki'}
 
 # 表情・構図は毎回ばらす（同じ笑顔の自撮りばかりになっていた）
 EXPRESSIONS = {
@@ -118,6 +120,32 @@ PREMIUM = [
     ('a cute dress', 'at a photo booth style studio with a pastel background'),
     ('a warm coat', 'at a winter night market holding a cup of hot wine'),
     ('a casual dress', 'on a train window seat, looking outside at the countryside'),
+]
+# 普通のアルバム（ガチャ・チャットで届く写真）用の「ちょっとセクシー」。水着・下着・ベッドの上は OpenAI の審査でほぼ断られるので入れない。
+# 断られたら2つ目（控えめ）に下げる
+ALBUM = [
+    (('an off-shoulder knit sweater showing her bare shoulders and collarbone', 'sitting on a sofa by the window, looking back over her shoulder'), 'a cozy knit sweater'),
+    (('a fitted camisole dress with thin straps', 'on a rooftop terrace at night with city lights, hair blowing in the wind'), 'a summer dress'),
+    (('a tight ribbed mini dress', 'leaning against a wall in a stylish hallway, one hand in her hair'), 'a stylish dress'),
+    (('a white hotel bathrobe, hair still damp after a shower', 'drying her hair with a towel by a big window, morning light'), 'a cozy hoodie'),
+    (('a crop top and high-waisted shorts showing her waist', 'at a summer festival at dusk holding a shaved ice'), 'a t-shirt and shorts'),
+    (('an oversized shirt slipping off one shoulder, bare legs', 'sitting on the floor of her room with a cup of coffee, sleepy morning'), 'an oversized shirt and leggings'),
+    (('a backless summer dress', 'on a beach boardwalk at sunset, looking back at the camera'), 'a summer dress'),
+    (('a fitted tank top and yoga leggings', 'stretching in her bright room after a workout, a little sweaty'), 'a sporty outfit'),
+    (('a satin slip dress under an open cardigan', 'sitting at a bar counter with soft warm lights'), 'a blouse and a skirt'),
+    (('a loose summer yukata slightly off her shoulders', 'on a veranda at night with fireworks in the sky'), 'a summer yukata'),
+    (('a short pleated skirt and a fitted knit top', 'sitting on a park bench in autumn, legs crossed'), 'a knit top and a long skirt'),
+    (('a fitted sundress with a low neckline', 'in a sunflower field, bending toward the camera with a playful smile'), 'a sundress'),
+    (('a cropped cardigan with nothing but a camisole underneath', 'lying on her stomach on a picnic blanket in the park, chin in her hands'), 'a cardigan'),
+    (('denim shorts and a tied-up shirt showing her waist', 'washing a car in the summer sun, splashing water'), 'a t-shirt and denim'),
+    (('a silky blouse unbuttoned at the collar', 'at a cafe terrace at night, leaning toward the camera with her chin on her hand'), 'a blouse'),
+    (('a fitted turtleneck dress', 'in front of a christmas illumination, wrapping her arms around herself in the cold'), 'a warm coat'),
+    (('a mini dress and knee-high boots', 'walking down a neon-lit street at night, glancing back'), 'a dress and a coat'),
+    (('a soft lounge set with a short camisole top', 'curled up on a sofa under fairy lights, watching a movie'), 'a cozy loungewear set'),
+    (('a light summer dress blowing in the wind', 'on a hill with a big blue sky, holding her hat'), 'a summer dress'),
+    (('an off-shoulder blouse', 'at an aquarium, blue light on her face, looking up at the fish'), 'a blouse'),
+    (('a fitted dress with a side slit', 'at a hotel lobby at night, sitting with her legs crossed'), 'an elegant dress'),
+    (('a tank top and a short skirt', 'eating ice cream on a hot summer street, melting a little'), 'a t-shirt and a skirt'),
 ]
 MILD_OUTFIT = 'a cute casual outfit'
 # アイテム写真の服（Z-Image のときの items.json の服は下着・彼シャツなどが多く、審査で断られるので使わない）
@@ -323,6 +351,20 @@ def premium_jobs(ch, n, start):
     return jobs
 
 
+def album_jobs(ch, n, start, kind='album'):
+    random.seed(f"{ch['slug']}-{kind}-{start}-{time.time()}")
+    picks = random.sample(ALBUM, k=min(n, len(ALBUM)))
+    while len(picks) < n:
+        picks.append(random.choice(ALBUM))
+    jobs = []
+    for i, ((outfit, scene), mild) in enumerate(picks):
+        jobs.append(dict(kind=kind, key=f'{start + i:03d}', variants=[
+            BASE.format(vibe=ch['vibe']) + f'Scene: {scene}. She is wearing {outfit}. Slightly alluring and flirty, but tasteful.' + TAIL,
+            BASE.format(vibe=ch['vibe']) + f'Scene: {scene}. She is wearing {mild}.' + TAIL,
+        ]))
+    return jobs
+
+
 # ---------------------------------------------------------------- 1枚を作って点検する
 DONE = {}   # 途中で止めて同じ --run で再開したとき、合格済みのものは作り直さない
 
@@ -400,6 +442,30 @@ def register(ch, logs, run_id):
         sb('/rest/v1/character_item_photos?on_conflict=character_id,item_id', json.dumps([{'character_id': ch['id'], 'item_id': l['item_id'], 'url': url, 'preview': None}]).encode(), 'POST',
            {'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates,return=minimal'})
         done += 1
+    gac = [l for l in oks if l['kind'] == 'gacha']
+    if gac:
+        mx = sb(f"/rest/v1/character_photos?select=order_index&character_id=eq.{ch['id']}&order=order_index.desc&limit=1")
+        order = (mx[0]['order_index'] if mx else 0) + 1
+        rows = []
+        for l in gac:
+            url = upload(f"char-photos/{ch['id']}/gacha-gpt/{run_id}-{l['key']}.webp", to_webp(l['file']))
+            # ガチャ専用（チャットでキャラが送る写真には使わない）
+            rows.append({'character_id': ch['id'], 'url': url, 'order_index': order, 'members_only': False, 'source': 'gacha'})
+            order += 1
+        sb('/rest/v1/character_photos', json.dumps(rows).encode(), 'POST', {'Content-Type': 'application/json', 'Prefer': 'return=minimal'})
+        done += len(rows)
+    alb = [l for l in oks if l['kind'] == 'album']
+    if alb:
+        mx = sb(f"/rest/v1/character_photos?select=order_index&character_id=eq.{ch['id']}&order=order_index.desc&limit=1")
+        order = (mx[0]['order_index'] if mx else 0) + 1
+        rows = []
+        for l in alb:
+            url = upload(f"char-photos/{ch['id']}/album-gpt/{run_id}-{l['key']}.webp", to_webp(l['file']))
+            # 普通のアルバム（会員限定ではない）。ガチャの中身・チャットでキャラから届く写真になる
+            rows.append({'character_id': ch['id'], 'url': url, 'order_index': order, 'members_only': False, 'source': 'album'})
+            order += 1
+        sb('/rest/v1/character_photos', json.dumps(rows).encode(), 'POST', {'Content-Type': 'application/json', 'Prefer': 'return=minimal'})
+        done += len(rows)
     prem = [l for l in oks if l['kind'] == 'premium']
     if prem:
         mx = sb(f"/rest/v1/character_photos?select=order_index&character_id=eq.{ch['id']}&order=order_index.desc&limit=1")
@@ -431,7 +497,8 @@ def contact_sheet(files, out):
 # ---------------------------------------------------------------- main
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('kind', choices=['items', 'premium'])
+    ap.add_argument('kind', choices=['items', 'premium', 'album', 'gacha'])
+    ap.add_argument('--missing-only', action='store_true', help='items: GPT で作り直していないアイテムだけ（url に full-items / -g が無いもの）')
     ap.add_argument('--chars', default='all')
     ap.add_argument('--n', type=int, default=30, help='premium の枚数（キャラごと）')
     ap.add_argument('--only', default='', help='items: アイテムの key をカンマ区切りで（試し用）')
@@ -467,6 +534,15 @@ def main():
         outdir.mkdir(parents=True, exist_ok=True)
         if a.kind == 'items':
             jobs = item_jobs(ch, items, item_ids)
+            if a.missing_only:
+                done_ids = {r['item_id'] for r in sb(f"/rest/v1/character_item_photos?select=item_id,url&character_id=eq.{ch['id']}&url=like.*full-items*")}
+                jobs = [j for j in jobs if j['item_id'] not in done_ids]
+        elif a.kind == 'gacha':
+            have = sb(f"/rest/v1/character_photos?select=id&character_id=eq.{ch['id']}&url=like.*gacha-gpt*")
+            jobs = album_jobs(ch, a.n, len(have), kind='gacha')
+        elif a.kind == 'album':
+            have = sb(f"/rest/v1/character_photos?select=id&character_id=eq.{ch['id']}&url=like.*album-gpt*")
+            jobs = album_jobs(ch, a.n, len(have))
         else:
             have = sb(f"/rest/v1/character_photos?select=id&character_id=eq.{ch['id']}&url=like.*premium*")
             jobs = premium_jobs(ch, a.n, len(have))

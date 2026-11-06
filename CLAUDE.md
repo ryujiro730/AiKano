@@ -193,7 +193,10 @@ Supabase RPC → 集計・計算・複雑なフィルタ（SQL/PostgreSQL）
 - 全員に公開（`lib/features.ts` の `GACHA_PUBLIC`）。**キャラは選べない**: 全キャラ（公開中・ブロックしていない）の写真からひとつのガチャ（`/gacha`、2026-11-06〜。`/gacha/<id>` は `/gacha` へ転送）。中身は `character_photos` のうち会員限定（非会員）・レベル限定を除いたもの（`lib/gacha.ts` の `getGachaPool`）。画面にキャラごとの集め具合と提供割合（残り枚数の比）を出す
 - プレゼントのお礼写真（`grantGiftRewardPhoto`）だけは贈ったキャラの写真から出す
 - スクリプト `scripts/photo-factory/factory.py` で写真を自動生成できる（OpenAI gpt-image-2.6-flare。アイテム写真の作り直し・会員限定のプレミアム写真。顔・露出・中身を点検して登録まで）。水着・下着など色っぽいものは OpenAI の審査で断られるので、ガチャ用のグラビアは Z-Image 側で作る
-- ガチャ専用写真は `character_photos.source = 'gacha'`（093）。水着・下着のグラビアで、チャットでキャラから送る写真（`lib/photo-request.ts`）には使わない
+- ガチャ専用写真は `character_photos.source = 'gacha'`（093）。チャットでキャラから送る写真（`lib/photo-request.ts`）には使わない
+- 2026-11-06 に ComfyUI（Z-Image・SD）製の写真 638 枚をガチャ・アルバムから外した（行のバックアップは `/mnt/data/photo_factory/backup/character_photos_comfy_20261106.json`、Storage のファイルは過去のチャット表示のため残している）。今の中身は全部 GPT 製: ガチャ＝プレミアム写真（`/premium/`、会員限定を外して source=gacha）＋アルバムの有料分、アルバム＝`/album-gpt/`
+- 無料フォト `character_photos.is_free`（099）: プロフィール・チャットで誰でも最初から見られる。ガチャ・キャラが自分から送る写真（未所持）には入れない。各キャラ約10枚。管理画面のフォト管理で切り替え
+- 会員限定フォトは 0 枚（プレミアム写真をガチャに回したため）
 - 元写真は `/mnt/data/vast_job/pull/gacha/<slug>/`（Z-Image＋LoRA、各キャラ約78枚）。NudeNet で露出（胸・局部）・お尻の露出があるものと、顔が本人に似ていないもの（ArcFace 0.35 未満）を外した 425 枚を登録。生成プロンプトは「裸なし」でも約1割は胸が出るので、追加するときも必ず検出にかける（Stripe の規約）
 
 ## プレゼントのお礼写真
@@ -333,7 +336,7 @@ src/
     UtmCapture.tsx          # UTMパラメータ捕捉
     PointsShortageDialog.tsx # ポイント不足ダイアログ
 .github/workflows/deploy.yml  # デプロイ＆cron設定
-supabase/migrations/          # マイグレーション（072・081〜098 は適用済み）
+supabase/migrations/          # マイグレーション（072・081〜099 は適用済み）
 ```
 
 ---

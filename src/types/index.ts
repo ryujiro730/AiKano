@@ -66,6 +66,8 @@ export interface CharacterPhoto {
   required_level?: number | null
   /** 'gacha' = ガチャ専用（チャットでキャラから送る写真には使わない。093） */
   source?: 'album' | 'gacha'
+  /** 無料フォト（誰でも見られる。ガチャには入らない。099） */
+  is_free?: boolean
   /** 未解錠のときに見せるモザイク用の極小画像（data URI。090） */
   preview?: string | null
   /** レベル不足で見られない（url は空） */

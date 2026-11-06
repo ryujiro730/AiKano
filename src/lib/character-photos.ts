@@ -7,6 +7,7 @@ import type { CharacterPhoto } from '@/types'
  * キャラのフォト一覧を閲覧ユーザー向けに返す。URL を渡してよいものだけ url を入れる（クライアントで隠すだけにしない）。
  * - 会員限定フォト：非会員には locked: true
  * - 好感度レベル限定フォト（required_level）：レベル不足なら levelLocked: true、達していれば無料で見られる
+ * - 無料フォト（is_free、099）：誰でも最初から見られる
  * - それ以外は1枚ずつ有料（会員も）。未解錠なら paywalled: true
  */
 export async function getCharacterPhotosForUser(
@@ -30,6 +31,7 @@ export async function getCharacterPhotosForUser(
   // 管理者もユーザー画面では一般ユーザーと同じ見え方にする（ガチャ・レベルの確認ができるように）
   const unlocked = userId ? await getUnlockedUrls(admin, userId, list.map(p => p.url)) : new Set<string>()
   return list.map(p => {
+    if (p.is_free) return { ...p, locked: false, paywalled: false, preview: null }
     if (p.members_only && !canSeeAll) return { ...p, url: '', locked: true, paywalled: true }
     if (p.required_level) {
       return level >= p.required_level
