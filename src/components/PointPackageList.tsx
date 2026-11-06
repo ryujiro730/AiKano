@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Sparkles } from 'lucide-react'
+import { CardBrands, FamilyMartBadge, LawsonBadge, MinistopBadge, SeicomartBadge } from '@/components/icons/payment-brands'
 import { TOKEN_PACKAGES } from '@/types'
 import { logAction } from '@/lib/action-log'
 import { pointsForPackage, isCampaignTarget, type PurchaseCampaign, toPurchaseCampaign, campaignRateFor, campaignMaxRate } from '@/lib/point-packages'
@@ -132,6 +133,17 @@ export function PointPackageList({ shortage = 0 }: { shortage?: number }) {
           </button>
         )
       })}
+      {/* カードが無い人も買えることを伝える（Checkout でカード・コンビニから選べる） */}
+      <div className="mt-1 flex flex-col items-center gap-1.5">
+        <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>{m.packages.methods}</p>
+        <div className="flex items-center gap-1 flex-wrap justify-center">
+          <CardBrands />
+          <FamilyMartBadge />
+          <LawsonBadge />
+          <MinistopBadge />
+          <SeicomartBadge />
+        </div>
+      </div>
     </div>
   )
 }

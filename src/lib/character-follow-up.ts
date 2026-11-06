@@ -4,7 +4,6 @@ import { getActivePlan } from './plans'
 import { checkSexualContent } from './moderation'
 import { sendNotificationEmail } from './send-notification-email'
 import { localizedCharacter } from './character-i18n'
-import { isLocale, type Locale } from '@/i18n/config'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AdminSupabase = SupabaseClient<any, any, any>
@@ -103,16 +102,14 @@ async function sendFollowUp(db: AdminSupabase, t: FollowUpTarget): Promise<void>
   if (insertErr) throw new Error('insert failed: ' + insertErr.message)
   await db.from('conversations').update({ last_message_at: now, is_unread_staff: false }).eq('id', t.conversation_id)
 
-  // メールで呼び戻す（配信停止したユーザーには送らない）
-  if (prof?.email && !prof.email_opt_out) {
-    const locale: Locale = isLocale(prof.locale) ? prof.locale : 'ja'
-    await sendNotificationEmail({
-      toEmail: prof.email,
-      locale,
-      characterName: localizedCharacter(character, locale).name,
+  // メールで呼び戻す（送ってよいか・宛先は sendNotificationEmail が DB で決める）
+  if (!prof?.email_opt_out) {
+    await sendNotificationEmail(db, {
+      userId: t.user_id,
+      kind: 'follow_up',
+      characterName: (locale) => localizedCharacter(character, locale).name,
       messageContent: text,
       conversationId: t.conversation_id,
-      userId: t.user_id,
     })
   }
 }

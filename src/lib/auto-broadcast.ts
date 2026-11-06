@@ -161,23 +161,16 @@ export async function processAutoBroadcast(): Promise<{ scheduled: number; sent:
         .update({ status: 'sent', sent_at: msgTime, conversation_id: conversationId })
         .eq('id', log.id)
 
-      // メール通知（非クリティカル・配信停止したユーザーには送らない）
-      if (!userProfile?.email_opt_out) Promise.all([
-        adminClient.from('characters').select('name, i18n').eq('id', characterId).single(),
-        adminClient.auth.admin.getUserById(log.user_id),
-      ]).then(([{ data: charData }, { data: authData }]) => {
-        const toEmail = authData?.user?.email
-        if (toEmail && charData?.name) {
-          sendNotificationEmail({
-            toEmail,
-            locale,
-            characterName: localizedCharacter(charData, locale).name,
-            messageContent: message,
-            conversationId,
-            userId: log.user_id,
-          })
-        }
-      }).catch(() => {/* 無視 */})
+      // メール通知（非クリティカル。送ってよいか・宛先は sendNotificationEmail が DB で決める）
+      if (!userProfile?.email_opt_out) adminClient.from('characters').select('name, i18n').eq('id', characterId).single()
+        .then(({ data: charData }) => charData?.name && sendNotificationEmail(adminClient, {
+          userId: log.user_id,
+          kind: 'auto_broadcast',
+          characterName: localizedCharacter(charData, locale).name,
+          messageContent: message,
+          conversationId,
+        }))
+        .then(undefined, () => {/* 無視 */})
 
       sent++
     } catch (err) {

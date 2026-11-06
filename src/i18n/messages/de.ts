@@ -260,6 +260,7 @@ export const de: Messages = {
   },
   "packages": {
     "checkoutFailed": "Zahlung konnte nicht gestartet werden",
+    "methods": "Zahlung per Karte oder im Convenience Store",
     "campaign": "Aktion: {rate}× Punkte!",
     "campaignUpTo": "Aktion: bis zu {rate}× Punkte!",
     "rate": "×{rate}",
@@ -318,9 +319,16 @@ export const de: Messages = {
     "activated": "Dein Abo ist jetzt aktiv!",
     "welcome": "Willkommen beim Tarif {name}.",
     "passPendingTitle": "Zahlungsnummer wurde erstellt",
-    "passPendingBody": "Dein Tarif wird aktiviert, sobald deine Zahlung im Convenience Store oder per PayPay bestätigt wurde (normalerweise innerhalb von 1–3 Tagen).",
+    "passPendingBody": "Dein Tarif wird aktiviert, sobald deine Zahlung im Convenience Store bestätigt wurde (normalerweise innerhalb von 1–3 Tagen).",
     "pointsThanks": "Vielen Dank für den Kauf von {pt} Punkten",
     "pointsNote": "Deine Punkte werden gutgeschrieben, sobald die Zahlung bestätigt ist (bei Kartenzahlung normalerweise sofort, bei Zahlung im Convenience Store nach Zahlungseingang).",
+    "pendingTitle": "Zahlung ausstehend",
+    "pendingPoints": "{pt}pt ({yen} ¥)",
+    "pendingPass": "{plan}-Pass ({yen} ¥)",
+    "dueBy": "Zahlbar bis: {date}",
+    "openVoucher": "Zahlungsbeleg öffnen",
+    "pointsPendingBody": "Sobald du im Convenience Store bezahlst, werden {pt}pt automatisch gutgeschrieben. Den Zahlungsbeleg kannst du jederzeit über diese Seite öffnen.",
+    "passPendingBody2": "Sobald du im Convenience Store bezahlst, wird dein Plan automatisch aktiviert. Den Zahlungsbeleg kannst du jederzeit über diese Seite öffnen.",
     "canceled": "Kauf abgebrochen",
     "active": "Aktiv",
     "usageThisMonth": "Nachrichtenverbrauch diesen Monat",
@@ -334,7 +342,7 @@ export const de: Messages = {
     "choosePayment": "Zahlungsmethode auswählen",
     "card": "Kreditkarte",
     "cardNote": "Monatliche automatische Verlängerung · Jederzeit kündbar",
-    "konbini": "Convenience Store oder PayPay",
+    "konbini": "Convenience Store",
     "konbiniNote": "Einmalzahlung für einen Monat · Nach der Zahlung sofort aktiv",
     "bank": "Banküberweisung",
     "bankNote": "Einmalzahlung für einen Monat · Nach Bestätigung sofort aktiv",
@@ -466,6 +474,7 @@ export const de: Messages = {
     "toTop": "Nach oben"
   },
   "shop": {
+    "photoHint": "Schenke einer Figur einen Gegenstand und du bekommst ein besonderes Foto von ihr damit",
     "buyFailed": "Kauf fehlgeschlagen",
     "title": "Shop",
     "videosTitle": "Charaktervideos",
@@ -546,6 +555,7 @@ export const de: Messages = {
     "minutes": "{n} Min."
   },
   "gift": {
+    "photoHint": "Schenke etwas und {name} schickt dir ein Foto damit",
     "sentMessage": "🎁 {item} verschenkt",
     "title": "Geschenk für {name}",
     "lead": "Ein Geschenk stärkt eure Zuneigung und macht {name} glücklich",

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { ShoppingBag, Loader2, Gift, Check } from 'lucide-react'
+import { ShoppingBag, Loader2, Gift, Check, Camera } from 'lucide-react'
 import type { Item, ItemCategory, UserItem } from '@/types'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -105,6 +105,12 @@ export default function ShopPage() {
           <span className="text-xs text-[var(--color-text-muted)]">pt</span>
         </div>
       </div>
+
+      {/* 贈るとそのアイテムを持った写真が届く（character_item_photos） */}
+      <p className="flex items-center gap-2 text-sm font-semibold mb-4 px-4 py-3 rounded-[var(--radius-card,12px)]"
+        style={{ background: 'var(--color-primary-soft)', border: '1px solid var(--color-primary-border)', color: 'var(--color-primary)' }}>
+        <Camera size={16} className="flex-shrink-0" />{m.shop.photoHint}
+      </p>
 
       {/* キャラ動画バナー */}
       <Link href="/videos" className="block mb-5 rounded-2xl overflow-hidden"

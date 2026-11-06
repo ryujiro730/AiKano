@@ -260,6 +260,7 @@ export const fr: Messages = {
   },
   "packages": {
     "checkoutFailed": "Échec du démarrage du paiement",
+    "methods": "Payez par carte ou en konbini",
     "campaign": "Offre en cours ! Points ×{rate}",
     "campaignUpTo": "Offre en cours ! Jusqu'à ×{rate} points",
     "rate": "×{rate}",
@@ -318,9 +319,16 @@ export const fr: Messages = {
     "activated": "Votre forfait est activé !",
     "welcome": "Bienvenue avec le forfait {name}.",
     "passPendingTitle": "Votre numéro de paiement a été généré",
-    "passPendingBody": "Votre forfait sera activé après confirmation du paiement en konbini ou par PayPay (généralement sous 1 à 3 jours).",
+    "passPendingBody": "Votre forfait sera activé après confirmation du paiement en konbini (généralement sous 1 à 3 jours).",
     "pointsThanks": "Merci pour votre achat de {pt} pt",
     "pointsNote": "Vos points seront crédités après confirmation du paiement (généralement immédiatement par carte, ou après réception du paiement en konbini, etc.).",
+    "pendingTitle": "Paiement en attente",
+    "pendingPoints": "{pt}pt ({yen} ¥)",
+    "pendingPass": "Forfait {plan} ({yen} ¥)",
+    "dueBy": "À payer avant le : {date}",
+    "openVoucher": "Ouvrir le bordereau de paiement",
+    "pointsPendingBody": "Dès que vous aurez payé en konbini, {pt}pt seront ajoutés automatiquement. Vous pouvez ouvrir le bordereau depuis cette page à tout moment.",
+    "passPendingBody2": "Dès que vous aurez payé en konbini, votre forfait sera activé automatiquement. Vous pouvez ouvrir le bordereau depuis cette page à tout moment.",
     "canceled": "Achat annulé",
     "active": "Actif",
     "usageThisMonth": "Messages utilisés ce mois-ci",
@@ -334,7 +342,7 @@ export const fr: Messages = {
     "choosePayment": "Choisir un mode de paiement",
     "card": "Carte bancaire",
     "cardNote": "Renouvellement automatique chaque mois · Résiliation possible à tout moment",
-    "konbini": "Konbini · PayPay",
+    "konbini": "Konbini",
     "konbiniNote": "Paiement unique pour 1 mois · Activation dès le paiement",
     "bank": "Virement bancaire",
     "bankNote": "Paiement unique pour 1 mois · Activation dès confirmation",
@@ -466,6 +474,7 @@ export const fr: Messages = {
     "toTop": "Retour en haut"
   },
   "shop": {
+    "photoHint": "Offrez un objet à un personnage et recevez une photo spéciale d’elle avec",
     "buyFailed": "Échec de l’achat",
     "title": "Boutique",
     "videosTitle": "Vidéos des personnages",
@@ -546,6 +555,7 @@ export const fr: Messages = {
     "minutes": "{n} min"
   },
   "gift": {
+    "photoHint": "Offrez un cadeau et {name} vous enverra une photo avec",
     "sentMessage": "🎁 Vous avez offert {item}",
     "title": "Offrir un cadeau à {name}",
     "lead": "Un cadeau augmente votre affinité et fait plaisir à {name}",

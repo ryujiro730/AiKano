@@ -12,6 +12,8 @@ export type ServerActionType =
   | 'points_shortage'
   | 'checkout_start'
   | 'point_purchase_complete'
+  | 'payment_pending'
+  | 'payment_expired'
   | 'subscription_checkout_start'
   | 'subscription_start'
   | 'subscription_renew'

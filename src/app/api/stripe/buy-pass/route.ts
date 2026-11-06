@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
         quantity: 1,
       }],
       mode: 'payment',
-      success_url: `${appUrl}/payment?pass=pending&plan=${planId}`,
+      success_url: `${appUrl}/payment?success=true&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl}/payment`,
       metadata: { userId: user.id, planId, type: 'monthly_pass' },
       // コンビニ払い期限: 3日

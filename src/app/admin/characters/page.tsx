@@ -902,7 +902,12 @@ export default function AdminCharactersPage() {
                     {photos.map((photo) => (
                       <div key={photo.id} className="relative group rounded-xl overflow-hidden" style={{ aspectRatio: '1' }}>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={photo.url} alt="" className="w-full h-full object-cover" />
+                        <img src={photo.url} alt="" loading="lazy" className="w-full h-full object-cover" />
+                        {/* ガチャ専用（source = 'gacha'。チャットでキャラから送る写真には使わない） */}
+                        {photo.source === 'gacha' && (
+                          <span className="absolute top-1 right-1 text-[10px] font-bold px-1.5 py-0.5 rounded-md text-white group-hover:opacity-0"
+                            style={{ background: 'rgba(201,138,28,0.92)' }}>ガチャ専用</span>
+                        )}
                         <button
                           onClick={() => deletePhoto(photo.id)}
                           className="absolute top-1 right-1 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"

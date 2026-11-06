@@ -1,8 +1,10 @@
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 import { MESSAGES } from '@/i18n/messages'
 import { fmt } from '@/i18n/fmt'
-import type { Locale } from '@/i18n/config'
+import { isLocale, type Locale } from '@/i18n/config'
 import { unsubscribeUrl } from './email-unsubscribe'
+import { kindTags, type EmailKind } from './email-kinds'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://aikano.chat'
 
@@ -11,31 +13,45 @@ function getResend() {
 }
 
 export interface NotificationEmailOptions {
-  toEmail: string
-  characterName: string
+  userId: string
+  /** 種類（Resend のタグ。管理画面「メール」で種類別に数える） */
+  kind: EmailKind
+  /** 言語ごとに名前を変えるときは関数で渡す（宛先の言語は送る直前に分かる） */
+  characterName: string | ((locale: Locale) => string)
   messageContent: string
   conversationId: string
-  locale?: Locale
-  /** 渡すと配信停止リンク（本文・List-Unsubscribe ヘッダー）を付ける */
-  userId?: string
 }
 
-export async function sendNotificationEmail(opts: NotificationEmailOptions): Promise<void> {
-  if (!process.env.RESEND_API_KEY) {
-    return
-  }
+/**
+ * キャラから新着メッセージが届いたことをメールで知らせる。
+ * 送ってよいかは DB 関数 claim_notify_email（091）が決める: 配信停止・不達・迷惑報告・夜中（0〜7時）・サイトを開いている・
+ * 前の通知から60分以内・1日5通・Gmail 宛で来ていない人（週1通）は送らない。宛先と言語もそこから受け取る
+ */
+export async function sendNotificationEmail(db: SupabaseClient, opts: NotificationEmailOptions): Promise<boolean> {
+  if (!process.env.RESEND_API_KEY) return false
 
-  const m = MESSAGES[opts.locale ?? 'ja']
+  const { data: claimed, error } = await db.rpc('claim_notify_email', { p_user_id: opts.userId, p_kind: opts.kind })
+  if (error) {
+    console.error('[sendNotificationEmail] claim error:', error.message)
+    return false
+  }
+  const to = (claimed as { email: string; locale: string | null }[] | null)?.[0]
+  if (!to) return false
+
+  const locale = isLocale(to.locale) ? to.locale : 'ja'
+  const m = MESSAGES[locale]
+  const characterName = typeof opts.characterName === 'function' ? opts.characterName(locale) : opts.characterName
   const chatUrl = `${APP_URL}/chat`
   const preview = opts.messageContent.slice(0, 60) + (opts.messageContent.length > 60 ? '…' : '')
-  const unsubscribe = opts.userId ? unsubscribeUrl(opts.userId) : null
+  const unsubscribe = unsubscribeUrl(opts.userId)
 
   try {
-    await getResend().emails.send({
+    const { error: sendErr } = await getResend().emails.send({
       from: 'AiKano <noreply@aikano.chat>',
-      to: opts.toEmail,
-      subject: fmt(m.email.subject, { name: opts.characterName }),
-      ...(unsubscribe ? { headers: { 'List-Unsubscribe': `<${unsubscribe}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' } } : {}),
+      to: to.email,
+      subject: fmt(m.email.subject, { name: characterName }),
+      headers: { 'List-Unsubscribe': `<${unsubscribe}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' },
+      tags: kindTags(opts.kind),
       html: `
 <!DOCTYPE html>
 <html lang="ja">
@@ -57,7 +73,7 @@ export async function sendNotificationEmail(opts: NotificationEmailOptions): Pro
             <td style="padding:32px;">
               <p style="margin:0 0 8px;font-size:14px;color:#9b6f7a;">${escapeHtml(m.email.label)}</p>
               <p style="margin:0 0 24px;font-size:22px;font-weight:700;color:#3d1a26;">
-                ${escapeHtml(fmt(m.email.subject, { name: opts.characterName }))}
+                ${escapeHtml(fmt(m.email.subject, { name: characterName }))}
               </p>
               <div style="background:#fdf0f5;border-left:4px solid #e879a0;border-radius:8px;padding:16px 20px;margin-bottom:28px;">
                 <p style="margin:0;font-size:15px;color:#3d1a26;line-height:1.7;white-space:pre-wrap;">${escapeHtml(preview)}</p>
@@ -75,10 +91,10 @@ export async function sendNotificationEmail(opts: NotificationEmailOptions): Pro
               <p style="margin:0;font-size:11px;color:#c8a0a8;text-align:center;line-height:1.6;">
                 ${escapeHtml(m.email.footer).replace(/\n/g, '<br>')}
               </p>
-              ${unsubscribe ? `<p style="margin:8px 0 0;font-size:11px;color:#c8a0a8;text-align:center;line-height:1.6;">
+              <p style="margin:8px 0 0;font-size:11px;color:#c8a0a8;text-align:center;line-height:1.6;">
                 <a href="${unsubscribe}" style="color:#c8a0a8;">${escapeHtml(m.email.unsubscribe)}</a><br>
                 合同会社TJYM ／ info@tjym.org
-              </p>` : ''}
+              </p>
             </td>
           </tr>
         </table>
@@ -89,8 +105,14 @@ export async function sendNotificationEmail(opts: NotificationEmailOptions): Pro
 </html>
       `.trim(),
     })
+    if (sendErr) {
+      console.error('[sendNotificationEmail] send error:', sendErr.message)
+      return false
+    }
+    return true
   } catch (err) {
     console.error('[sendNotificationEmail] error:', err instanceof Error ? err.message : err)
+    return false
   }
 }
 

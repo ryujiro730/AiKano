@@ -6,6 +6,7 @@ import { createClient as createServerClient } from '@/lib/supabase/server'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { resolveVariables } from '@/lib/message-variables'
 import { sendNotificationEmail } from '@/lib/send-notification-email'
+import { localizedCharacter } from '@/lib/character-i18n'
 import { getOrCreateConversation } from '@/lib/conversations'
 
 export const fetchCache = 'force-no-store'
@@ -88,21 +89,16 @@ export async function POST(req: NextRequest) {
     .update({ last_message_at: now, is_unread_staff: false })
     .eq('id', conversationId)
 
-  // メール通知（非同期）
-  Promise.all([
-    admin.auth.admin.getUserById(userId),
-    admin.from('characters').select('name').eq('id', characterId).single(),
-  ]).then(([{ data: authData }, { data: charData }]) => {
-    const email = authData?.user?.email
-    if (email && charData?.name) {
-      sendNotificationEmail({
-        toEmail: email,
-        characterName: charData.name,
-        messageContent: resolvedContent,
-        conversationId,
-      })
-    }
-  }).catch(() => {})
+  // メール通知（非同期。送ってよいか・宛先は sendNotificationEmail が DB で決める）
+  admin.from('characters').select('name, i18n').eq('id', characterId).single()
+    .then(({ data: charData }) => charData?.name && sendNotificationEmail(admin, {
+      userId,
+      kind: 'individual',
+      characterName: (locale) => localizedCharacter(charData, locale).name,
+      messageContent: resolvedContent,
+      conversationId,
+    }))
+    .then(undefined, () => {})
 
   return NextResponse.json({ message: msg, conversationId })
 }

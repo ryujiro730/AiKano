@@ -14,6 +14,7 @@ import { createClient as createAdminClient } from '@/lib/supabase/service'
 import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { resolveVariables } from '@/lib/message-variables'
 import { sendNotificationEmail } from '@/lib/send-notification-email'
+import { localizedCharacter } from '@/lib/character-i18n'
 import { attachMessageMedia } from '@/lib/paid-media'
 
 export const fetchCache = 'force-no-store'
@@ -95,23 +96,18 @@ export async function POST(req: NextRequest) {
 
   // メール通知（非同期・非クリティカル）
   if (conv?.user_id && conv?.character_id) {
-    Promise.all([
-      admin.auth.admin.getUserById(conv.user_id),
-      admin.from('characters').select('name').eq('id', conv.character_id).single(),
-    ]).then(([{ data: authData, error: authErr }, { data: charData, error: charErr }]) => {
-      if (authErr) console.error('[staff-reply] getUserById error:', authErr.message)
-      if (charErr) console.error('[staff-reply] getCharacter error:', charErr.message)
-      const email = authData?.user?.email
-      console.log('[staff-reply] sending email to:', email, 'char:', charData?.name)
-      if (email && charData?.name) {
-        sendNotificationEmail({
-          toEmail: email,
-          characterName: charData.name,
+    admin.from('characters').select('name, i18n').eq('id', conv.character_id).single()
+      .then(({ data: charData, error: charErr }) => {
+        if (charErr) console.error('[staff-reply] getCharacter error:', charErr.message)
+        return charData?.name && sendNotificationEmail(admin, {
+          userId: conv.user_id,
+          kind: 'staff_reply',
+          characterName: (locale) => localizedCharacter(charData, locale).name,
           messageContent: resolvedContent,
           conversationId,
         })
-      }
-    }).catch((err) => { console.error('[staff-reply] email notification error:', err) })
+      })
+      .then(undefined, (err) => { console.error('[staff-reply] email notification error:', err) })
   } else {
     console.warn('[staff-reply] skipping email: user_id=', conv?.user_id, 'character_id=', conv?.character_id)
   }

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { X, Loader2, Heart } from 'lucide-react'
+import { X, Loader2, Heart, Camera } from 'lucide-react'
 import { useI18n } from '@/i18n/client'
 import { fmt } from '@/i18n/fmt'
 
@@ -64,6 +64,11 @@ export function GiftSheet({ characterId, characterName, onClose, onGifted }: {
         </div>
 
         <div className="px-4 pb-5">
+          {/* 贈るとそのアイテムを持った写真が届く（character_item_photos。全キャラ×全アイテム分ある） */}
+          <p className="flex items-center gap-1.5 text-xs font-semibold mb-3 px-3 py-2 rounded-[var(--radius-card,12px)]"
+            style={{ background: 'var(--color-primary-soft)', color: 'var(--color-primary)' }}>
+            <Camera size={14} className="flex-shrink-0" />{fmt(m.gift.photoHint, { name: characterName })}
+          </p>
           {owned === null ? (
             <div className="flex justify-center py-10"><Loader2 className="animate-spin" size={20} style={{ color: 'var(--color-primary)' }} /></div>
           ) : owned.length === 0 ? (

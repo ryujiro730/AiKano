@@ -13,12 +13,12 @@ export function isPhotoRequest(text: string) {
 }
 
 /**
- * キャラが送る写真を1枚選ぶ。アイコン写真＋フォト（会員限定は会員のみ・レベル限定は達した人のみ）から、
+ * キャラが送る写真を1枚選ぶ。アイコン写真＋フォト（会員限定は会員のみ・レベル限定は達した人のみ。ガチャ専用は除く）から、
  * この会話でまだ送っていないものを優先する。free: アイコンと到達済みのレベル限定フォトは無料で見せる。
  */
 export async function pickCharacterPhoto(db: SupabaseClient, characterId: string, userId: string, conversationId: string, avatarUrl: string | null) {
   const [{ data: photos }, { data: profile }, { data: sent }, { data: uc }] = await Promise.all([
-    db.from('character_photos').select('url, members_only, required_level').eq('character_id', characterId),
+    db.from('character_photos').select('url, members_only, required_level').eq('character_id', characterId).eq('source', 'album'),
     db.from('profiles').select('subscription_status, subscription_plan, subscription_period_end, role').eq('id', userId).single(),
     db.from('message_media').select('url, messages!inner(conversation_id)').eq('messages.conversation_id', conversationId).limit(500),
     db.from('user_characters').select('affection_level').eq('user_id', userId).eq('character_id', characterId).maybeSingle(),
@@ -40,11 +40,11 @@ export async function pickCharacterPhoto(db: SupabaseClient, characterId: string
 
 /**
  * 会話の流れでキャラから自分で送る写真を1枚選ぶ（ユーザーがまだ持っていない・この会話で未送信の通常フォト）。
- * 会員限定・レベル限定・アイコンは使わない。
+ * 会員限定・レベル限定・アイコン・ガチャ専用（source = 'gacha'）は使わない。
  */
 export async function pickSpontaneousPhoto(db: SupabaseClient, characterId: string, userId: string, conversationId: string) {
   const [{ data: photos }, { data: sent }, { data: owned }] = await Promise.all([
-    db.from('character_photos').select('url, members_only, required_level').eq('character_id', characterId),
+    db.from('character_photos').select('url, members_only, required_level').eq('character_id', characterId).eq('source', 'album'),
     db.from('message_media').select('url, messages!inner(conversation_id)').eq('messages.conversation_id', conversationId).limit(500),
     db.from('media_unlocks').select('url').eq('user_id', userId).limit(5000),
   ])

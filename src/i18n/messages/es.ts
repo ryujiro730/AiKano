@@ -260,6 +260,7 @@ export const es: Messages = {
   },
   "packages": {
     "checkoutFailed": "No se pudo iniciar el pago",
+    "methods": "Paga con tarjeta o en tienda de conveniencia",
     "campaign": "¡Promoción activa! Puntos ×{rate}",
     "campaignUpTo": "¡Promoción activa! Hasta ×{rate} puntos",
     "rate": "×{rate}",
@@ -318,9 +319,16 @@ export const es: Messages = {
     "activated": "¡Tu plan ya está activo!",
     "welcome": "Te damos la bienvenida al plan {name}.",
     "passPendingTitle": "Se ha generado el número de pago",
-    "passPendingBody": "El plan se activará cuando se confirme el pago en una tienda de conveniencia o por PayPay (normalmente en un plazo de 1 a 3 días).",
+    "passPendingBody": "El plan se activará cuando se confirme el pago en una tienda de conveniencia (normalmente en un plazo de 1 a 3 días).",
     "pointsThanks": "Gracias por comprar {pt}pt",
     "pointsNote": "Los puntos se añadirán cuando se confirme el pago (normalmente al instante con tarjeta; en pagos en tiendas de conveniencia, tras confirmar el ingreso).",
+    "pendingTitle": "Pago pendiente",
+    "pendingPoints": "{pt}pt (¥{yen})",
+    "pendingPass": "Pase {plan} (¥{yen})",
+    "dueBy": "Pagar antes de: {date}",
+    "openVoucher": "Abrir comprobante de pago",
+    "pointsPendingBody": "Cuando pagues en la tienda de conveniencia, se añadirán {pt}pt automáticamente. Puedes abrir el comprobante desde esta página en cualquier momento.",
+    "passPendingBody2": "Cuando pagues en la tienda de conveniencia, tu plan se activará automáticamente. Puedes abrir el comprobante desde esta página en cualquier momento.",
     "canceled": "Has cancelado la compra",
     "active": "Activo",
     "usageThisMonth": "Mensajes usados este mes",
@@ -334,7 +342,7 @@ export const es: Messages = {
     "choosePayment": "Elige un método de pago",
     "card": "Tarjeta de crédito",
     "cardNote": "Renovación automática cada mes · Cancela cuando quieras",
-    "konbini": "Pago en tienda de conveniencia o por PayPay",
+    "konbini": "Pago en tienda de conveniencia",
     "konbiniNote": "Un pago por un mes · Se activa justo después del pago",
     "bank": "Transferencia bancaria",
     "bankNote": "Un pago por un mes · Se activa justo después de la confirmación",
@@ -466,6 +474,7 @@ export const es: Messages = {
     "toTop": "Ir al inicio"
   },
   "shop": {
+    "photoHint": "Regala un artículo a un personaje y recibirás una foto especial de ella con él",
     "buyFailed": "No se pudo completar la compra",
     "title": "Tienda",
     "videosTitle": "Videos de personajes",
@@ -546,6 +555,7 @@ export const es: Messages = {
     "minutes": "{n} min"
   },
   "gift": {
+    "photoHint": "Haz un regalo y {name} te enviará una foto con él",
     "sentMessage": "🎁 Le regalaste {item}",
     "title": "Un regalo para {name}",
     "lead": "Al hacerle un regalo, aumenta la afinidad y haces feliz a {name}",

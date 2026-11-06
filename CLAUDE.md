@@ -110,7 +110,7 @@ Supabase RPC → 集計・計算・複雑なフィルタ（SQL/PostgreSQL）
 
 ## 管理画面（AI返信前提で簡素化）
 
-- メニュー: 概要 / ユーザー / 会話 / キャラ管理 / 集計 / 銀行振込 / お問い合わせ / 動画販売 / アイテム / プレゼント写真 / キャンペーン / 自動同報 / プロモ申請（人手返信用の受信トレイ・モニター・オペグラ・個別送信・通報はメニューから外した。ページ自体は残っている）
+- メニュー: 概要 / ユーザー / 会話 / キャラ管理 / 集計 / 銀行振込 / お問い合わせ / 動画販売 / アイテム / プレゼント写真 / キャンペーン / メール / 自動同報 / プロモ申請（人手返信用の受信トレイ・モニター・オペグラ・個別送信・通報はメニューから外した。ページ自体は残っている）
 - 管理APIの認可は `requireAdmin()`（`lib/admin-auth.ts`）。集計は DB 関数 `admin_user_stats` / `admin_conversation_list` / `admin_overview`（066〜068、service_role のみ）
 - `lib/supabase/server.ts` の `createAdminClient()` は純粋な service role（以前は cookie 付きでユーザー権限になっていたのを修正）。ユーザーの特定は必ず `getAuthUser()` で行い、本人のデータに絞る条件を書くこと
 - ユーザー一覧は `search_admin_users`、行動タイムラインは `admin_user_timeline`（行動ログ＋メッセージ＋ポイント取引＋ログインを合成）。どちらもページング対応（069）
@@ -155,6 +155,8 @@ Supabase RPC → 集計・計算・複雑なフィルタ（SQL/PostgreSQL）
 
 **キャンペーン**（matchkoi から移植）: 対象判定は `lib/campaign-eligibility.ts` 1か所（期間・性別・一人一回限り・条件。表示・バナー・決済で共用）。一人一回限りは `point_transactions.campaign_id / once_campaign_id` のユニーク制約で DB が保証（083）。Stripe webhook は「取引を先に記録 → 成功したら add_points」。管理画面は `components/admin/CampaignManager.tsx` → `/api/admin/campaigns/*`（ブラウザから campaigns に直接書かない）。お知らせメール（公開時・条件達成・24h/72h 追い・手動）は `lib/campaign-email.ts`、対象は DB 関数 `campaign_email_targets` / `campaign_reminder_targets`（088）、cron `/api/cron/campaigns` を5分おき
 
+**コンビニ払い**: 2026-11-06 承認。Checkout は Stripe の管理画面の設定でカード・コンビニ・PayPay を出す（`payment_method_types` は指定しない）。払込番号を出した時点で webhook が `pending_payments`（092）に払込票URL・期限を記録し、決済ページの「お支払い待ち」から開ける。入金（`async_payment_succeeded`）で付与して paid、期限切れ（`async_payment_failed`）で expired。決済ページの完了表示は `/api/payments/status` が Stripe に実際の状態を聞いて出し分ける
+
 **課金導線**: ポイント購入は `PointPackageList`（購入ダイアログと /payment#points で共用）→ `/api/stripe/checkout`（packageId のみ受け取り、価格・付与pt・キャンペーン倍率はサーバーで決定）→ webhook で付与。キャンペーン判定は `lib/campaigns.ts`、付与pt計算は `lib/point-packages.ts` を表示とサーバーで共用。
 
 **書き込み権限**: profiles・point_transactions・user_items・動画購入はブラウザから書けない（065）。必ず service role のサーバーAPI経由で書く
@@ -184,9 +186,16 @@ Supabase RPC → 集計・計算・複雑なフィルタ（SQL/PostgreSQL）
 - 会員限定フォト: `character_photos.members_only`。非会員には URL を返さない（`lib/character-photos.ts`）。RLS でも直読み不可
 - 会員判定は `getActivePlan(profile)`（期限切れパスは非会員扱い）
 
+## 写真ガチャ
+
+- 全員に公開（`lib/features.ts` の `GACHA_PUBLIC`）。中身は `character_photos` のうち会員限定・レベル限定を除いたもの（`lib/gacha.ts`）
+- ガチャ専用写真は `character_photos.source = 'gacha'`（093）。水着・下着のグラビアで、チャットでキャラから送る写真（`lib/photo-request.ts`）には使わない
+- 元写真は `/mnt/data/vast_job/pull/gacha/<slug>/`（Z-Image＋LoRA、各キャラ約78枚）。NudeNet で露出（胸・局部）・お尻の露出があるものと、顔が本人に似ていないもの（ArcFace 0.35 未満）を外した 425 枚を登録。生成プロンプトは「裸なし」でも約1割は胸が出るので、追加するときも必ず検出にかける（Stripe の規約）
+
 ## プレゼントのお礼写真
 
 - アイテムを贈ると、`character_item_photos`（キャラ×アイテムごとの「そのアイテムを持った写真」、081）があれば必ず無料で送る（`lib/item-photos.ts`、ai-reply）
+- ショップ画面とプレゼント画面（`GiftSheet`）で「贈るとそのアイテムを持った写真が届く」と案内している
 - 無いキャラ・アイテムは従来どおり、一定額以上のアイテムならガチャ写真から1枚（`grantGiftRewardPhoto`）
 - 画像は Storage `avatars/item-photos/<character_id>/<item_id>.webp`。生成は Vast.ai 上の Z-Image Turbo＋キャラ LoRA（元データ・LoRA は `/mnt/data/vast_job/`）
 - アルバム（character_photos）も同じ方法で作成し `avatars/char-photos/<character_id>/` に置いた（各キャラ20枚、うち6枚が会員限定）。なつき（旧称ぼく夏系）・メイリン（中国系）は 2026-10-19 追加。なつきのアイテム写真は GPT 製
@@ -224,6 +233,12 @@ Supabase RPC → 集計・計算・複雑なフィルタ（SQL/PostgreSQL）
 - cron が1分おきに `processAutoBroadcast()` を実行
 - `trigger: 'registration'` = ユーザー登録日時 + delay_minutes で送信時刻を計算
 - 予約は `schedule_auto_broadcasts()`（086）: シーケンス作成より後に登録した人だけ・30分以上前に過ぎたステップは予約しない・1通目を逃した人には続きも送らない・BAN 中は除く
+
+## メール（Resend）
+
+- 新着通知（自動同報・追いLINE・スタッフ返信・個別送信）は必ず `sendNotificationEmail(db, { userId, kind, ... })` で送る。宛先・言語・送ってよいかは DB 関数 `claim_notify_email`（091）が決める: 配信停止・不達・迷惑報告・BAN・0〜7時・画面を開いて15分以内・前の通知から60分以内・1日5通・Gmail 宛で3日以上来ていない人は週1通・登録3日以内の Gmail は1日2通
+- 送るメールには `kindTags(kind)`（`lib/email-kinds.ts`）を付ける。Resend の Webhook `/api/webhooks/resend`（`RESEND_WEBHOOK_SECRET`）が `record_email_event` で `email_messages` に記録し、迷惑報告・Permanent バウンス・送信停止の人は `email_opt_out` を立てる
+- 管理画面「メール」（`/admin/email`、`get_email_stats`）で到達率・開封率・迷惑報告率を見る。Gmail の迷惑報告率は 0.3% 未満を保つ（matchkoi はこれを超えて Gmail 宛が止められた）
 
 ## キャラからの追いLINE（呼び戻し）
 
@@ -303,7 +318,7 @@ src/
     UtmCapture.tsx          # UTMパラメータ捕捉
     PointsShortageDialog.tsx # ポイント不足ダイアログ
 .github/workflows/deploy.yml  # デプロイ＆cron設定
-supabase/migrations/          # マイグレーション（072・081〜090 は適用済み）
+supabase/migrations/          # マイグレーション（072・081〜093 は適用済み）
 ```
 
 ---

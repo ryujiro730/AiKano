@@ -34,6 +34,8 @@ const ACTIONS: Record<string, { label: string; cat: Category; color: string }> =
   point_purchase:              { label: 'ポイント購入ボタン',     cat: 'money',   color: '#f59e0b' },
   checkout_start:              { label: '決済画面へ',             cat: 'money',   color: '#f59e0b' },
   point_purchase_complete:     { label: 'ポイント購入完了',       cat: 'money',   color: '#16a34a' },
+  payment_pending:             { label: 'コンビニ払い 払込番号発行', cat: 'money',   color: '#f59e0b' },
+  payment_expired:             { label: 'コンビニ払い 期限切れ',   cat: 'money',   color: '#9ca3af' },
   subscription_checkout_start: { label: 'サブスク決済画面へ',     cat: 'money',   color: '#f59e0b' },
   subscription_start:          { label: 'サブスク開始',           cat: 'money',   color: '#16a34a' },
   subscription_renew:          { label: 'サブスク更新',           cat: 'money',   color: '#16a34a' },

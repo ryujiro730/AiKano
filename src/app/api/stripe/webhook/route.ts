@@ -7,6 +7,7 @@ import { grantSubscriptionBonus } from '@/lib/subscription-bonus'
 import { logUserAction } from '@/lib/user-action-log'
 import { sendTJPurchase } from '@/lib/trafficjunky'
 import { findPackage } from '@/lib/point-packages'
+import { recordPendingPayment, setPendingStatus } from '@/lib/pending-payments'
 
 export const fetchCache = 'force-no-store'
 
@@ -123,7 +124,7 @@ export async function POST(request: Request) {
                 monthly_messages_limit: plan.monthly_messages,
                 monthly_reset_at: periodEnd,
               }).eq('id', userId)
-              await logUserAction(admin, userId, 'subscription_start', { plan: plan.name, method: 'コンビニ・PayPay', price_yen: session.amount_total ?? plan.price_yen })
+              await logUserAction(admin, userId, 'subscription_start', { plan: plan.name, method: 'コンビニ払い', price_yen: session.amount_total ?? plan.price_yen })
               await sendTJPurchase(admin, userId, session.id, session.amount_total ?? plan.price_yen, `pass_${planId}`)
               await grantSubscriptionBonus(admin, userId, planId, `pass:${session.id}`)
             } else if (insErr.code !== '23505') {
@@ -142,8 +143,21 @@ export async function POST(request: Request) {
             await sendTJPurchase(admin, userId, session.id, priceYen ? parseInt(priceYen) : (session.amount_total ?? 0), `points_${granted}`)
           }
         }
+        await setPendingStatus(admin, session.id, 'paid')
+      } else if (event.type === 'checkout.session.completed') {
+        // コンビニ払いなど: 払込番号を出しただけでまだ払われていない。入金で async_payment_succeeded が来る
+        await recordPendingPayment(stripe, admin, session)
+        if (session.metadata?.userId) await logUserAction(admin, session.metadata.userId, 'payment_pending', { price_yen: session.amount_total })
       }
     }
+  }
+
+  // ── コンビニ払いなどの期限切れ・失敗 ────────────────────────────
+  if (event.type === 'checkout.session.async_payment_failed') {
+    const session = event.data.object as Stripe.Checkout.Session
+    await setPendingStatus(admin, session.id, 'expired')
+    const userId = session.metadata?.userId
+    if (userId) await logUserAction(admin, userId, 'payment_expired', { price_yen: session.amount_total })
   }
 
   // ── サブスク開始（checkout完了）────────────────────────────────

@@ -4,10 +4,7 @@ import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Loader2, Crown, Settings, Gift, Copy, Check, CreditCard, Store, Building2, RefreshCw } from 'lucide-react'
-import { CardBrands, FamilyMartBadge, LawsonBadge, MinistopBadge, SeicomartBadge, PayPayBadge } from '@/components/icons/payment-brands'
-
-// Stripe本番でコンビニ・PayPayの審査が通るまで非表示
-const KONBINI_PAYPAY_ENABLED = false
+import { CardBrands, FamilyMartBadge, LawsonBadge, MinistopBadge, SeicomartBadge } from '@/components/icons/payment-brands'
 import { PLANS } from '@/lib/plans'
 import { PointPackageList } from '@/components/PointPackageList'
 import type { Profile } from '@/types'
@@ -19,14 +16,18 @@ import { fmt, gap } from '@/i18n/fmt'
 import { planFeatures } from '@/lib/plan-i18n'
 import { REFERRAL_BONUS, POINTS_PER_MESSAGE } from '@/lib/pricing'
 
+type PaymentStatus = {
+  pending: { session_id: string; kind: 'points' | 'pass'; amount_yen: number; points: number | null; plan_id: string | null; voucher_url: string | null; expires_at: string | null }[]
+  session: { paid: boolean; kind: 'points' | 'pass'; points: number | null; planId: string | null; voucherUrl: string | null; expiresAt: string | null } | null
+}
+
 export default function PaymentPage() {
   const { m, locale } = useI18n()
   const searchParams = useSearchParams()
   const justSubscribed = searchParams.get('subscribed') === 'true'
   const subscribedPlan = searchParams.get('plan')
   const isCanceled = searchParams.get('canceled') === 'true'
-  const isPassPending = searchParams.get('pass') === 'pending'
-  const pointsPurchased = searchParams.get('success') === 'true' ? Number(searchParams.get('points')) || null : null
+  const checkoutSessionId = searchParams.get('success') === 'true' ? searchParams.get('session_id') : null
 
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
@@ -34,7 +35,14 @@ export default function PaymentPage() {
   const [buyingPass, setBuyingPass] = useState<string | null>(null)
   const [openingPortal, setOpeningPortal] = useState(false)
   const [copied, setCopied] = useState(false)
+  // Checkout から戻ったときの実際の支払い状態と、コンビニ払いの払い待ち（/api/payments/status）
+  const [payStatus, setPayStatus] = useState<PaymentStatus | null>(null)
   const supabase = createClient()
+
+  useEffect(() => {
+    const q = checkoutSessionId ? `?session_id=${encodeURIComponent(checkoutSessionId)}` : ''
+    fetch(`/api/payments/status${q}`).then(r => r.ok ? r.json() : null).then(setPayStatus).catch(() => {})
+  }, [checkoutSessionId])
 
   useEffect(() => {
     const load = async () => {
@@ -125,16 +133,62 @@ export default function PaymentPage() {
           <p style={{ color: 'var(--color-text-muted)' }}>{fmt(m.payment.welcome, { name: subscribedPlan === 'standard' ? m.plans.standard : m.plans.premium })}</p>
         </div>
       )}
-      {isPassPending && (
-        <div className="rounded-xl p-4 mb-5 text-sm" style={{ background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.3)' }}>
-          <p className="font-semibold mb-0.5" style={{ color: '#f59e0b' }}>{m.payment.passPendingTitle}</p>
-          <p style={{ color: 'var(--color-text-muted)' }}>{m.payment.passPendingBody}</p>
+      {payStatus?.session?.paid && payStatus.session.kind === 'points' && (
+        <div className="rounded-xl p-4 mb-5 text-sm" style={{ background: 'var(--color-primary-soft)', border: '1px solid var(--color-primary-border)' }}>
+          <p className="font-semibold mb-0.5" style={{ color: 'var(--color-primary)' }}>{fmt(m.payment.pointsThanks, { pt: (payStatus.session.points ?? 0).toLocaleString() })}</p>
+          <p style={{ color: 'var(--color-text-muted)' }}>{m.payment.pointsNote}</p>
         </div>
       )}
-      {pointsPurchased && (
-        <div className="rounded-xl p-4 mb-5 text-sm" style={{ background: 'var(--color-primary-soft)', border: '1px solid var(--color-primary-border)' }}>
-          <p className="font-semibold mb-0.5" style={{ color: 'var(--color-primary)' }}>{fmt(m.payment.pointsThanks, { pt: pointsPurchased.toLocaleString() })}</p>
-          <p style={{ color: 'var(--color-text-muted)' }}>{m.payment.pointsNote}</p>
+      {payStatus?.session?.paid && payStatus.session.kind === 'pass' && (
+        <div className="rounded-xl p-4 mb-5 text-sm" style={{ background: 'rgba(125,186,132,0.12)', border: '1px solid rgba(125,186,132,0.3)' }}>
+          <p className="font-semibold" style={{ color: '#7ec850' }}>{m.payment.activated}</p>
+        </div>
+      )}
+      {payStatus?.session && !payStatus.session.paid && (
+        <div className="rounded-xl p-4 mb-5 text-sm" style={{ background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.3)' }}>
+          <p className="font-semibold mb-0.5" style={{ color: '#f59e0b' }}>{m.payment.passPendingTitle}</p>
+          <p style={{ color: 'var(--color-text-muted)' }}>
+            {payStatus.session.kind === 'points'
+              ? fmt(m.payment.pointsPendingBody, { pt: (payStatus.session.points ?? 0).toLocaleString() })
+              : m.payment.passPendingBody2}
+          </p>
+          {/* webhook より先に戻ってきて、まだ払い待ち一覧に無いときはここから払込票を開く */}
+          {payStatus.session.voucherUrl && !payStatus.pending.some(p => p.session_id === checkoutSessionId) && (
+            <a href={payStatus.session.voucherUrl} target="_blank" rel="noreferrer"
+              className="inline-block mt-2 text-xs font-bold px-3 py-2 rounded-full text-white" style={{ background: '#f59e0b' }}>
+              {m.payment.openVoucher}
+            </a>
+          )}
+        </div>
+      )}
+      {/* コンビニ払いの払い待ち（払込票はここからいつでも開ける） */}
+      {payStatus && payStatus.pending.length > 0 && (
+        <div className="rounded-xl p-4 mb-5 text-sm" style={{ background: 'var(--color-surface)', border: '1px solid rgba(251,191,36,0.5)' }}>
+          <p className="font-semibold mb-2 flex items-center gap-1.5"><Store size={14} style={{ color: '#f59e0b' }} />{m.payment.pendingTitle}</p>
+          <div className="flex flex-col gap-2">
+            {payStatus.pending.map(p => (
+              <div key={p.session_id} className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-medium">
+                    {p.kind === 'points'
+                      ? fmt(m.payment.pendingPoints, { pt: (p.points ?? 0).toLocaleString(), yen: p.amount_yen.toLocaleString() })
+                      : fmt(m.payment.pendingPass, { plan: p.plan_id === 'premium' ? m.plans.premium : m.plans.standard, yen: p.amount_yen.toLocaleString() })}
+                  </p>
+                  {p.expires_at && (
+                    <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+                      {fmt(m.payment.dueBy, { date: format(new Date(p.expires_at), 'M/d HH:mm', { locale: DATE_FNS_LOCALE[locale] }) })}
+                    </p>
+                  )}
+                </div>
+                {p.voucher_url && (
+                  <a href={p.voucher_url} target="_blank" rel="noreferrer"
+                    className="flex-shrink-0 text-xs font-bold px-3 py-2 rounded-full text-white" style={{ background: '#f59e0b' }}>
+                    {m.payment.openVoucher}
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
       {isCanceled && (
@@ -246,8 +300,8 @@ export default function PaymentPage() {
                   <span className="text-xs font-bold mt-1 flex-shrink-0" style={{ color: 'var(--color-primary)' }}>→</span>
                 </button>
 
-                {/* コンビニ/PayPay（1回払い） */}
-                {KONBINI_PAYPAY_ENABLED && <button onClick={() => handleBuyPass(plan.id)} disabled={subscribing !== null || buyingPass !== null}
+                {/* コンビニ払い（1回払い） */}
+                <button onClick={() => handleBuyPass(plan.id)} disabled={subscribing !== null || buyingPass !== null}
                   className="w-full flex items-start gap-3 px-5 py-3.5 transition-colors disabled:opacity-60"
                   style={{ borderTop: '1px solid var(--color-border)' }}
                   onMouseEnter={e => (e.currentTarget.style.background = 'var(--color-surface-2)')}
@@ -267,11 +321,10 @@ export default function PaymentPage() {
                       <LawsonBadge />
                       <MinistopBadge />
                       <SeicomartBadge />
-                      <PayPayBadge />
                     </div>
                   </div>
                   <span className="text-xs font-bold mt-1 flex-shrink-0" style={{ color: 'var(--color-primary)' }}>→</span>
-                </button>}
+                </button>
 
                 {/* 銀行振込（1回払い）。日本の口座への振込なので日本語ユーザーのみ */}
                 {locale === 'ja' && <a href={`/payment/bank-transfer?plan=${plan.id}`}
@@ -336,13 +389,11 @@ export default function PaymentPage() {
               <td className="py-2 text-center">{m.payment.autoMonthly}</td>
               <td className="py-2 text-center">{m.payment.instant}</td>
             </tr>
-            {KONBINI_PAYPAY_ENABLED && (
-              <tr>
-                <td className="py-2 flex items-center gap-1.5"><Store size={12} style={{ color: '#22c55e' }} />{m.payment.konbini}</td>
-                <td className="py-2 text-center">{m.payment.manualMonth}</td>
-                <td className="py-2 text-center">{m.payment.afterPayment}</td>
-              </tr>
-            )}
+            <tr>
+              <td className="py-2 flex items-center gap-1.5"><Store size={12} style={{ color: '#22c55e' }} />{m.payment.konbini}</td>
+              <td className="py-2 text-center">{m.payment.manualMonth}</td>
+              <td className="py-2 text-center">{m.payment.afterPayment}</td>
+            </tr>
             <tr>
               <td className="py-2 flex items-center gap-1.5"><Building2 size={12} style={{ color: '#ca8a04' }} />{m.payment.bank}</td>
               <td className="py-2 text-center">{m.payment.manualMonth}</td>

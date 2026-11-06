@@ -42,7 +42,7 @@ export async function POST(request: Request) {
         },
       ],
       mode: 'payment',
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/payment?success=true&points=${tokens}&price=${pkg.price_yen}`,
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/payment?success=true&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/payment?canceled=true`,
       metadata: {
         userId: user.id,

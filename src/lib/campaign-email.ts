@@ -5,6 +5,7 @@ import { fmt } from '@/i18n/fmt'
 import { isLocale, type Locale } from '@/i18n/config'
 import { INTERNAL_EMAILS } from './internal-accounts'
 import { unsubscribeUrl } from './email-unsubscribe'
+import { kindTags } from './email-kinds'
 import { localizedText } from './content-i18n'
 import { isWithinPeriod, type CampaignRow } from './campaign-eligibility'
 
@@ -116,6 +117,7 @@ function launchEmail(campaign: CampaignRow, t: Target) {
     to: t.email,
     subject: copy ? fmt(m.subject, { copy }) : m.subjectDefault,
     headers: headers(t.user_id),
+    tags: kindTags('campaign_launch'),
     html: emailHtml({
       locale, userId: t.user_id, label: m.label, title: copy, body: (c.description as string | null) ?? '',
       ctaUrl: absoluteUrl(c.cta_url), ctaLabel: (c.cta_text as string | null) || m.cta, imageUrl: c.image_url,
@@ -138,6 +140,7 @@ function reminderEmail(campaign: CampaignRow, t: Target, text?: ReminderText) {
     to: t.email,
     subject,
     headers: headers(t.user_id),
+    tags: kindTags('campaign_reminder'),
     html: emailHtml({
       locale, userId: t.user_id, label: m.label, title: '', body,
       ctaUrl: absoluteUrl(text?.ctaUrl || c.cta_url), ctaLabel: text?.ctaLabel?.trim() || m.reminderCta, imageUrl: c.image_url,

@@ -260,6 +260,7 @@ export const en: Messages = {
   },
   "packages": {
     "checkoutFailed": "Failed to start payment",
+    "methods": "Pay by card or at a convenience store",
     "campaign": "Campaign on! {rate}x points",
     "campaignUpTo": "Campaign on! Up to {rate}x points",
     "rate": "{rate}x",
@@ -318,9 +319,16 @@ export const en: Messages = {
     "activated": "Your plan is now active!",
     "welcome": "Welcome to the {name} plan.",
     "passPendingTitle": "Your payment code is ready",
-    "passPendingBody": "Your plan will become active once your convenience store or PayPay payment is confirmed (usually within 1–3 days).",
+    "passPendingBody": "Your plan will become active once your convenience store payment is confirmed (usually within 1–3 days).",
     "pointsThanks": "Thanks for purchasing {pt}pt",
     "pointsNote": "Your points will be added once your payment is confirmed (usually right away for cards, and after payment confirmation for convenience store payments and other methods).",
+    "pendingTitle": "Awaiting payment",
+    "pendingPoints": "{pt}pt (¥{yen})",
+    "pendingPass": "{plan} pass (¥{yen})",
+    "dueBy": "Pay by: {date}",
+    "openVoucher": "Open payment slip",
+    "pointsPendingBody": "Once you pay at the convenience store, {pt}pt will be added automatically. You can open the payment slip from this page at any time.",
+    "passPendingBody2": "Once you pay at the convenience store, your plan will be activated automatically. You can open the payment slip from this page at any time.",
     "canceled": "Purchase canceled",
     "active": "Active",
     "usageThisMonth": "Messages used this month",
@@ -334,7 +342,7 @@ export const en: Messages = {
     "choosePayment": "Choose a payment method",
     "card": "Credit card",
     "cardNote": "Automatically renews monthly · Cancel anytime",
-    "konbini": "Convenience store or PayPay",
+    "konbini": "Convenience store",
     "konbiniNote": "One-time payment for 1 month · Active as soon as payment is made",
     "bank": "Bank transfer",
     "bankNote": "One-time payment for 1 month · Active as soon as payment is confirmed",
@@ -466,6 +474,7 @@ export const en: Messages = {
     "toTop": "Back to top"
   },
   "shop": {
+    "photoHint": "Give an item to a character and you will get a special photo of her holding it",
     "buyFailed": "Purchase failed",
     "title": "Shop",
     "videosTitle": "Character Videos",
@@ -546,6 +555,7 @@ export const en: Messages = {
     "minutes": "{n} min"
   },
   "gift": {
+    "photoHint": "Give a gift and {name} will send you a photo holding it",
     "sentMessage": "🎁 You gave {item} as a gift",
     "title": "A gift for {name}",
     "lead": "Giving a gift raises affection and makes {name} happy",
