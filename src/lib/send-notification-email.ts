@@ -107,13 +107,22 @@ export async function sendNotificationEmail(db: SupabaseClient, opts: Notificati
     })
     if (sendErr) {
       console.error('[sendNotificationEmail] send error:', sendErr.message)
+      await releaseClaim(db, opts.userId, opts.kind)
       return false
     }
     return true
   } catch (err) {
     console.error('[sendNotificationEmail] error:', err instanceof Error ? err.message : err)
+    await releaseClaim(db, opts.userId, opts.kind)
     return false
   }
+}
+
+/** 送れなかったときは、claim_notify_email が入れた送信記録を取り消す（届いていないのに1時間1通・1日5通の数に入っていた） */
+async function releaseClaim(db: SupabaseClient, userId: string, kind: EmailKind) {
+  const { data } = await db.from('email_notify_log').select('id').eq('user_id', userId).eq('kind', kind)
+    .order('sent_at', { ascending: false }).limit(1)
+  if (data?.[0]) await db.from('email_notify_log').delete().eq('id', data[0].id)
 }
 
 function escapeHtml(str: string): string {
