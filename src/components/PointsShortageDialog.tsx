@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { X, CalendarCheck } from 'lucide-react'
 import { LOGIN_BONUS, FREE_MESSAGES_PER_LOGIN } from '@/lib/pricing'
 import { logAction } from '@/lib/action-log'
+import { trackViewCheckout } from '@/lib/meta'
 import { PointPackageList } from './PointPackageList'
 import { useI18n } from '@/i18n/client'
 import { fmt } from '@/i18n/fmt'
@@ -23,6 +24,7 @@ export function PointsShortageDialog({ currentPoints, requiredPoints, onClose, t
 
   useEffect(() => {
     logAction('purchase_dialog_open', { metadata: { title, current: currentPoints, required: requiredPoints } })
+    trackViewCheckout()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

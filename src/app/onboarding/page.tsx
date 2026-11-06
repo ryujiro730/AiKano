@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Loader2, ChevronLeft, Check } from 'lucide-react'
 import { trackSignUp, trackOnboardingStart } from '@/lib/gtag'
-import { trackMeta } from '@/lib/meta'
+import { trackMeta, trackMetaCustom } from '@/lib/meta'
 import { getStoredUtm, getStoredGclid } from '@/components/UtmCapture'
 import { useI18n } from '@/i18n/client'
 import { fmt } from '@/i18n/fmt'
@@ -22,6 +22,8 @@ export default function OnboardingPage() {
   const supabase = createClient()
 
   const [step, setStep] = useState(1)
+  // Meta: 登録の各ステップに進んだ（独自イベント OnboardingStep1〜3。どこで離脱しているかを広告側でも見る）
+  useEffect(() => { trackMetaCustom(`OnboardingStep${step}`) }, [step])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 

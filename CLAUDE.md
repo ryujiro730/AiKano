@@ -220,7 +220,10 @@ Supabase RPC → 集計・計算・複雑なフィルタ（SQL/PostgreSQL）
 ## Meta 広告の計測（Pixel・CAPI）
 
 - Pixel ID は `lib/meta.ts` の `META_PIXEL_ID`（空の間は何も読み込まない）。CAPI のトークンは GitHub Secret `META_CAPI_TOKEN`（`lib/meta-capi.ts`）
-- 送るイベント: PageView（ブラウザ・管理画面は除く）／CompleteRegistration（登録完了。サーバーとブラウザで同じ eventId `reg_<userId>`）／InitiateCheckout（決済開始、サーバー）／Purchase と初回の FirstPurchase（Stripe webhook から。ポイント・パスは Checkout のセッションID、サブスクは請求書ID。決済ページに戻ったときブラウザからも同じ ID で送る）
+- 送るイベント（登録と課金の間も送り、課金しそうな人の学習材料にする。matchkoi と同じ考え）:
+  PageView（ブラウザ・管理画面は除く）／OnboardingStep1〜3（ブラウザの独自イベント）／CompleteRegistration（登録完了。サーバーとブラウザで同じ eventId `reg_<userId>`）／
+  Contact（初めてのメッセージ。`profiles.first_message_at`、097）／InitiateCheckout（購入ダイアログ・決済ページを開いた。ブラウザと `/api/meta/event` から同じ eventId）／
+  AddPaymentInfo（Stripe の決済画面へ進んだ、サーバー）／Purchase と初回の FirstPurchase（Stripe webhook から。ポイント・パスは Checkout のセッションID、サブスクは請求書ID。決済ページに戻ったときブラウザからも同じ ID で送る）
 - webhook ではブラウザ情報が取れないので、登録・決済開始時に `meta_attribution`（096）へ fbp / fbc / IP / UA を保存して使う。社内アカウントは送らない
 
 ## UTM / 流入元トラッキング
@@ -328,7 +331,7 @@ src/
     UtmCapture.tsx          # UTMパラメータ捕捉
     PointsShortageDialog.tsx # ポイント不足ダイアログ
 .github/workflows/deploy.yml  # デプロイ＆cron設定
-supabase/migrations/          # マイグレーション（072・081〜096 は適用済み）
+supabase/migrations/          # マイグレーション（072・081〜097 は適用済み）
 ```
 
 ---

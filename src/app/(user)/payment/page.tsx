@@ -11,7 +11,7 @@ import type { Profile } from '@/types'
 import { format } from 'date-fns'
 import { DATE_FNS_LOCALE } from '@/i18n/date-locale'
 import { logAction } from '@/lib/action-log'
-import { trackMeta } from '@/lib/meta'
+import { trackMeta, trackViewCheckout } from '@/lib/meta'
 import { useI18n } from '@/i18n/client'
 import { fmt, gap } from '@/i18n/fmt'
 import { planFeatures } from '@/lib/plan-i18n'
@@ -60,7 +60,7 @@ export default function PaymentPage() {
     load()
   }, [])
 
-  useEffect(() => { logAction('payment_page') }, [])
+  useEffect(() => { logAction('payment_page'); trackViewCheckout() }, [])
 
   // /payment#points で来たら、読み込み完了後にポイント購入欄へスクロール
   useEffect(() => {

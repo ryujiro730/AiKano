@@ -13,7 +13,8 @@ import { INTERNAL_EMAILS } from './internal-accounts'
 const GRAPH_API_VERSION = 'v21.0'
 const SITE = 'https://aikano.chat'
 
-type EventName = 'CompleteRegistration' | 'InitiateCheckout' | 'Purchase' | 'FirstPurchase'
+// 登録と課金の間の行動（Contact・InitiateCheckout・AddPaymentInfo）も送る。課金より件数が多いので、課金しそうな人の学習材料になる（matchkoi の funnel-events と同じ考え）
+type EventName = 'CompleteRegistration' | 'Contact' | 'InitiateCheckout' | 'AddPaymentInfo' | 'Purchase' | 'FirstPurchase'
 
 function sha256(value: string) {
   return createHash('sha256').update(value.trim().toLowerCase()).digest('hex')
@@ -115,10 +116,25 @@ export async function metaRegistration(admin: SupabaseClient, userId: string, so
   await send({ eventName: 'CompleteRegistration', eventId: `reg_${userId}`, eventSourceUrl: `${SITE}/onboarding`, userId, attr: await getAttribution(admin, userId), contentName: source ?? 'organic' })
 }
 
-/** 決済画面へ進んだ（本人のリクエスト中に呼ぶ） */
+/** 初めてメッセージを送った（1人1回。profiles.first_message_at が空のときだけ入れて送る、097） */
+export async function metaFirstMessage(admin: SupabaseClient, userId: string) {
+  const { data } = await admin.from('profiles').update({ first_message_at: new Date().toISOString() })
+    .eq('id', userId).is('first_message_at', null).select('id')
+  if (!data?.length) return
+  await captureMetaAttribution(admin, userId)
+  await send({ eventName: 'Contact', eventId: `contact_${userId}`, eventSourceUrl: `${SITE}/chat`, userId, attr: await getAttribution(admin, userId) })
+}
+
+/** 購入ダイアログ・決済ページを開いた（/api/meta/event から。ブラウザ側も同じ eventId で送る） */
+export async function metaViewCheckout(admin: SupabaseClient, userId: string, eventId: string, eventSourceUrl: string) {
+  await captureMetaAttribution(admin, userId)
+  await send({ eventName: 'InitiateCheckout', eventId, eventSourceUrl, userId, attr: await getAttribution(admin, userId) })
+}
+
+/** Stripe の決済画面へ進んだ（本人のリクエスト中に呼ぶ） */
 export async function metaInitiateCheckout(admin: SupabaseClient, userId: string, eventId: string, valueYen: number) {
   await captureMetaAttribution(admin, userId)
-  await send({ eventName: 'InitiateCheckout', eventId, eventSourceUrl: `${SITE}/payment`, userId, attr: await getAttribution(admin, userId), value: valueYen })
+  await send({ eventName: 'AddPaymentInfo', eventId, eventSourceUrl: `${SITE}/payment`, userId, attr: await getAttribution(admin, userId), value: valueYen })
 }
 
 /**

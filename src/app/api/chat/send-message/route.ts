@@ -5,6 +5,7 @@ import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { PLANS, type PlanId } from '@/lib/plans'
 import { POINTS_PER_MESSAGE } from '@/lib/pricing'
 import { logUserAction } from '@/lib/user-action-log'
+import { metaFirstMessage } from '@/lib/meta-capi'
 import { spendPoints, refundPoints, usablePoints } from '@/lib/points'
 import { getMessages } from '@/i18n/server'
 import { fmt } from '@/i18n/fmt'
@@ -76,6 +77,8 @@ export async function POST(req: NextRequest) {
     cost: charge.deducted,
     via: charge.usedSubscription ? 'subscription' : 'points',
   })
+  // 初めてのメッセージなら Meta に Contact を送る（返事を待たせないよう待たない）
+  void metaFirstMessage(db, user.id)
 
   return NextResponse.json({
     message: msg,
