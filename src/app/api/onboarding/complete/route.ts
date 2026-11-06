@@ -6,6 +6,7 @@ import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { REGISTRATION_BONUS, REFERRAL_BONUS } from '@/lib/pricing'
 import { logUserAction } from '@/lib/user-action-log'
 import { sendTJPostback } from '@/lib/trafficjunky'
+import { metaRegistration } from '@/lib/meta-capi'
 import { getLocale, getMessages } from '@/i18n/server'
 
 export const fetchCache = 'force-no-store'
@@ -158,8 +159,10 @@ export async function POST(req: NextRequest) {
     })
 
     if (tjAclid) await sendTJPostback({ aclid: String(tjAclid), transactionId: `signup_${user.id}`, event: 'signup' })
+    // Meta: ブラウザ側（onboarding/page.tsx）も同じ eventId で送り、Meta 側で1件にまとめる
+    await metaRegistration(adminClient, user.id, utmSource ?? referralSource ?? null)
 
-    return NextResponse.json({ ok: true })
+    return NextResponse.json({ ok: true, metaEventId: `reg_${user.id}` })
   }
 
   // onboarding完了済み → 名前・年齢・性別のみ更新

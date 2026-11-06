@@ -8,6 +8,7 @@ import { logUserAction } from '@/lib/user-action-log'
 import { sendTJPurchase } from '@/lib/trafficjunky'
 import { findPackage } from '@/lib/point-packages'
 import { recordPendingPayment, setPendingStatus } from '@/lib/pending-payments'
+import { metaPurchase } from '@/lib/meta-capi'
 
 export const fetchCache = 'force-no-store'
 
@@ -170,6 +171,7 @@ async function handle(
               }).eq('id', userId)
               await logUserAction(admin, userId, 'subscription_start', { plan: plan.name, method: 'コンビニ払い', price_yen: session.amount_total ?? plan.price_yen })
               await sendTJPurchase(admin, userId, session.id, session.amount_total ?? plan.price_yen, `pass_${planId}`)
+              await metaPurchase(admin, userId, session.id, session.amount_total ?? plan.price_yen, `pass_${planId}`)
               await grantSubscriptionBonus(admin, userId, planId, `pass:${session.id}`)
             } else if (insErr.code !== '23505') {
               console.error('[stripe webhook] pass record failed:', insErr.message)
@@ -185,6 +187,7 @@ async function handle(
           if (granted !== 'duplicate') {
             await logUserAction(admin, userId, 'point_purchase_complete', { tokens: granted, price_yen: priceYen ? parseInt(priceYen) : session.amount_total })
             await sendTJPurchase(admin, userId, session.id, priceYen ? parseInt(priceYen) : (session.amount_total ?? 0), `points_${granted}`)
+            await metaPurchase(admin, userId, session.id, priceYen ? parseInt(priceYen) : (session.amount_total ?? 0), `points_${granted}`)
           }
         }
         await setPendingStatus(admin, session.id, 'paid')
@@ -304,7 +307,11 @@ async function handle(
           price_yen: invoice.amount_paid,
           stripe_session_id: invoice.id,
         })
-        if (!dupErr) await sendTJPurchase(admin, payer.id, invoice.id!, invoice.amount_paid, 'subscription')
+        if (!dupErr) {
+          await sendTJPurchase(admin, payer.id, invoice.id!, invoice.amount_paid, 'subscription')
+          // サブスクは初回・毎月の更新とも請求書ごとに Purchase（Checkout 完了では送らない＝二重にしない）
+          await metaPurchase(admin, payer.id, invoice.id!, invoice.amount_paid, `subscription_${(invoice as any).billing_reason ?? ''}`)
+        }
       }
     }
 

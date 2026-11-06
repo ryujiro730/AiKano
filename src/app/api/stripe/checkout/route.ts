@@ -7,6 +7,7 @@ import { INTERNAL_EMAILS } from '@/lib/internal-accounts'
 import { findEligibleCampaign } from '@/lib/campaigns'
 import { findPackage, pointsForPackage, isCampaignTarget, type PurchaseCampaign, toPurchaseCampaign } from '@/lib/point-packages'
 import { logUserAction } from '@/lib/user-action-log'
+import { metaInitiateCheckout } from '@/lib/meta-capi'
 
 export const fetchCache = 'force-no-store'
 
@@ -55,6 +56,7 @@ export async function POST(request: Request) {
     } as any)
 
     await logUserAction(db, user.id, 'checkout_start', { price_yen: pkg.price_yen, tokens, campaign: appliedCampaignId || undefined })
+    await metaInitiateCheckout(db, user.id, `ic_${session.id}`, pkg.price_yen)
 
     return NextResponse.json({ url: session.url })
   } catch (error) {

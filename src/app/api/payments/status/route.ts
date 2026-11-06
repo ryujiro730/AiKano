@@ -32,6 +32,7 @@ export async function GET(req: NextRequest) {
       paid,
       kind: s.metadata?.type === 'monthly_pass' ? 'pass' : 'points',
       points: s.metadata?.tokens ? parseInt(s.metadata.tokens) : null,
+      amountYen: s.amount_total ?? null,
       planId: s.metadata?.planId ?? null,
       voucherUrl: v?.voucherUrl ?? null,
       expiresAt: v?.expiresAt ?? null,

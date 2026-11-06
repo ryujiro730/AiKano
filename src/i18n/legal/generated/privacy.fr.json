@@ -1,6 +1,6 @@
 {
   "title": "Politique de confidentialité",
-  "updated": "Dernière mise à jour : juin 2026",
+  "updated": "Dernière mise à jour : novembre 2026",
   "footer": "Équipe de gestion d’AiKano",
   "sections": [
     {
@@ -90,6 +90,10 @@
         {
           "label": "Outils d’analyse :",
           "text": "Analyse de l’accès au service afin de l’améliorer (Google Analytics, etc.)"
+        },
+        {
+          "label": "Mesure publicitaire :",
+          "text": "Pour mesurer la performance des publicités et optimiser leur diffusion, nous utilisons les outils de mesure de Meta Platforms, Inc. (Pixel Meta et API Conversions) et pouvons transmettre à Meta des informations de consultation, d’inscription et d’achat, ainsi que des adresses e-mail chiffrées (hachées) et des données similaires. Le contenu de vos conversations n’est pas transmis."
         },
         {
           "label": "Modèles d’IA :",

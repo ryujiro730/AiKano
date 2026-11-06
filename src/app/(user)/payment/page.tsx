@@ -11,6 +11,7 @@ import type { Profile } from '@/types'
 import { format } from 'date-fns'
 import { DATE_FNS_LOCALE } from '@/i18n/date-locale'
 import { logAction } from '@/lib/action-log'
+import { trackMeta } from '@/lib/meta'
 import { useI18n } from '@/i18n/client'
 import { fmt, gap } from '@/i18n/fmt'
 import { planFeatures } from '@/lib/plan-i18n'
@@ -18,7 +19,7 @@ import { REFERRAL_BONUS, POINTS_PER_MESSAGE } from '@/lib/pricing'
 
 type PaymentStatus = {
   pending: { session_id: string; kind: 'points' | 'pass'; amount_yen: number; points: number | null; plan_id: string | null; voucher_url: string | null; expires_at: string | null }[]
-  session: { paid: boolean; kind: 'points' | 'pass'; points: number | null; planId: string | null; voucherUrl: string | null; expiresAt: string | null } | null
+  session: { paid: boolean; kind: 'points' | 'pass'; points: number | null; amountYen: number | null; planId: string | null; voucherUrl: string | null; expiresAt: string | null } | null
 }
 
 export default function PaymentPage() {
@@ -41,7 +42,11 @@ export default function PaymentPage() {
 
   useEffect(() => {
     const q = checkoutSessionId ? `?session_id=${encodeURIComponent(checkoutSessionId)}` : ''
-    fetch(`/api/payments/status${q}`).then(r => r.ok ? r.json() : null).then(setPayStatus).catch(() => {})
+    fetch(`/api/payments/status${q}`).then(r => r.ok ? r.json() : null).then((d: PaymentStatus | null) => {
+      setPayStatus(d)
+      // サーバー（webhook）の CAPI と同じ eventID（Checkout のセッションID）で送り、Meta 側で1件にまとめる
+      if (d?.session?.paid && checkoutSessionId) trackMeta('Purchase', { value: d.session.amountYen ?? 0, currency: 'JPY' }, checkoutSessionId)
+    }).catch(() => {})
   }, [checkoutSessionId])
 
   useEffect(() => {

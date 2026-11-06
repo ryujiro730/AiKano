@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Loader2, ChevronLeft, Check } from 'lucide-react'
 import { trackSignUp, trackOnboardingStart } from '@/lib/gtag'
+import { trackMeta } from '@/lib/meta'
 import { getStoredUtm, getStoredGclid } from '@/components/UtmCapture'
 import { useI18n } from '@/i18n/client'
 import { fmt } from '@/i18n/fmt'
@@ -95,6 +96,8 @@ export default function OnboardingPage() {
       return
     }
     trackSignUp({ referral_source: referralSource ?? utmSource })
+    const done = await res.json().catch(() => ({}))
+    if (done.metaEventId) trackMeta('CompleteRegistration', { content_name: referralSource ?? utmSource ?? 'organic' }, done.metaEventId)
     // sessionStorage をクリア
     ;['referral_source', 'referral_article', 'referral_by_code',
       'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'fbclid', 'gclid', 'aclid',

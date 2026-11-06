@@ -1,6 +1,6 @@
 {
   "title": "Datenschutzerklärung",
-  "updated": "Zuletzt aktualisiert: Juni 2026",
+  "updated": "Zuletzt aktualisiert: November 2026",
   "footer": "AiKano-Betriebsteam",
   "sections": [
     {
@@ -90,6 +90,10 @@
         {
           "label": "Analysetools:",
           "text": "Analyse der Zugriffe zur Verbesserung des Dienstes (z. B. Google Analytics)"
+        },
+        {
+          "label": "Anzeigenmessung:",
+          "text": "Zur Messung der Anzeigenleistung und Optimierung der Auslieferung nutzen wir Messwerkzeuge von Meta Platforms, Inc. (Meta-Pixel und Conversions API) und übermitteln ggf. Informationen zu Seitenaufrufen, Registrierungen und Käufen sowie gehashte (verschlüsselte) E-Mail-Adressen und ähnliche Daten an Meta. Inhalte deiner Gespräche werden nicht übermittelt."
         },
         {
           "label": "KI-Basismodelle:",

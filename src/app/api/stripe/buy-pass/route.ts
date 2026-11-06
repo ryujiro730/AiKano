@@ -5,6 +5,7 @@ import { getAuthUser } from '@/lib/supabase/get-auth-user'
 import { createAdminClient } from '@/lib/supabase/server'
 import { PLANS, type PlanId } from '@/lib/plans'
 import { getOrCreateCustomer } from '@/lib/stripe-customer'
+import { metaInitiateCheckout } from '@/lib/meta-capi'
 
 export const fetchCache = 'force-no-store'
 
@@ -46,6 +47,7 @@ export async function POST(req: NextRequest) {
       managed_payments: { enabled: false },
     } as any)
 
+    await metaInitiateCheckout(admin, user.id, `ic_${session.id}`, plan.price_yen)
     return NextResponse.json({ url: session.url })
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)

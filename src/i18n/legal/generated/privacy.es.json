@@ -1,6 +1,6 @@
 {
   "title": "Política de privacidad",
-  "updated": "Última actualización: junio de 2026",
+  "updated": "Última actualización: noviembre de 2026",
   "footer": "Oficina de administración de AiKano",
   "sections": [
     {
@@ -90,6 +90,10 @@
         {
           "label": "Herramientas de análisis:",
           "text": "Análisis de visitas para mejorar el servicio (como Google Analytics)."
+        },
+        {
+          "label": "Medición de anuncios:",
+          "text": "Para medir el rendimiento de los anuncios y optimizar su entrega, utilizamos las herramientas de medición de Meta Platforms, Inc. (Píxel de Meta y API de conversiones) y podemos enviar a Meta información de visitas, registros y compras, junto con direcciones de correo electrónico cifradas (hash) y datos similares. No enviamos el contenido de tus conversaciones."
         },
         {
           "label": "Modelos de IA:",

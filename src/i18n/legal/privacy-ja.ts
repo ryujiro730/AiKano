@@ -2,7 +2,7 @@ import type { LegalDoc } from './types'
 
 export const privacyJa: LegalDoc = {
   title: 'プライバシーポリシー',
-  updated: '最終更新日：2026年6月',
+  updated: '最終更新日：2026年11月',
   footer: 'AiKano 運営事務局',
   sections: [
     {
@@ -73,6 +73,7 @@ export const privacyJa: LegalDoc = {
       items: [
         { label: '決済サービス：', text: 'ポイント購入時の決済処理（クレジットカード情報は当社サーバーに保存しません）' },
         { label: '解析ツール：', text: 'サービス改善のためのアクセス解析（Google Analytics等）' },
+        { label: '広告の計測：', text: '広告の効果測定・配信の最適化のため、Meta Platforms, Inc. の計測ツール（Metaピクセル・コンバージョンAPI）を利用し、閲覧・登録・購入の情報と、暗号化（ハッシュ化）したメールアドレス等を同社に送信する場合があります。会話の内容は送信しません。' },
         { label: 'AI基盤モデル：', text: '応答生成に外部AI API（OpenAI・Anthropic等）を利用する場合があります。その際、会話内容が当該サービスのAPIに送信される場合があります。' },
       ],
     },

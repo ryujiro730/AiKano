@@ -1,6 +1,6 @@
 {
   "title": "Privacy Policy",
-  "updated": "Last updated: June 2026",
+  "updated": "Last updated: November 2026",
   "footer": "AiKano Operations Team",
   "sections": [
     {
@@ -90,6 +90,10 @@
         {
           "label": "Analytics tools:",
           "text": "Access analytics to improve the service (such as Google Analytics)"
+        },
+        {
+          "label": "Ad measurement:",
+          "text": "To measure ad performance and optimize ad delivery, we use Meta Platforms, Inc.'s measurement tools (Meta Pixel and Conversions API) and may send page view, sign-up and purchase information, along with hashed (encrypted) email addresses and similar data, to Meta. We do not send the content of your conversations."
         },
         {
           "label": "AI foundation models:",
