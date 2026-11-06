@@ -246,6 +246,8 @@ Supabase RPC → 集計・計算・複雑なフィルタ（SQL/PostgreSQL）
 - cron が1分おきに `processAutoBroadcast()` を実行
 - `trigger: 'registration'` = ユーザー登録日時 + delay_minutes で送信時刻を計算
 - 予約は `schedule_auto_broadcasts()`（086）: シーケンス作成より後に登録した人だけ・30分以上前に過ぎたステップは予約しない・1通目を逃した人には続きも送らない・BAN 中は除く
+- `auto_broadcast_sequences.target`（098）: 'all'（全員）／'partner'（登録時にそのキャラを選んだ人だけ、`profiles.partner_character_id`）／'non_partner'（選ばなかった人だけ）。ブロックしたキャラからは送らない。partner の1通目は登録から10分以上あける（partner は登録の最後に入る）
+- 2026-11-06 の構成: 各キャラ「選んだ人へ（登録から7日）」＝10分・2時間・翌日・3日後（写真付き＝有料モザイク）・7日後の5通、「ほかのキャラを選んだ人へあいさつ」＝登録30時間後から1日1人ずつ1通。ユーザーがそのキャラに返信すると、そのキャラの残りは取り消される（/api/chat/cancel-broadcasts）。文面は通知メールの冒頭にも載るので、性的な表現は入れない（Gmail・Stripe・Meta）
 
 ## メール（Resend）
 
@@ -331,7 +333,7 @@ src/
     UtmCapture.tsx          # UTMパラメータ捕捉
     PointsShortageDialog.tsx # ポイント不足ダイアログ
 .github/workflows/deploy.yml  # デプロイ＆cron設定
-supabase/migrations/          # マイグレーション（072・081〜097 は適用済み）
+supabase/migrations/          # マイグレーション（072・081〜098 は適用済み）
 ```
 
 ---
