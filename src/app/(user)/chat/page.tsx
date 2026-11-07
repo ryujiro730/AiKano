@@ -892,6 +892,8 @@ export default function ChatPage() {
           currentPoints={pointsShortage.current}
           requiredPoints={pointsShortage.required}
           onClose={() => setPointsShortage(null)}
+          characterName={character?.name}
+          characterAvatar={character?.avatar_url}
         />
       )}
 

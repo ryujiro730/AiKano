@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import { Sparkles } from 'lucide-react'
 import { CardBrands, FamilyMartBadge, LawsonBadge, MinistopBadge, SeicomartBadge } from '@/components/icons/payment-brands'
-import { TOKEN_PACKAGES } from '@/types'
+import { TOKEN_PACKAGES, FIRST_PACKAGE } from '@/types'
+import { POINTS_PER_MESSAGE } from '@/lib/pricing'
 import { logAction } from '@/lib/action-log'
 import { pointsForPackage, isCampaignTarget, type PurchaseCampaign, toPurchaseCampaign, campaignRateFor, campaignMaxRate } from '@/lib/point-packages'
 import { useI18n } from '@/i18n/client'
@@ -18,6 +19,22 @@ export function PointPackageList({ shortage = 0 }: { shortage?: number }) {
   const { m } = useI18n()
   const [purchasing, setPurchasing] = useState<string | null>(null)
   const [campaign, setCampaign] = useState<PurchaseCampaign | null>(null)
+  // 初回限定パック（課金したことがない人だけ・見せてから24時間。期限はサーバーで決まり、本当に切れる）
+  const [offerEnds, setOfferEnds] = useState<number | null>(null)
+  const [now, setNow] = useState(() => Date.now())
+
+  useEffect(() => {
+    fetch('/api/points/first-offer', { method: 'POST' })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.eligible && d.expiresAt) setOfferEnds(new Date(d.expiresAt).getTime()) })
+      .catch(() => {})
+  }, [])
+  useEffect(() => {
+    if (!offerEnds) return
+    const t = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(t)
+  }, [offerEnds])
+  const offerLeft = offerEnds ? offerEnds - now : 0
 
   useEffect(() => {
     fetch('/api/campaigns/active?purchase=true')
@@ -61,8 +78,28 @@ export function PointPackageList({ shortage = 0 }: { shortage?: number }) {
     return a.price_yen - b.price_yen
   })
 
+  const hms = (ms: number) => {
+    const s = Math.max(0, Math.floor(ms / 1000))
+    return `${String(Math.floor(s / 3600)).padStart(2, '0')}:${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
+  }
+
   return (
     <div className="flex flex-col gap-2.5">
+      {offerLeft > 0 && (
+        <button onClick={() => handlePurchase(FIRST_PACKAGE)} disabled={!!purchasing}
+          className="relative w-full text-left px-4 py-3.5 rounded-xl overflow-hidden disabled:opacity-60"
+          style={{ background: 'linear-gradient(135deg, #ff7aa8 0%, #d93a72 100%)', color: '#fff', boxShadow: '0 6px 18px rgba(217,58,114,0.35)' }}>
+          <span className="absolute top-2 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full tabular-nums" style={{ background: 'rgba(255,255,255,0.25)' }}>
+            {fmt(m.packages.firstOfferEnds, { time: hms(offerLeft) })}
+          </span>
+          <p className="text-[11px] font-black tracking-wider opacity-95">{m.packages.firstOffer}</p>
+          <p className="text-lg font-black mt-0.5">
+            {fmt(m.packages.firstOfferDesc, { price: FIRST_PACKAGE.price_yen.toLocaleString(), pt: FIRST_PACKAGE.tokens, n: Math.floor(FIRST_PACKAGE.tokens / POINTS_PER_MESSAGE) })}
+          </p>
+          <p className="text-[11px] opacity-90 mt-0.5">{m.packages.firstOfferNote}</p>
+          {purchasing === FIRST_PACKAGE.id && <p className="text-[11px] mt-1">{m.packages.processing}</p>}
+        </button>
+      )}
       {campaign && campaignMaxRate(campaign) > 1 && (
         <div className="rounded-xl px-4 py-2.5 flex items-center gap-2 mb-1"
           style={{ background: 'var(--color-primary-soft)', border: '1px solid var(--color-primary-border)' }}>
@@ -118,6 +155,9 @@ export function PointPackageList({ shortage = 0 }: { shortage?: number }) {
                     style={{ background: 'var(--color-primary)', color: '#fff' }}>{pkg.is_popular ? m.packages.popular : m.packages.recommended}</span>
                 )}
               </div>
+              <p className="text-[11px] mt-0.5 font-semibold" style={{ color: 'var(--color-primary)' }}>
+                {fmt(m.packages.messagesApprox, { n: Math.floor(points / POINTS_PER_MESSAGE).toLocaleString() })}
+              </p>
               {!inCampaign && pkg.bonus_points > 0 && (
                 <p className="text-[11px] mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
                   {fmt(m.packages.breakdown, { base: (pkg.tokens - pkg.bonus_points).toLocaleString(), bonus: pkg.bonus_points.toLocaleString() })}

@@ -11,3 +11,4 @@ supabase/.temp/
 /char_generated/
 /momo/
 /momo_generated/
+scripts/announcement-sent.json

@@ -251,6 +251,7 @@ export const es: Messages = {
     "receive": "¡Reclamar!"
   },
   "shortage": {
+    "characterLine": "{name}: «Quiero seguir hablando…»",
     "defaultTitle": "Necesitas puntos para seguir hablando",
     "balance": "Saldo",
     "required": "Necesarios",
@@ -259,6 +260,11 @@ export const es: Messages = {
     "comeBack": "Vuelve mañana a verme y podrás intercambiar {n} mensajes"
   },
   "packages": {
+    "firstOffer": "SOLO PRIMERA COMPRA",
+    "firstOfferDesc": "¥{price} por {pt}pt (unos {n} mensajes)",
+    "firstOfferEnds": "Quedan {time}",
+    "firstOfferNote": "Solo para tu primera compra. Los mismos puntos que el paquete de ¥1,000.",
+    "messagesApprox": "Unos {n} mensajes",
     "checkoutFailed": "No se pudo iniciar el pago",
     "methods": "Paga con tarjeta o en tienda de conveniencia",
     "campaign": "¡Promoción activa! Puntos ×{rate}",

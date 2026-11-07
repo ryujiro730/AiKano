@@ -159,6 +159,9 @@ Supabase RPC → 集計・計算・複雑なフィルタ（SQL/PostgreSQL）
 
 **Stripe webhook**: 署名の鍵は GitHub Secret `STRIPE_WEBHOOK_SECRET`（本番の送信先 vibrant-rhythm の whsec。2026-10-03 に本番キーへ替えたとき差し替え漏れで、11/06 まで本番の通知が全部 400 で落ちていた）。受け取った通知と処理結果は `stripe_webhook_log`（094）に残る（outcome: ok / pending / no_profile / error）。顧客IDで見つからないユーザーは、Stripe の顧客の metadata.userId かメールで探して結びつける（`profileForCustomer`）
 
+**初回限定パック**: 480円で100pt（`FIRST_PACKAGE`、`types/index.ts`）。課金したことがない人だけ、オファーを初めて見せてから24時間（`profiles.first_offer_expires_at`、100。`lib/first-offer.ts`・`/api/points/first-offer`）。購入ダイアログ・決済ページの一番上に残り時間つきで出す。キャンペーン倍率は掛けない。Checkout でも期限と課金歴をサーバーで確かめる。特商法の料金表に記載
+**購入ダイアログ**: 各パックに「約○通話せます」を出す。チャットから開いたときはキャラの顔と「もっと話したいな…」
+
 **課金導線**: ポイント購入は `PointPackageList`（購入ダイアログと /payment#points で共用）→ `/api/stripe/checkout`（packageId のみ受け取り、価格・付与pt・キャンペーン倍率はサーバーで決定）→ webhook で付与。キャンペーン判定は `lib/campaigns.ts`、付与pt計算は `lib/point-packages.ts` を表示とサーバーで共用。
 
 **書き込み権限**: profiles・point_transactions・user_items・動画購入はブラウザから書けない（065）。必ず service role のサーバーAPI経由で書く
@@ -336,7 +339,7 @@ src/
     UtmCapture.tsx          # UTMパラメータ捕捉
     PointsShortageDialog.tsx # ポイント不足ダイアログ
 .github/workflows/deploy.yml  # デプロイ＆cron設定
-supabase/migrations/          # マイグレーション（072・081〜099 は適用済み）
+supabase/migrations/          # マイグレーション（072・081〜100 は適用済み）
 ```
 
 ---

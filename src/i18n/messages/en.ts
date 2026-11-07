@@ -251,6 +251,7 @@ export const en: Messages = {
     "receive": "Claim!"
   },
   "shortage": {
+    "characterLine": "{name}: \"I want to keep talking…\"",
     "defaultTitle": "You need points to keep chatting",
     "balance": "Balance",
     "required": "Required",
@@ -259,6 +260,11 @@ export const en: Messages = {
     "comeBack": "Come back tomorrow and chat for {n} messages"
   },
   "packages": {
+    "firstOffer": "FIRST PURCHASE ONLY",
+    "firstOfferDesc": "¥{price} for {pt}pt (about {n} messages)",
+    "firstOfferEnds": "{time} left",
+    "firstOfferNote": "For first-time buyers only. Same points as the regular ¥1,000 pack.",
+    "messagesApprox": "About {n} messages",
     "checkoutFailed": "Failed to start payment",
     "methods": "Pay by card or at a convenience store",
     "campaign": "Campaign on! {rate}x points",

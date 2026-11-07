@@ -251,6 +251,7 @@ export const de: Messages = {
     "receive": "Abholen!"
   },
   "shortage": {
+    "characterLine": "{name}: „Ich will noch weiterreden…“",
     "defaultTitle": "Du brauchst Punkte, um weiterzuchatten",
     "balance": "Guthaben",
     "required": "Benötigt",
@@ -259,6 +260,11 @@ export const de: Messages = {
     "comeBack": "Komm morgen wieder und chatte für {n} Nachrichten"
   },
   "packages": {
+    "firstOffer": "NUR BEIM ERSTEN KAUF",
+    "firstOfferDesc": "{price} ¥ für {pt}pt (etwa {n} Nachrichten)",
+    "firstOfferEnds": "Noch {time}",
+    "firstOfferNote": "Nur beim ersten Kauf. Gleiche Punkte wie das 1.000-¥-Paket.",
+    "messagesApprox": "Etwa {n} Nachrichten",
     "checkoutFailed": "Zahlung konnte nicht gestartet werden",
     "methods": "Zahlung per Karte oder im Convenience Store",
     "campaign": "Aktion: {rate}× Punkte!",

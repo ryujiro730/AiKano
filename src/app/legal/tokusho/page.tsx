@@ -33,6 +33,7 @@ const rows: { label: string; value: React.ReactNode }[] = [
               </tr>
             </thead>
             <tbody>
+              <tr><td className="py-1 pr-4">¥480（初回限定：はじめての購入時のみ・表示から24時間）</td><td className="pr-4">100pt</td><td>—</td></tr>
               <tr><td className="py-1 pr-4">¥1,000</td><td className="pr-4">100pt</td><td>—</td></tr>
               <tr><td className="py-1 pr-4">¥3,000</td><td className="pr-4">330pt</td><td>+30pt</td></tr>
               <tr><td className="py-1 pr-4">¥5,000</td><td className="pr-4">550pt</td><td>+50pt</td></tr>

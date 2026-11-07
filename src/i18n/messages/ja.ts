@@ -202,6 +202,7 @@ export const ja = {
     receive: '受け取る！',
   },
   shortage: {
+    characterLine: '{name}「もっと話したいな…」',
     defaultTitle: '続けて話すにはポイントが必要です',
     balance: '残高',
     required: '必要',
@@ -210,6 +211,11 @@ export const ja = {
     comeBack: '明日また会いに来れば、{n}通分話せます',
   },
   packages: {
+    firstOffer: '初回限定',
+    firstOfferDesc: '{price}円で{pt}pt（約{n}通）',
+    firstOfferEnds: '残り {time}',
+    firstOfferNote: 'はじめての購入の方だけ。ふだんの1,000円パックと同じポイントです',
+    messagesApprox: '約{n}通話せます',
     checkoutFailed: '決済の開始に失敗しました',
     methods: 'カード・コンビニで払えます',
     campaign: 'キャンペーン中！ポイント ×{rate}倍',

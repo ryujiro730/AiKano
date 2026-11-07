@@ -8,6 +8,8 @@ import { findEligibleCampaign } from '@/lib/campaigns'
 import { findPackage, pointsForPackage, isCampaignTarget, type PurchaseCampaign, toPurchaseCampaign } from '@/lib/point-packages'
 import { logUserAction } from '@/lib/user-action-log'
 import { metaInitiateCheckout } from '@/lib/meta-capi'
+import { getFirstOffer } from '@/lib/first-offer'
+import { FIRST_PACKAGE } from '@/types'
 
 export const fetchCache = 'force-no-store'
 
@@ -19,6 +21,11 @@ export async function POST(request: Request) {
   const { packageId } = await request.json().catch(() => ({}))
   const pkg = typeof packageId === 'string' ? findPackage(packageId) : null
   if (!pkg) return NextResponse.json({ error: 'Invalid package' }, { status: 400 })
+  // 初回限定パックは、課金したことがなく期限内の人だけ（価格はサーバーで決めるので、ここで弾けば安く買われることはない）
+  if (pkg.id === FIRST_PACKAGE.id) {
+    const db0 = createAdminClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+    if (!(await getFirstOffer(db0, user.id)).eligible) return NextResponse.json({ error: 'offer_unavailable' }, { status: 400 })
+  }
 
   try {
     const isInternal = !!user.email && (INTERNAL_EMAILS as readonly string[]).includes(user.email)

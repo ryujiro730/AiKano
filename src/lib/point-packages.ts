@@ -1,4 +1,4 @@
-import { TOKEN_PACKAGES, type TokenPackage } from '@/types'
+import { TOKEN_PACKAGES, FIRST_PACKAGE, type TokenPackage } from '@/types'
 
 /** 高額パックの倍率（price_yen が min_yen 以上のパックは rate 倍） */
 export type RateTier = { min_yen: number; rate: number }
@@ -42,11 +42,14 @@ export function campaignMaxRate(campaign: PurchaseCampaign | null): number {
 }
 
 export function findPackage(packageId: string): TokenPackage | null {
+  if (packageId === FIRST_PACKAGE.id) return FIRST_PACKAGE
   return TOKEN_PACKAGES.find(p => p.id === packageId) ?? null
 }
 
 /** キャンペーン対象のパックか */
 export function isCampaignTarget(pkg: TokenPackage, campaign: PurchaseCampaign | null): boolean {
+  // 初回限定パックはもともと割安なので、キャンペーン倍率は掛けない
+  if (pkg.id === FIRST_PACKAGE.id) return false
   if (!campaign || campaignRateFor(pkg, campaign) <= 1) return false
   return (campaign.min_price_yen == null || pkg.price_yen >= campaign.min_price_yen)
     && (campaign.max_price_yen == null || pkg.price_yen <= campaign.max_price_yen)

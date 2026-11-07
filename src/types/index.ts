@@ -147,6 +147,12 @@ export interface TokenPackage {
   stripe_price_id: string
 }
 
+/**
+ * 初回限定パック（課金したことがない人だけ・オファーを見せてから24時間。lib/first-offer.ts）。
+ * キャンペーン倍率は掛けない。一覧（TOKEN_PACKAGES）には入れず、対象の人にだけ別枠で出す
+ */
+export const FIRST_PACKAGE: TokenPackage = { id: 'pack_first', name: '初回限定 100ポイント', tokens: 100, price_yen: 480, bonus_points: 0, is_popular: false, stripe_price_id: '' }
+
 export const TOKEN_PACKAGES: TokenPackage[] = [
   { id: 'pack_1000',  name: '100ポイント',   tokens: 100,  price_yen: 1000,  bonus_points: 0,   is_popular: false, stripe_price_id: '' },
   { id: 'pack_3000',  name: '330ポイント',   tokens: 330,  price_yen: 3000,  bonus_points: 30,  is_popular: false, stripe_price_id: '' },

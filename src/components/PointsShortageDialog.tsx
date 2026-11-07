@@ -15,9 +15,12 @@ interface Props {
   onClose: () => void
   /** 見出し（既定はチャット向けの文言） */
   title?: string
+  /** チャットから開いたとき: キャラの顔と「もっと話したいな…」を出す（気持ちが乗っているところで止まる） */
+  characterName?: string
+  characterAvatar?: string | null
 }
 
-export function PointsShortageDialog({ currentPoints, requiredPoints, onClose, title: titleProp }: Props) {
+export function PointsShortageDialog({ currentPoints, requiredPoints, onClose, title: titleProp, characterName, characterAvatar }: Props) {
   const { m } = useI18n()
   const title = titleProp ?? m.shortage.defaultTitle
   const shortage = Math.max(0, requiredPoints - currentPoints)
@@ -54,6 +57,18 @@ export function PointsShortageDialog({ currentPoints, requiredPoints, onClose, t
         </div>
 
         <div className="h-px mx-5" style={{ background: 'var(--color-border)' }} />
+
+        {characterName && (
+          <div className="mx-5 mt-3 flex items-center gap-3">
+            {characterAvatar && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={characterAvatar} alt="" className="w-11 h-11 rounded-full object-cover flex-shrink-0" />
+            )}
+            <p className="text-sm font-semibold px-3 py-2 rounded-2xl rounded-tl-sm" style={{ background: 'var(--color-surface-2)' }}>
+              {fmt(m.shortage.characterLine, { name: characterName })}
+            </p>
+          </div>
+        )}
 
         <div className="mx-5 mt-3 rounded-[var(--radius-card,12px)] px-4 py-2.5 flex items-center gap-2.5"
           style={{ background: 'var(--color-primary-soft)', border: '1px solid var(--color-primary-border)' }}>
